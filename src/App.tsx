@@ -1,10 +1,17 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import type { SectionId } from "./app/navigation";
 import type { DraftFormState, ObservationFormState, TaskFormState } from "./app/actions";
+import {
+  fallbackDesktopWindowPlan,
+  isTauriRuntime,
+  loadDesktopWindowPlan,
+  type DesktopWindowPlanResult
+} from "./app/desktopWindows";
 import { scanLocalAgents as scanKnownLocalAgents } from "./app/localAgents";
 import { playLocalSpeechPreview } from "./app/voicePlayback";
 import { AppShell } from "./components/layout/AppShell";
 import { CharacterStudioPage } from "./components/characters/CharacterStudioPage";
+import { CompanionWindow } from "./components/desktop/CompanionWindow";
 import { DesktopStagePage } from "./components/desktop/DesktopStagePage";
 import { MemoryCenterPage } from "./components/memory/MemoryCenterPage";
 import { PrivacySyncPage } from "./components/privacy/PrivacySyncPage";
@@ -50,6 +57,7 @@ import { createVoiceRequest, recordVoicePlaybackResult } from "./domain/voice";
 
 export default function App() {
   const [state, setState] = useState<PersonaDeskState>(() => loadState());
+  const surface = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("surface") : null;
   const [activeSection, setActiveSection] = useState<SectionId>("desktop");
   const [taskForm, setTaskForm] = useState<TaskFormState>({
     goal: "",
@@ -73,10 +81,19 @@ export default function App() {
   const [syncPreview, setSyncPreview] = useState<SyncPreview | null>(null);
   const [syncPackageText, setSyncPackageText] = useState("");
   const [syncImportPreview, setSyncImportPreview] = useState<SyncPackageImportPreview | null>(null);
+  const [desktopWindowPlan, setDesktopWindowPlan] = useState<DesktopWindowPlanResult>(() => fallbackDesktopWindowPlan());
 
   useEffect(() => {
     saveState(state);
   }, [state]);
+
+  useEffect(() => {
+    if (!isTauriRuntime()) {
+      return;
+    }
+
+    void loadDesktopWindowPlan().then(setDesktopWindowPlan);
+  }, []);
 
   const emotionalCharacters = useMemo(
     () => state.characters.filter((character) => character.kind === "emotional"),
@@ -336,12 +353,23 @@ export default function App() {
           <DesktopStagePage
             actions={actions}
             conversationMessages={state.conversationMessages}
+            desktopWindowPlan={desktopWindowPlan}
             emotionalCharacters={emotionalCharacters}
             latestRun={latestRun}
             roleBoundaries={state.roleBoundaries}
           />
         );
     }
+  }
+
+  if (surface === "companion") {
+    return (
+      <CompanionWindow
+        activeObservation={activeObservation}
+        emotionalCharacters={emotionalCharacters}
+        latestRun={latestRun}
+      />
+    );
   }
 
   return (

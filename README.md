@@ -28,6 +28,11 @@ This repository currently implements the Phase 1 thin slice from the design spec
   - task characters cannot act as desktop companions,
   - no model provider is called by this Phase 1 chat,
   - raw companion conversations remain local-only and are excluded from sync preview.
+- Native desktop surfaces:
+  - the Tauri desktop runtime declares a main control console window and a separate compact companion window,
+  - the companion surface is loaded from `index.html?surface=companion`,
+  - the companion window is configured as always-on-top, undecorated, and hidden from the taskbar,
+  - the web fallback still shows the native surface plan without pretending browser tabs are real desktop windows.
 - A real deterministic local planner executor for text planning and validation.
 - Autonomous task loop:
   - creates a task,
@@ -104,6 +109,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
 - Screen observation stores local summaries only. It does not capture or upload raw frames.
 - Cloud vision approvals are recorded as audit entries only until a real vision provider and upload path are configured.
 - Optional sync is represented by local settings, a local preview, and local sync package export/import preflight. A cloud sync backend and automatic import merge are not implemented yet.
+- Transparent companion windows, tray/menu integration, startup behavior, and system notifications are not implemented yet.
 
 ## Privacy Defaults
 

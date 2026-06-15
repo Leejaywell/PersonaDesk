@@ -88,6 +88,54 @@ label {
   padding: 18px;
 }
 
+.companion-window-shell {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  min-width: 220px;
+  min-height: 100vh;
+  gap: 12px;
+  padding: 18px;
+  background: #f8fafc;
+}
+
+.companion-window-avatar {
+  display: grid;
+  place-items: center;
+  width: 104px;
+  height: 104px;
+  border: 4px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.18);
+  color: #ffffff;
+  font-size: 34px;
+  font-weight: 800;
+}
+
+.companion-window-copy {
+  text-align: center;
+}
+
+.companion-window-copy h1 {
+  margin: 0 0 6px;
+  font-size: 20px;
+}
+
+.companion-window-copy p {
+  max-width: 220px;
+  margin: 0;
+  color: #52606d;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.companion-window-status {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .topbar {
   display: flex;
   align-items: center;
@@ -343,6 +391,7 @@ label {
 .task-form,
 .draft-form,
 .card-list,
+.native-window-list,
 .executor-list,
 .task-card-list,
 .executor-config-list,

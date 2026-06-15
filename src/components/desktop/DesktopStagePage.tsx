@@ -1,6 +1,7 @@
 import { Sparkles } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import type { AppActions } from "../../app/actions";
+import type { DesktopWindowPlanResult } from "../../app/desktopWindows";
 import type { Character, ConversationMessage, RoleBoundary, TaskRun } from "../../domain/types";
 import { CharacterCard } from "../characters/CharacterCard";
 import { Panel } from "../ui/Panel";
@@ -11,12 +12,14 @@ export function DesktopStagePage({
   roleBoundaries,
   latestRun,
   conversationMessages,
+  desktopWindowPlan,
   actions
 }: {
   emotionalCharacters: Character[];
   roleBoundaries: Record<string, RoleBoundary>;
   latestRun: TaskRun | undefined;
   conversationMessages: ConversationMessage[];
+  desktopWindowPlan: DesktopWindowPlanResult;
   actions: AppActions;
 }) {
   const [selectedCharacterId, setSelectedCharacterId] = useState(emotionalCharacters[0]?.id ?? "");
@@ -117,6 +120,35 @@ export function DesktopStagePage({
         <div className="desktop-latest-task">
           <strong>Latest task</strong>
           {latestRun ? <StatusPill status={latestRun.status} /> : <span className="empty-state">No task run yet.</span>}
+        </div>
+      </Panel>
+
+      <Panel
+        description="The desktop runtime starts the management console separately from the always-on-top companion surface."
+        title="Native Surfaces"
+      >
+        <p className="local-only">{desktopWindowPlan.message}</p>
+        <div className="native-window-list">
+          {desktopWindowPlan.windows.map((windowPlan) => (
+            <article className="summary-card" key={windowPlan.label}>
+              <div className="task-card-header">
+                <div>
+                  <strong>{windowPlan.title}</strong>
+                  <p>
+                    {windowPlan.label} / {windowPlan.surface} / {windowPlan.width}x{windowPlan.height}
+                  </p>
+                </div>
+                <StatusPill status={windowPlan.alwaysOnTop ? "active" : "inactive"}>
+                  {windowPlan.alwaysOnTop ? "Always on top" : "Console"}
+                </StatusPill>
+              </div>
+              <div className="task-meta-row">
+                <span className="meta-chip">Decorations: {windowPlan.decorations ? "on" : "off"}</span>
+                <span className="meta-chip">Taskbar: {windowPlan.skipTaskbar ? "hidden" : "shown"}</span>
+                <span className="meta-chip">Initial focus: {windowPlan.focus ? "yes" : "no"}</span>
+              </div>
+            </article>
+          ))}
         </div>
       </Panel>
 

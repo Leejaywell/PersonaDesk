@@ -13,6 +13,7 @@ import App from "./App";
 
 describe("PersonaDesk app", () => {
   beforeEach(() => {
+    window.history.pushState({}, "", "/");
     window.localStorage.clear();
     Object.defineProperty(window, "speechSynthesis", { value: undefined, configurable: true });
     Object.defineProperty(window, "SpeechSynthesisUtterance", { value: undefined, configurable: true });
@@ -27,7 +28,7 @@ describe("PersonaDesk app", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    expect(screen.getByText("PersonaDesk")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "PersonaDesk", level: 1 })).toBeInTheDocument();
     expect(screen.getByText("Desktop Stage")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Tasks/i })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Run autonomous task" })).not.toBeInTheDocument();
@@ -37,6 +38,28 @@ describe("PersonaDesk app", () => {
 
     expect(screen.getByText("Executor Registry")).toBeInTheDocument();
     expect(screen.getByText("Voice Providers")).toBeInTheDocument();
+  });
+
+  it("shows the native companion window plan on the desktop stage", () => {
+    render(<App />);
+
+    expect(screen.getByText("Native Surfaces")).toBeInTheDocument();
+    expect(screen.getByText("PersonaDesk Companion")).toBeInTheDocument();
+    expect(screen.getByText(/companion \/ floating-companion \/ 280x360/)).toBeInTheDocument();
+    expect(screen.getByText("Always on top")).toBeInTheDocument();
+    expect(screen.getByText("Decorations: off")).toBeInTheDocument();
+    expect(screen.getByText("Taskbar: hidden")).toBeInTheDocument();
+  });
+
+  it("renders the compact companion surface without management navigation", () => {
+    window.history.pushState({}, "", "/?surface=companion");
+
+    render(<App />);
+
+    expect(screen.getByRole("main", { name: "PersonaDesk companion window" })).toBeInTheDocument();
+    expect(screen.getByText("Mira")).toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Product sections" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Executor Registry")).not.toBeInTheDocument();
   });
 
   it("can exchange local deterministic companion messages on the desktop stage", async () => {
