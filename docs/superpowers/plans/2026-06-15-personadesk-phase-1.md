@@ -64,7 +64,7 @@ The plan does not implement paid cloud APIs, voice cloning, video personality im
 - Create: `src-tauri/tauri.conf.json`
 - Create: `src-tauri/src/main.rs`
 
-- [ ] **Step 1: Write the package and compiler files**
+- [x] **Step 1: Write the package and compiler files**
 
 Create `package.json` with these scripts and dependencies:
 
@@ -129,13 +129,13 @@ Create `tsconfig.json` with strict React settings:
 }
 ```
 
-- [ ] **Step 2: Write the Vite and entry files**
+- [x] **Step 2: Write the Vite and entry files**
 
 Create `index.html`, `vite.config.ts`, `src/main.tsx`, `src/App.tsx`, and `src/styles.css` so `npm run dev` serves a visible PersonaDesk shell with no broken imports.
 
 The first `src/App.tsx` should render the product name, one desktop stage region, one task room region, and one control console region.
 
-- [ ] **Step 3: Write the Tauri files**
+- [x] **Step 3: Write the Tauri files**
 
 Create `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json`, and `src-tauri/src/main.rs` with a minimal Tauri v2 app command:
 
@@ -146,7 +146,7 @@ fn platform_name() -> &'static str {
 }
 ```
 
-- [ ] **Step 4: Install dependencies**
+- [x] **Step 4: Install dependencies**
 
 Run:
 
@@ -156,7 +156,7 @@ npm install
 
 Expected: dependencies install and `package-lock.json` is created.
 
-- [ ] **Step 5: Verify scaffold builds**
+- [x] **Step 5: Verify scaffold builds**
 
 Run:
 
@@ -166,7 +166,7 @@ npm run build
 
 Expected: TypeScript succeeds and Vite creates `dist/`.
 
-- [ ] **Step 6: Commit scaffold**
+- [x] **Step 6: Commit scaffold**
 
 ```bash
 git add package.json package-lock.json index.html vite.config.ts tsconfig.json tsconfig.node.json src src-tauri
