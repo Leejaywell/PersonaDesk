@@ -48,6 +48,26 @@ describe("PersonaDesk app", () => {
     expect(screen.getByText(/No model provider was called/)).toBeInTheDocument();
   });
 
+  it("can review companion-proposed memory before long-term write", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.type(screen.getByLabelText("Message"), "Please remember that I prefer quiet summaries.");
+    await user.click(screen.getByRole("button", { name: "Send local companion message" }));
+    await user.click(screen.getByRole("button", { name: /Memory/i }));
+
+    expect(screen.getByDisplayValue("Please remember that I prefer quiet summaries.")).toBeInTheDocument();
+    expect(screen.getByText(/Companion identified a relationship or preference note/i)).toBeInTheDocument();
+    expect(screen.getByLabelText("Layer")).toHaveValue("character-private");
+    expect(screen.getByLabelText("Owner")).toHaveValue("mira");
+    await user.click(screen.getByRole("button", { name: "Confirm reviewed memory" }));
+
+    const confirmedMemoryPanel = screen.getByRole("region", { name: "Confirmed Memory" });
+    expect(within(confirmedMemoryPanel).getByText("Confirmed memories: 1")).toBeInTheDocument();
+    expect(within(confirmedMemoryPanel).getByText("Mira")).toBeInTheDocument();
+    expect(within(confirmedMemoryPanel).getByText("Please remember that I prefer quiet summaries.")).toBeInTheDocument();
+  });
+
   it("can scan and merge detected local agents from the executor page", async () => {
     const user = userEvent.setup();
     scanLocalAgentsMock.mockResolvedValue({

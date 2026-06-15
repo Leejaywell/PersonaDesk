@@ -39,6 +39,25 @@ describe("companion conversation", () => {
     expect(state.conversationMessages).toHaveLength(0);
   });
 
+  it("proposes companion memory candidates without writing long-term memory", () => {
+    const state = sendCompanionMessage(createInitialState(), {
+      characterId: "mira",
+      text: "Please remember that I prefer quiet summaries."
+    });
+
+    expect(state.conversationMessages).toHaveLength(2);
+    expect(state.memoryCandidates).toHaveLength(1);
+    expect(state.memories).toHaveLength(0);
+    expect(state.memoryCandidates[0]).toMatchObject({
+      proposedLayer: "character-private",
+      proposedOwnerCharacterId: "mira",
+      proposedText: "Please remember that I prefer quiet summaries.",
+      sensitivity: "low",
+      status: "pending"
+    });
+    expect(state.memoryCandidates[0].sourceEvent).toBe(state.conversationMessages[0].id);
+  });
+
   it("adds deterministic task reactions from emotional characters with task-comment permission", () => {
     let state = createInitialState();
     state = createTask(state, {
@@ -93,6 +112,28 @@ describe("companion conversation", () => {
     });
     expect(state.conversationMessages[0].text).toContain("User reviewed a design document");
     expect(state.conversationMessages[0].text).toContain("no raw screen frames");
+  });
+
+  it("proposes memory candidates from memory-shaped allowlisted observation summaries", () => {
+    let state = createInitialState();
+    state = startObservationSession(state, ["Safari"]);
+    state = summarizeObservationEvent(state, state.observationSessions[0].id, {
+      appName: "Safari",
+      summary: "User prefers reading design docs in Safari"
+    });
+    state = addObservationSummaryCompanionReactions(state, state.observationSessions[0].id);
+
+    const summary = state.observationSessions[0].localSummaryStream[0];
+    expect(state.conversationMessages).toHaveLength(1);
+    expect(state.memoryCandidates).toHaveLength(1);
+    expect(state.memoryCandidates[0]).toMatchObject({
+      proposedLayer: "character-private",
+      proposedOwnerCharacterId: "mira",
+      proposedText: "User prefers reading design docs in Safari",
+      sourceEvent: summary.id,
+      status: "pending"
+    });
+    expect(state.memories).toHaveLength(0);
   });
 
   it("does not add companion reactions for blocked observation sources", () => {

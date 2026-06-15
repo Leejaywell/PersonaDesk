@@ -22,6 +22,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
   - appearance backend, avatar label, accent color, TTS provider binding, and voice profile fields.
 - Desktop companion chat:
   - emotional characters can exchange local deterministic messages with the user,
+  - memory-shaped companion messages can propose character-private memory candidates for review,
   - emotional characters with task-comment permission can leave local reactions after task delivery or approval blocks,
   - emotional characters with observation-summary permission can react to allowlisted local observation summaries,
   - task characters cannot act as desktop companions,
@@ -44,7 +45,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
   - blocks when the allowed executor list has no available executor instead of silently falling back,
   - lets the user grant requested scopes and resume the same blocked task while preserving the blocked run as history.
 - Memory candidate workflow:
-  - candidates are proposed,
+  - candidates are proposed from task outcomes, memory-shaped companion messages, and allowlisted observation summaries,
   - users can edit memory text, layer, owner, sensitivity, and sync policy before confirmation,
   - owner choices are constrained by each character's memory permission scope,
   - context preview shows which confirmed memories would be injected for a selected character and task,
@@ -58,6 +59,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
   - non-allowlisted observation events are ignored and recorded in a boundary audit,
   - only local text summaries are stored,
   - allowlisted local summaries can trigger local companion feedback for permitted emotional characters,
+  - memory-shaped local summaries can propose memory candidates without writing long-term memory automatically,
   - cloud vision review requires an explicit approval audit record,
   - approval records do not upload raw screen frames in this Phase 1 implementation,
   - raw screen frames are not stored by this implementation.

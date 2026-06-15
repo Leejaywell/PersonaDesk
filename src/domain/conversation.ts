@@ -1,3 +1,4 @@
+import { proposeMemoryCandidate } from "./memory";
 import type { ConversationMessage, PersonaDeskState } from "./types";
 
 export interface CompanionMessageInput {
@@ -33,6 +34,41 @@ function deterministicReply(characterName: string, text: string, source: Convers
   return `${characterName}: I am here with you. I will keep this as local desktop conversation context.`;
 }
 
+function memoryCandidateText(text: string): string | null {
+  const trimmed = text.trim();
+  const lower = trimmed.toLowerCase();
+  const memorySignals = ["remember", "prefers", "prefer", "likes", "like", "usually", "important"];
+
+  if (!memorySignals.some((signal) => lower.includes(signal))) {
+    return null;
+  }
+
+  return trimmed.length > 160 ? `${trimmed.slice(0, 157)}...` : trimmed;
+}
+
+function proposeCompanionMemoryIfUseful(
+  state: PersonaDeskState,
+  characterId: string,
+  sourceEventId: string,
+  text: string,
+  reason: string
+): PersonaDeskState {
+  const candidateText = memoryCandidateText(text);
+
+  if (!candidateText) {
+    return state;
+  }
+
+  return proposeMemoryCandidate(state, {
+    layer: "character-private",
+    ownerCharacterId: characterId,
+    text: candidateText,
+    source: sourceEventId,
+    sensitivity: "low",
+    reason
+  });
+}
+
 export function sendCompanionMessage(state: PersonaDeskState, input: CompanionMessageInput): PersonaDeskState {
   const character = state.characters.find((item) => item.id === input.characterId);
   const text = input.text.trim();
@@ -63,10 +99,18 @@ export function sendCompanionMessage(state: PersonaDeskState, input: CompanionMe
     createdAt: timestamp
   };
 
-  return {
+  const nextState = {
     ...state,
     conversationMessages: [...state.conversationMessages, userMessage, characterMessage]
   };
+
+  return proposeCompanionMemoryIfUseful(
+    nextState,
+    character.id,
+    userMessage.id,
+    text,
+    "Companion identified a relationship or preference note. User confirmation is required before long-term memory write."
+  );
 }
 
 function taskReactionText(characterName: string, runStatus: string, taskTitle: string): string {
@@ -177,8 +221,20 @@ export function addObservationSummaryCompanionReactions(state: PersonaDeskState,
     return state;
   }
 
-  return {
+  const nextState = {
     ...state,
     conversationMessages: [...state.conversationMessages, ...reactions]
   };
+
+  return reactions.reduce((current, reaction) => {
+    const summary = session.localSummaryStream.find((item) => item.id === reaction.sourceEventId);
+
+    return proposeCompanionMemoryIfUseful(
+      current,
+      reaction.characterId,
+      reaction.sourceEventId ?? reaction.id,
+      summary?.summary ?? reaction.text,
+      "Observation companion identified a possible preference from an allowlisted local summary. User confirmation is required before long-term memory write."
+    );
+  }, nextState);
 }
