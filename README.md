@@ -46,6 +46,8 @@ This repository currently implements the Phase 1 thin slice from the design spec
   - candidates are proposed,
   - users can edit memory text, layer, owner, sensitivity, and sync policy before confirmation,
   - owner choices are constrained by each character's memory permission scope,
+  - context preview shows which confirmed memories would be injected for a selected character and task,
+  - high-sensitivity memories are excluded from context preview unless explicitly included,
   - long-term memory is written only after confirmation,
   - high-sensitivity memories are forced to local-only,
   - rejected candidates are discarded.

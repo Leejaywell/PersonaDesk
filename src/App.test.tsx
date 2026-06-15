@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -171,19 +171,22 @@ describe("PersonaDesk app", () => {
     expect(await screen.findByText("Delivered")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /Memory/i }));
-    expect(screen.queryByRole("option", { name: "Mira" })).not.toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "Orion" })).toBeInTheDocument();
+    expect(within(screen.getByLabelText("Owner")).queryByRole("option", { name: "Mira" })).not.toBeInTheDocument();
+    expect(within(screen.getByLabelText("Owner")).getByRole("option", { name: "Orion" })).toBeInTheDocument();
+    expect(screen.getByText("Context Preview")).toBeInTheDocument();
+    expect(screen.getByText(/does not inject every memory/i)).toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText("Layer"), "character-private");
-    expect(screen.getByRole("option", { name: "Mira" })).toBeInTheDocument();
+    expect(within(screen.getByLabelText("Owner")).getByRole("option", { name: "Mira" })).toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText("Owner"), "mira");
     await user.selectOptions(screen.getByLabelText("Sensitivity"), "high");
     await user.click(screen.getByRole("button", { name: "Confirm reviewed memory" }));
 
-    expect(screen.getByText("Confirmed memories: 1")).toBeInTheDocument();
-    expect(screen.getAllByText("character-private").length).toBeGreaterThan(0);
-    expect(screen.getByText("Mira")).toBeInTheDocument();
-    expect(screen.getByText("high")).toBeInTheDocument();
-    expect(screen.getByText("local-only")).toBeInTheDocument();
+    const confirmedMemoryPanel = screen.getByRole("region", { name: "Confirmed Memory" });
+    expect(within(confirmedMemoryPanel).getByText("Confirmed memories: 1")).toBeInTheDocument();
+    expect(within(confirmedMemoryPanel).getAllByText("character-private").length).toBeGreaterThan(0);
+    expect(within(confirmedMemoryPanel).getByText("Mira")).toBeInTheDocument();
+    expect(within(confirmedMemoryPanel).getByText("high")).toBeInTheDocument();
+    expect(within(confirmedMemoryPanel).getByText("local-only")).toBeInTheDocument();
   });
 
   it("blocks risky tasks until requested scopes are granted on the same task", async () => {

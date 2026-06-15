@@ -249,6 +249,8 @@ export default function App() {
             characters={state.characters}
             memories={state.memories}
             memoryCandidates={state.memoryCandidates}
+            taskRuns={state.taskRuns}
+            tasks={state.tasks}
           />
         );
       case "executors":

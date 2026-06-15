@@ -1,8 +1,8 @@
 import { Check, Shield, X } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
 import type { AppActions } from "../../app/actions";
-import { canCharacterOwnMemoryLayer, canUseSharedMemoryOwner } from "../../domain/memory";
-import type { Character, MemoryCandidate, MemoryItem, MemoryLayer, Sensitivity } from "../../domain/types";
+import { buildMemoryContextPreview, canCharacterOwnMemoryLayer, canUseSharedMemoryOwner } from "../../domain/memory";
+import type { Character, MemoryCandidate, MemoryItem, MemoryLayer, Sensitivity, Task, TaskRun } from "../../domain/types";
 import { Panel } from "../ui/Panel";
 
 const memoryLayers: MemoryLayer[] = [
@@ -149,15 +149,122 @@ function MemoryCandidateReviewCard({
   );
 }
 
+function MemoryContextPreviewPanel({
+  characters,
+  memories,
+  tasks,
+  taskRuns
+}: {
+  characters: Character[];
+  memories: MemoryItem[];
+  tasks: Task[];
+  taskRuns: TaskRun[];
+}) {
+  const [characterId, setCharacterId] = useState(characters[0]?.id ?? "");
+  const [taskId, setTaskId] = useState("");
+  const [includeHighSensitivity, setIncludeHighSensitivity] = useState(false);
+  const preview = useMemo(
+    () =>
+      buildMemoryContextPreview(
+        {
+          characters,
+          memories,
+          taskRuns
+        },
+        {
+          characterId,
+          taskId: taskId || null,
+          includeHighSensitivity,
+          limit: 6
+        }
+      ),
+    [characterId, characters, includeHighSensitivity, memories, taskId, taskRuns]
+  );
+
+  return (
+    <Panel
+      className="wide-panel"
+      description="Preview the confirmed memories a role would receive before any model call."
+      title="Context Preview"
+    >
+      <div className="settings-grid">
+        <label>
+          Context character
+          <select value={characterId} onChange={(event) => setCharacterId(event.target.value)}>
+            {characters.map((character) => (
+              <option key={character.id} value={character.id}>
+                {character.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Context task
+          <select value={taskId} onChange={(event) => setTaskId(event.target.value)}>
+            <option value="">No specific task</option>
+            {tasks.map((task) => (
+              <option key={task.id} value={task.id}>
+                {task.title}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <label className="toggle-row">
+        <input
+          checked={includeHighSensitivity}
+          onChange={(event) => setIncludeHighSensitivity(event.target.checked)}
+          type="checkbox"
+        />
+        Include high-sensitivity memories in preview
+      </label>
+      <p className="local-only">{preview.disclosure}</p>
+      <div className="sync-preview">
+        <section className="sync-preview-list" aria-label="Context preview included">
+          <h3>Included</h3>
+          {preview.included.length === 0 ? (
+            <p className="empty-state">No confirmed memories match this context.</p>
+          ) : (
+            preview.included.map((item) => (
+              <article className="summary-card" key={item.id}>
+                <strong>{item.layer}</strong>
+                <p>{item.text}</p>
+                <p>{item.reason}</p>
+              </article>
+            ))
+          )}
+        </section>
+        <section className="sync-preview-list" aria-label="Context preview excluded">
+          <h3>Excluded</h3>
+          {preview.excluded.length === 0 ? (
+            <p className="empty-state">No confirmed memories were excluded.</p>
+          ) : (
+            preview.excluded.map((item) => (
+              <article className="summary-card" key={item.id}>
+                <strong>{item.layer}</strong>
+                <p>{item.reason}</p>
+              </article>
+            ))
+          )}
+        </section>
+      </div>
+    </Panel>
+  );
+}
+
 export function MemoryCenterPage({
   memoryCandidates,
   memories,
   characters,
+  tasks,
+  taskRuns,
   actions
 }: {
   memoryCandidates: MemoryCandidate[];
   memories: MemoryItem[];
   characters: Character[];
+  tasks: Task[];
+  taskRuns: TaskRun[];
   actions: AppActions;
 }) {
   return (
@@ -204,6 +311,7 @@ export function MemoryCenterPage({
           </div>
         )}
       </Panel>
+      <MemoryContextPreviewPanel characters={characters} memories={memories} taskRuns={taskRuns} tasks={tasks} />
     </div>
   );
 }
