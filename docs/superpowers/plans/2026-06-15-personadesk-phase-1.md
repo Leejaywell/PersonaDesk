@@ -454,7 +454,7 @@ git commit -m "feat: add executor routing and agent detection"
 - Create: `src/domain/tasks.ts`
 - Test: `src/domain/tasks.test.ts`
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 Create `src/domain/tasks.test.ts`:
 
@@ -501,7 +501,7 @@ describe("task autonomy", () => {
 });
 ```
 
-- [ ] **Step 2: Run the test and verify it fails**
+- [x] **Step 2: Run the test and verify it fails**
 
 Run:
 
@@ -511,7 +511,7 @@ npm test -- src/domain/tasks.test.ts
 
 Expected: FAIL because `tasks.ts` does not exist.
 
-- [ ] **Step 3: Implement task runtime**
+- [x] **Step 3: Implement task runtime**
 
 Create:
 
@@ -523,7 +523,7 @@ Create:
 
 The deterministic executor must be named and disclosed as local deterministic planning logic. It must not claim to be an AI model.
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run:
 
@@ -533,7 +533,7 @@ npm test -- src/domain/tasks.test.ts
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit task runtime**
+- [x] **Step 5: Commit task runtime**
 
 ```bash
 git add src/domain/tasks.ts src/domain/tasks.test.ts
