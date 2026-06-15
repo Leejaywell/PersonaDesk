@@ -164,6 +164,26 @@ describe("PersonaDesk app", () => {
     expect(screen.getByText(/No model provider was called/)).toBeInTheDocument();
   });
 
+  it("can authorize task runs to use local observation summaries", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /Privacy/i }));
+    await user.click(screen.getByRole("button", { name: "Start observation" }));
+    await user.type(screen.getByLabelText("Local summary"), "User compared launch checklist examples");
+    await user.click(screen.getByRole("button", { name: "Add local summary" }));
+
+    await user.click(screen.getByRole("button", { name: /Tasks/i }));
+    await user.selectOptions(screen.getByLabelText("Authorization scope"), "text-planning-only observation-summaries");
+    await user.type(screen.getByLabelText("Task goal"), "Create an observation-aware checklist");
+    await user.click(screen.getByRole("button", { name: "Run autonomous task" }));
+
+    expect(await screen.findByText("Delivered")).toBeInTheDocument();
+    expect(screen.getByText(/Authorized observation summaries:/)).toBeInTheDocument();
+    expect(screen.getByText(/Safari: User compared launch checklist examples/)).toBeInTheDocument();
+    expect(screen.getByText("Scope: text-planning-only observation-summaries")).toBeInTheDocument();
+  });
+
   it("lets the user accept a delivered task result", async () => {
     const user = userEvent.setup();
     render(<App />);

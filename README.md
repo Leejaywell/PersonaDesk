@@ -41,6 +41,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
   - asks the user to accept the delivered result or request revision,
   - records the final user acceptance decision on the task run,
   - creates a new revised delivery run from user revision feedback,
+  - uses allowlisted local observation summaries only when the task authorization scope includes observation-summaries,
   - blocks when the request exceeds the authorization scope,
   - blocks when the allowed executor list has no available executor instead of silently falling back,
   - lets the user grant requested scopes and resume the same blocked task while preserving the blocked run as history.
@@ -60,6 +61,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
   - only local text summaries are stored,
   - allowlisted local summaries can trigger local companion feedback for permitted emotional characters,
   - memory-shaped local summaries can propose memory candidates without writing long-term memory automatically,
+  - task characters can use local observation summaries only when a task explicitly authorizes observation-summary access,
   - cloud vision review requires an explicit approval audit record,
   - approval records do not upload raw screen frames in this Phase 1 implementation,
   - raw screen frames are not stored by this implementation.

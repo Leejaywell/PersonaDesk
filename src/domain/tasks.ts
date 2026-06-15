@@ -2,6 +2,7 @@ import { executorDisclosure, routeExecutorForTask } from "./executors";
 import type {
   ApprovalRequest,
   Artifact,
+  ObservationSummary,
   PersonaDeskState,
   SupervisionMode,
   TaskAcceptanceStatus,
@@ -32,6 +33,36 @@ function createId(prefix: string): string {
 
 function nowIso(): string {
   return new Date().toISOString();
+}
+
+function canUseObservationSummaries(task: Task): boolean {
+  return task.authorizationScope.toLowerCase().split(/\s+/).includes("observation-summaries");
+}
+
+function authorizedObservationSummaries(state: PersonaDeskState, task: Task): ObservationSummary[] {
+  if (!canUseObservationSummaries(task)) {
+    return [];
+  }
+
+  return state.observationSessions.flatMap((session) => session.localSummaryStream).slice(-3);
+}
+
+function observationDecision(task: Task, summaries: ObservationSummary[]): string {
+  if (summaries.length > 0) {
+    return `Used ${summaries.length} local observation summary item${summaries.length === 1 ? "" : "s"} because the task authorization scope includes observation-summaries.`;
+  }
+
+  if (canUseObservationSummaries(task)) {
+    return "Observation-summary access was authorized, but no local observation summaries were available.";
+  }
+
+  return "Did not access observation summaries because the task authorization scope does not include observation-summaries.";
+}
+
+function observationLog(summaries: ObservationSummary[]): string {
+  return summaries.length > 0
+    ? "Task characters used allowlisted local observation summaries as text-only context; raw screen frames were not accessed."
+    : "No observation summary text was added to this task run.";
 }
 
 export function createTask(state: PersonaDeskState, input: CreateTaskInput): PersonaDeskState {
@@ -169,7 +200,8 @@ export function runAutonomyCycle(state: PersonaDeskState, taskId: string): Perso
     return appendRun(state, task.id, blockedRun, "blocked");
   }
 
-  const artifact = buildDeterministicArtifact(task);
+  const observationSummaries = authorizedObservationSummaries(state, task);
+  const artifact = buildDeterministicArtifact(task, "", observationSummaries);
   const validationResults = validateArtifact(task, artifact);
   const passed = validationResults.every((result) => result.passed);
   const deliveredRun: TaskRun = {
@@ -190,11 +222,13 @@ export function runAutonomyCycle(state: PersonaDeskState, taskId: string): Perso
     ],
     decisions: [
       "Used the local deterministic planner because no configured model API is required for text planning.",
+      observationDecision(task, observationSummaries),
       "Validated output against the user goal, desired output, and privacy constraint."
     ],
     logs: [
       "Plan created by Orion.",
       "Artifact drafted by local deterministic planner.",
+      observationLog(observationSummaries),
       "Vale validated the artifact against acceptance checks."
     ],
     validationResults,
@@ -424,7 +458,8 @@ export function runTaskRevision(state: PersonaDeskState, taskId: string, previou
     return appendRun(state, task.id, blockedRun, "blocked");
   }
 
-  const artifact = buildDeterministicArtifact(task, revisionFeedback);
+  const observationSummaries = authorizedObservationSummaries(state, task);
+  const artifact = buildDeterministicArtifact(task, revisionFeedback, observationSummaries);
   const validationResults = validateArtifact(task, artifact);
   const passed = validationResults.every((result) => result.passed);
   const revisedRun: TaskRun = {
@@ -446,11 +481,13 @@ export function runTaskRevision(state: PersonaDeskState, taskId: string, previou
     decisions: [
       "Used the local deterministic planner to revise the delivered artifact.",
       `Applied user revision feedback: ${revisionFeedback}`,
+      observationDecision(task, observationSummaries),
       "Validated revised output against the task goal, desired output, and privacy constraint."
     ],
     logs: [
       "Revision feedback reviewed by Orion.",
       "Revised artifact drafted by local deterministic planner.",
+      observationLog(observationSummaries),
       "Vale validated the revised artifact against acceptance checks."
     ],
     validationResults,
@@ -486,7 +523,11 @@ export function runTaskRevision(state: PersonaDeskState, taskId: string, previou
   };
 }
 
-export function buildDeterministicArtifact(task: Task, revisionFeedback = ""): Artifact {
+export function buildDeterministicArtifact(
+  task: Task,
+  revisionFeedback = "",
+  observationSummaries: ObservationSummary[] = []
+): Artifact {
   const checklist = [
     `Goal: ${task.goal}`,
     `Desired output: ${task.desiredOutput}`,
@@ -500,6 +541,11 @@ export function buildDeterministicArtifact(task: Task, revisionFeedback = ""): A
 
   if (feedback) {
     checklist.push(`Revision feedback addressed: ${feedback}`);
+  }
+
+  if (observationSummaries.length > 0) {
+    checklist.push("Authorized observation summaries:");
+    checklist.push(...observationSummaries.map((summary) => `${summary.appName}: ${summary.summary}`));
   }
 
   return {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createInitialState } from "./defaultState";
+import { startObservationSession, summarizeObservationEvent } from "./observation";
 import {
   createTask,
   grantApprovalScopesAndResumeTask,
@@ -164,6 +165,56 @@ describe("task autonomy", () => {
     expect(state.tasks[0].supervisionMode).toBe("supervised");
     expect(state.taskRuns[0].status).toBe("delivered");
     expect(state.taskRuns[0].approvalRequests).toEqual([]);
+  });
+
+  it("does not include observation summaries without task authorization", () => {
+    let state = createInitialState();
+    state = startObservationSession(state, ["Safari"]);
+    state = summarizeObservationEvent(state, state.observationSessions[0].id, {
+      appName: "Safari",
+      summary: "User compared launch checklist examples"
+    });
+    state = createTask(state, {
+      goal: "Draft a launch checklist",
+      constraints: "Use only task input",
+      desiredOutput: "Checklist",
+      supervisionMode: "unsupervised",
+      authorizationScope: "text-planning-only",
+      allowedExecutorIds: ["local-planner"]
+    });
+    state = runAutonomyCycle(state, state.tasks[0].id);
+
+    expect(state.taskRuns[0].artifacts[0].content).not.toContain("User compared launch checklist examples");
+    expect(state.taskRuns[0].decisions).toContain(
+      "Did not access observation summaries because the task authorization scope does not include observation-summaries."
+    );
+  });
+
+  it("uses local observation summaries when task authorization allows it", () => {
+    let state = createInitialState();
+    state = startObservationSession(state, ["Safari"]);
+    state = summarizeObservationEvent(state, state.observationSessions[0].id, {
+      appName: "Safari",
+      summary: "User compared launch checklist examples"
+    });
+    state = createTask(state, {
+      goal: "Draft a launch checklist",
+      constraints: "Use current observation summaries",
+      desiredOutput: "Checklist",
+      supervisionMode: "unsupervised",
+      authorizationScope: "text-planning-only observation-summaries",
+      allowedExecutorIds: ["local-planner"]
+    });
+    state = runAutonomyCycle(state, state.tasks[0].id);
+
+    expect(state.taskRuns[0].artifacts[0].content).toContain("Authorized observation summaries:");
+    expect(state.taskRuns[0].artifacts[0].content).toContain("Safari: User compared launch checklist examples");
+    expect(state.taskRuns[0].decisions).toContain(
+      "Used 1 local observation summary item because the task authorization scope includes observation-summaries."
+    );
+    expect(state.taskRuns[0].logs).toContain(
+      "Task characters used allowlisted local observation summaries as text-only context; raw screen frames were not accessed."
+    );
   });
 
   it("grants requested approval scopes and resumes the same blocked task", () => {

@@ -95,6 +95,9 @@ export function TaskRoomPage({
                 onChange={(event) => setTaskForm({ ...taskForm, authorizationScope: event.target.value })}
               >
                 <option value="text-planning-only">Text planning only</option>
+                <option value="text-planning-only observation-summaries">
+                  Text planning + observation summaries
+                </option>
                 <option value="text-planning-only destructive-filesystem">Text planning + destructive filesystem</option>
                 <option value="text-planning-only external-publishing">Text planning + external publishing</option>
                 <option value="text-planning-only destructive-filesystem external-publishing">
