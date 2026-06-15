@@ -1,10 +1,10 @@
-# Claw Pet AI Desktop Companion Platform Design
+# PersonaDesk AI Desktop Companion Platform Design
 
 Date: 2026-06-15
 
 ## Summary
 
-Claw Pet is a cross-platform desktop companion platform where users can create multiple emotional characters and task characters. Emotional characters provide presence, companionship, observation, commentary, and relationship continuity. Task characters collaborate in task rooms, choose executors, run long tasks, validate their own work, and deliver results back to the user.
+PersonaDesk is a cross-platform desktop companion platform where users can create multiple emotional characters and task characters. Emotional characters provide presence, companionship, observation, commentary, and relationship continuity. Task characters collaborate in task rooms, choose executors, run long tasks, validate their own work, and deliver results back to the user.
 
 Phase 1 is an end-to-end thin slice. It should prove that the complete loop works: desktop presence, multi-character interaction, task collaboration, executor routing, memory confirmation, voice, screen observation, privacy controls, and optional sync. Each capability should be minimal but real.
 
@@ -848,4 +848,4 @@ Deepen memory versioning, sync, cross-device presence, family/team spaces, and l
 
 ## Reference
 
-- [rullerzhou-afk/clawd-on-desk](https://github.com/rullerzhou-afk/clawd-on-desk) is a useful reference for desktop multi-agent presence, agent status tracking, and local AI assistant integration patterns. Claw Pet should borrow the general idea of visible local agents, but extend it into an open character platform with emotional roles, memory permissions, observation, voice, and executor routing.
+- [rullerzhou-afk/clawd-on-desk](https://github.com/rullerzhou-afk/clawd-on-desk) is a useful reference for desktop multi-agent presence, agent status tracking, and local AI assistant integration patterns. PersonaDesk should borrow the general idea of visible local agents, but extend it into an open character platform with emotional roles, memory permissions, observation, voice, and executor routing.
