@@ -1,71 +1,40 @@
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import type { SectionId } from "./app/navigation";
+import type { DraftFormState, ObservationFormState, TaskFormState } from "./app/actions";
+import { AppShell } from "./components/layout/AppShell";
+import { CharacterStudioPage } from "./components/characters/CharacterStudioPage";
+import { DesktopStagePage } from "./components/desktop/DesktopStagePage";
+import { MemoryCenterPage } from "./components/memory/MemoryCenterPage";
+import { PrivacySyncPage } from "./components/privacy/PrivacySyncPage";
+import { ExecutorSettingsPage } from "./components/settings/ExecutorSettingsPage";
+import { TaskRoomPage } from "./components/tasks/TaskRoomPage";
 import {
-  Bot,
-  Brain,
-  Check,
-  Eye,
-  Mic,
-  Play,
-  Shield,
-  Sparkles,
-  Users,
-  Volume2,
-  X
-} from "lucide-react";
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import { confirmCharacterDraft, createCharacterDraft, rejectCharacterDraft } from "./domain/characterDrafts";
-import { executorDisclosure } from "./domain/executors";
-import { confirmMemoryCandidate, rejectMemoryCandidate } from "./domain/memory";
+  confirmCharacterDraft as confirmDraft,
+  createCharacterDraft,
+  rejectCharacterDraft as rejectDraft
+} from "./domain/characterDrafts";
+import { confirmMemoryCandidate as confirmMemory, rejectMemoryCandidate as rejectMemory } from "./domain/memory";
 import { startObservationSession, stopObservationSession, summarizeObservationEvent } from "./domain/observation";
 import { loadState, saveState } from "./domain/storage";
 import { createTask, runAutonomyCycle } from "./domain/tasks";
-import type { Character, ExecutorStatus, PersonaDeskState, TaskRunStatus } from "./domain/types";
-
-function statusLabel(status: ExecutorStatus | TaskRunStatus | "active" | "inactive"): string {
-  return status
-    .split("-")
-    .map((part) => `${part[0]?.toUpperCase() ?? ""}${part.slice(1)}`)
-    .join(" ");
-}
-
-function statusClass(status: ExecutorStatus | TaskRunStatus | "active" | "inactive"): string {
-  if (status === "available" || status === "delivered" || status === "active") {
-    return "status-ok";
-  }
-
-  if (status === "blocked" || status === "missing" || status === "failed") {
-    return "status-risk";
-  }
-
-  return "status-muted";
-}
-
-function CharacterCard({ character, boundaryLabel }: { character: Character; boundaryLabel: string }) {
-  return (
-    <article className="character-card">
-      <div className="avatar-token" style={{ backgroundColor: character.appearance.accent }}>
-        {character.appearance.avatarLabel}
-      </div>
-      <div>
-        <h3>{character.name}</h3>
-        <p>{character.customRelationship}</p>
-        <div className="meta-row">
-          <span>{character.relationshipTemplate}</span>
-          <span>{boundaryLabel}</span>
-        </div>
-      </div>
-    </article>
-  );
-}
+import type { PersonaDeskState } from "./domain/types";
 
 export default function App() {
   const [state, setState] = useState<PersonaDeskState>(() => loadState());
-  const [taskGoal, setTaskGoal] = useState("");
-  const [taskConstraints, setTaskConstraints] = useState("Keep it local-first and privacy aware");
-  const [desiredOutput, setDesiredOutput] = useState("Checklist");
-  const [allowedApps, setAllowedApps] = useState("Safari, Notes");
-  const [observationSummary, setObservationSummary] = useState("");
-  const [draftText, setDraftText] = useState("A gentle companion who speaks softly and likes quiet encouragement.");
-  const [draftImage, setDraftImage] = useState<File | null>(null);
+  const [activeSection, setActiveSection] = useState<SectionId>("desktop");
+  const [taskForm, setTaskForm] = useState<TaskFormState>({
+    goal: "",
+    constraints: "Keep it local-first and privacy aware",
+    desiredOutput: "Checklist"
+  });
+  const [observationForm, setObservationForm] = useState<ObservationFormState>({
+    allowedApps: "Safari, Notes",
+    summary: ""
+  });
+  const [draftForm, setDraftForm] = useState<DraftFormState>({
+    text: "A gentle companion who speaks softly and likes quiet encouragement.",
+    image: null
+  });
 
   useEffect(() => {
     saveState(state);
@@ -81,7 +50,6 @@ export default function App() {
   );
   const latestRun = state.taskRuns[state.taskRuns.length - 1];
   const activeObservation = state.observationSessions.find((session) => session.active);
-  const voiceExecutors = state.executors.filter((executor) => executor.type === "asr" || executor.type === "tts");
 
   function updateState(next: PersonaDeskState) {
     setState(next);
@@ -90,14 +58,14 @@ export default function App() {
   function runTask(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!taskGoal.trim()) {
+    if (!taskForm.goal.trim()) {
       return;
     }
 
     let next = createTask(state, {
-      goal: taskGoal,
-      constraints: taskConstraints,
-      desiredOutput,
+      goal: taskForm.goal,
+      constraints: taskForm.constraints,
+      desiredOutput: taskForm.desiredOutput,
       supervisionMode: "unsupervised",
       authorizationScope: "text-planning-only"
     });
@@ -105,36 +73,42 @@ export default function App() {
     next = runAutonomyCycle(next, taskId);
 
     updateState(next);
-    setTaskGoal("");
+    setTaskForm({ ...taskForm, goal: "" });
   }
 
   function generateDraft(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!draftText.trim() && !draftImage) {
+    if (!draftForm.text.trim() && !draftForm.image) {
       return;
     }
 
     updateState(
       createCharacterDraft(state, {
-        textImport: draftText,
-        imageFileName: draftImage?.name ?? null,
-        imageMimeType: draftImage?.type || null,
-        imageSizeBytes: draftImage?.size ?? null
+        textImport: draftForm.text,
+        imageFileName: draftForm.image?.name ?? null,
+        imageMimeType: draftForm.image?.type || null,
+        imageSizeBytes: draftForm.image?.size ?? null
       })
     );
   }
 
   function startObservation() {
-    const apps = allowedApps
+    const apps = observationForm.allowedApps
       .split(",")
       .map((app) => app.trim())
       .filter(Boolean);
     updateState(startObservationSession(state, apps));
   }
 
+  function stopObservation() {
+    if (activeObservation) {
+      updateState(stopObservationSession(state, activeObservation.id));
+    }
+  }
+
   function addObservationSummary() {
-    if (!activeObservation || !observationSummary.trim()) {
+    if (!activeObservation || !observationForm.summary.trim()) {
       return;
     }
 
@@ -142,396 +116,96 @@ export default function App() {
     updateState(
       summarizeObservationEvent(state, activeObservation.id, {
         appName,
-        summary: observationSummary
+        summary: observationForm.summary
       })
     );
-    setObservationSummary("");
+    setObservationForm({ ...observationForm, summary: "" });
+  }
+
+  const actions = {
+    runTask,
+    generateCharacterDraft: generateDraft,
+    confirmCharacterDraft: (draftId: string) => updateState(confirmDraft(state, draftId)),
+    rejectCharacterDraft: (draftId: string) => updateState(rejectDraft(state, draftId)),
+    confirmMemoryCandidate: (candidateId: string) => updateState(confirmMemory(state, candidateId)),
+    rejectMemoryCandidate: (candidateId: string) => updateState(rejectMemory(state, candidateId)),
+    startObservation,
+    stopObservation,
+    addObservationSummary,
+    setSyncEnabled: (enabled: boolean) =>
+      updateState({
+        ...state,
+        syncProfile: {
+          ...state.syncProfile,
+          enabled,
+          lastSyncStatus: enabled ? "synced" : "never"
+        }
+      })
+  };
+
+  function renderSection() {
+    switch (activeSection) {
+      case "tasks":
+        return (
+          <TaskRoomPage
+            actions={actions}
+            roleBoundaries={state.roleBoundaries}
+            setTaskForm={setTaskForm}
+            taskCharacters={taskCharacters}
+            taskForm={taskForm}
+            taskRuns={state.taskRuns}
+            tasks={state.tasks}
+          />
+        );
+      case "characters":
+        return (
+          <CharacterStudioPage
+            actions={actions}
+            characterDrafts={state.characterDrafts}
+            draftForm={draftForm}
+            emotionalCharacters={emotionalCharacters}
+            roleBoundaries={state.roleBoundaries}
+            setDraftForm={setDraftForm}
+            taskCharacters={taskCharacters}
+          />
+        );
+      case "memory":
+        return <MemoryCenterPage actions={actions} memories={state.memories} memoryCandidates={state.memoryCandidates} />;
+      case "executors":
+        return <ExecutorSettingsPage executors={state.executors} />;
+      case "privacy":
+        return (
+          <PrivacySyncPage
+            actions={actions}
+            activeObservation={activeObservation}
+            observationForm={observationForm}
+            observationSessions={state.observationSessions}
+            setObservationForm={setObservationForm}
+            syncProfile={state.syncProfile}
+          />
+        );
+      case "desktop":
+      default:
+        return (
+          <DesktopStagePage
+            emotionalCharacters={emotionalCharacters}
+            latestRun={latestRun}
+            roleBoundaries={state.roleBoundaries}
+          />
+        );
+    }
   }
 
   return (
-    <main className="app-shell">
-      <section className="topbar" aria-label="PersonaDesk overview">
-        <div>
-          <h1>PersonaDesk</h1>
-          <p>Multi-character desktop companion platform</p>
-        </div>
-        <div className="topbar-actions">
-          <span className="status-pill status-ok">Local-first</span>
-          <span className="status-pill">Phase 1 thin slice</span>
-        </div>
-      </section>
-
-      <section className="workspace-grid">
-        <section className="panel desktop-stage" aria-labelledby="desktop-stage-title">
-          <div className="panel-heading">
-            <div>
-              <h2 id="desktop-stage-title">Desktop Stage</h2>
-              <span>Mixed presence: emotional characters stay visible, task characters gather in rooms.</span>
-            </div>
-            <Sparkles aria-hidden="true" size={19} />
-          </div>
-          <div className="stage-surface">
-            {emotionalCharacters.map((character, index) => (
-              <div
-                className={`avatar-card ${index % 2 === 0 ? "warm" : "cool"}`}
-                key={character.id}
-                style={{ backgroundColor: character.appearance.accent }}
-              >
-                {character.appearance.avatarLabel}
-              </div>
-            ))}
-            <div className="stage-caption">Emotional characters can observe and comment within configured boundaries.</div>
-          </div>
-        </section>
-
-        <section className="panel task-stage" aria-labelledby="task-room-title">
-          <div className="panel-heading">
-            <div>
-              <h2 id="task-room-title">Task Room</h2>
-              <span>Efficiency view backed by factual task runs.</span>
-            </div>
-            <Users aria-hidden="true" size={19} />
-          </div>
-
-          <form className="task-form" onSubmit={runTask}>
-            <label>
-              Task goal
-              <input
-                value={taskGoal}
-                onChange={(event) => setTaskGoal(event.target.value)}
-                placeholder="Create a privacy checklist"
-              />
-            </label>
-            <label>
-              Constraints
-              <input value={taskConstraints} onChange={(event) => setTaskConstraints(event.target.value)} />
-            </label>
-            <label>
-              Desired output
-              <input value={desiredOutput} onChange={(event) => setDesiredOutput(event.target.value)} />
-            </label>
-            <button className="primary-button" type="submit">
-              <Play aria-hidden="true" size={16} />
-              Run autonomous task
-            </button>
-          </form>
-        </section>
-
-        <section className="panel" aria-labelledby="emotional-characters-title">
-          <div className="panel-heading">
-            <div>
-              <h2 id="emotional-characters-title">Emotional Characters</h2>
-              <span>Relationship, presence, and memory requests without default tool execution.</span>
-            </div>
-            <Brain aria-hidden="true" size={19} />
-          </div>
-          <div className="card-list">
-            {emotionalCharacters.map((character) => (
-              <CharacterCard
-                boundaryLabel={state.roleBoundaries[character.roleBoundaryId].label}
-                character={character}
-                key={character.id}
-              />
-            ))}
-          </div>
-        </section>
-
-        <section className="panel" aria-labelledby="task-characters-title">
-          <div className="panel-heading">
-            <div>
-              <h2 id="task-characters-title">Task Characters</h2>
-              <span>Task room roles with explicit executor permissions.</span>
-            </div>
-            <Bot aria-hidden="true" size={19} />
-          </div>
-          <div className="card-list">
-            {taskCharacters.map((character) => (
-              <CharacterCard
-                boundaryLabel={state.roleBoundaries[character.roleBoundaryId].label}
-                character={character}
-                key={character.id}
-              />
-            ))}
-          </div>
-        </section>
-
-        <section className="panel wide-panel" aria-labelledby="drafts-title">
-          <div className="panel-heading">
-            <div>
-              <h2 id="drafts-title">Character Drafts</h2>
-              <span>Generate draft roles from text and optional image metadata, then confirm before activation.</span>
-            </div>
-            <Sparkles aria-hidden="true" size={19} />
-          </div>
-          <form className="draft-form" onSubmit={generateDraft}>
-            <label>
-              Text import
-              <textarea
-                value={draftText}
-                onChange={(event) => setDraftText(event.target.value)}
-                placeholder="Describe the character's personality, tone, boundaries, and relationship."
-              />
-            </label>
-            <label>
-              Optional image file
-              <input
-                accept="image/*"
-                onChange={(event) => setDraftImage(event.target.files?.[0] ?? null)}
-                type="file"
-              />
-            </label>
-            <button className="primary-button" type="submit">
-              <Sparkles aria-hidden="true" size={16} />
-              Generate character draft
-            </button>
-          </form>
-          {state.characterDrafts.length === 0 ? (
-            <p className="empty-state">No pending character drafts.</p>
-          ) : (
-            <div className="card-list">
-              {state.characterDrafts.map((draft) => (
-                <article className="review-card" key={draft.id}>
-                  <div className="task-card-header">
-                    <div>
-                      <h3>{draft.nameSuggestion}</h3>
-                      <p>{draft.personaSummary}</p>
-                    </div>
-                    <span className="status-pill">{draft.kind}</span>
-                  </div>
-                  <p>{draft.speakingStyle}</p>
-                  {draft.imageFileName && (
-                    <p>
-                      Image metadata: {draft.imageFileName}, {draft.imageMimeType ?? "unknown type"},{" "}
-                      {draft.imageSizeBytes ?? 0} bytes
-                    </p>
-                  )}
-                  <div className="disclosure-list">
-                    {draft.disclosures.map((disclosure) => (
-                      <p key={disclosure}>{disclosure}</p>
-                    ))}
-                  </div>
-                  <div className="button-row">
-                    <button onClick={() => updateState(confirmCharacterDraft(state, draft.id))} type="button">
-                      <Check aria-hidden="true" size={15} />
-                      Confirm character
-                    </button>
-                    <button onClick={() => updateState(rejectCharacterDraft(state, draft.id))} type="button">
-                      <X aria-hidden="true" size={15} />
-                      Reject draft
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="panel wide-panel" aria-labelledby="task-cards-title">
-          <div className="panel-heading">
-            <div>
-              <h2 id="task-cards-title">Task Cards</h2>
-              <span>Long-task autonomy records plan, execution, validation, artifacts, and approval gates.</span>
-            </div>
-            <Check aria-hidden="true" size={19} />
-          </div>
-          {state.taskRuns.length === 0 ? (
-            <p className="empty-state">No task run yet.</p>
-          ) : (
-            <div className="task-card-list">
-              {state.taskRuns.map((run) => {
-                const task = state.tasks.find((item) => item.id === run.taskId);
-                return (
-                  <article className="task-card" key={run.id}>
-                    <div className="task-card-header">
-                      <div>
-                        <h3>{task?.title ?? "Untitled task"}</h3>
-                        <p>{run.finalSummary}</p>
-                      </div>
-                      <span className={`status-pill ${statusClass(run.status)}`}>{statusLabel(run.status)}</span>
-                    </div>
-                    {run.approvalRequests.length > 0 && (
-                      <div className="notice danger">
-                        {run.approvalRequests.map((request) => (
-                          <p key={request.id}>{request.reason}</p>
-                        ))}
-                      </div>
-                    )}
-                    {run.artifacts.map((artifact) => (
-                      <pre className="artifact" key={artifact.id}>
-                        {artifact.content}
-                      </pre>
-                    ))}
-                    <div className="validation-grid">
-                      {run.validationResults.map((result) => (
-                        <span className={result.passed ? "check-pass" : "check-fail"} key={result.id}>
-                          {result.label}
-                        </span>
-                      ))}
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          )}
-        </section>
-
-        <section className="panel" aria-labelledby="memory-title">
-          <div className="panel-heading">
-            <div>
-              <h2 id="memory-title">Memory Review</h2>
-              <span>Candidates require confirmation before long-term write.</span>
-            </div>
-            <Shield aria-hidden="true" size={19} />
-          </div>
-          {state.memoryCandidates.length === 0 ? (
-            <p className="empty-state">No pending memory candidates.</p>
-          ) : (
-            <div className="card-list">
-              {state.memoryCandidates.map((candidate) => (
-                <article className="review-card" key={candidate.id}>
-                  <p>{candidate.proposedText}</p>
-                  <small>{candidate.reason}</small>
-                  <div className="button-row">
-                    <button onClick={() => updateState(confirmMemoryCandidate(state, candidate.id))} type="button">
-                      <Check aria-hidden="true" size={15} />
-                      Confirm
-                    </button>
-                    <button onClick={() => updateState(rejectMemoryCandidate(state, candidate.id))} type="button">
-                      <X aria-hidden="true" size={15} />
-                      Reject
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
-          <p className="memory-count">Confirmed memories: {state.memories.length}</p>
-        </section>
-
-        <section className="panel" aria-labelledby="executors-title">
-          <div className="panel-heading">
-            <div>
-              <h2 id="executors-title">Executor Registry</h2>
-              <span>Unavailable providers stay visible and honest.</span>
-            </div>
-            <Bot aria-hidden="true" size={19} />
-          </div>
-          <div className="executor-list">
-            {state.executors.map((executor) => (
-              <article className="executor-row" key={executor.id}>
-                <div>
-                  <strong>{executor.displayName}</strong>
-                  <p>{executorDisclosure(executor)}</p>
-                </div>
-                <span className={`status-pill ${statusClass(executor.status)}`}>{statusLabel(executor.status)}</span>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="panel" aria-labelledby="observation-title">
-          <div className="panel-heading">
-            <div>
-              <h2 id="observation-title">Observation</h2>
-              <span>Manual sessions, app allowlists, local summaries only.</span>
-            </div>
-            <Eye aria-hidden="true" size={19} />
-          </div>
-          <label>
-            Allowed apps
-            <input value={allowedApps} onChange={(event) => setAllowedApps(event.target.value)} />
-          </label>
-          <div className="button-row">
-            <button onClick={startObservation} type="button">
-              <Eye aria-hidden="true" size={15} />
-              Start observation
-            </button>
-            <button
-              disabled={!activeObservation}
-              onClick={() => activeObservation && updateState(stopObservationSession(state, activeObservation.id))}
-              type="button"
-            >
-              <X aria-hidden="true" size={15} />
-              Stop
-            </button>
-          </div>
-          <label>
-            Local summary
-            <input
-              disabled={!activeObservation}
-              value={observationSummary}
-              onChange={(event) => setObservationSummary(event.target.value)}
-              placeholder="User reviewed a design document"
-            />
-          </label>
-          <button disabled={!activeObservation} onClick={addObservationSummary} type="button">
-            <Check aria-hidden="true" size={15} />
-            Add local summary
-          </button>
-          <div className="summary-list">
-            {state.observationSessions.flatMap((session) =>
-              session.localSummaryStream.map((summary) => (
-                <p key={summary.id}>
-                  <strong>{summary.appName}</strong>: {summary.summary}
-                </p>
-              ))
-            )}
-          </div>
-        </section>
-
-        <section className="panel" aria-labelledby="voice-title">
-          <div className="panel-heading">
-            <div>
-              <h2 id="voice-title">Voice</h2>
-              <span>ASR/TTS provider slots are explicit and unconfigured by default.</span>
-            </div>
-            <Mic aria-hidden="true" size={19} />
-          </div>
-          <div className="executor-list">
-            {voiceExecutors.map((executor) => (
-              <article className="executor-row" key={executor.id}>
-                <div>
-                  <strong>{executor.displayName}</strong>
-                  <p>{executor.statusReason}</p>
-                </div>
-                {executor.type === "tts" ? <Volume2 aria-hidden="true" size={18} /> : <Mic aria-hidden="true" size={18} />}
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="panel" aria-labelledby="sync-title">
-          <div className="panel-heading">
-            <div>
-              <h2 id="sync-title">Sync</h2>
-              <span>Local-first, optional summaries only.</span>
-            </div>
-            <Shield aria-hidden="true" size={19} />
-          </div>
-          <label className="toggle-row">
-            <input
-              checked={state.syncProfile.enabled}
-              onChange={(event) =>
-                updateState({
-                  ...state,
-                  syncProfile: {
-                    ...state.syncProfile,
-                    enabled: event.target.checked,
-                    lastSyncStatus: event.target.checked ? "synced" : "never"
-                  }
-                })
-              }
-              type="checkbox"
-            />
-            Enable optional sync for confirmed summaries
-          </label>
-          <p className="local-only">
-            Local-only: {state.syncProfile.localOnlyClasses.join(", ")}
-          </p>
-        </section>
-      </section>
-
-      {latestRun && <div className="toast">Latest task: {statusLabel(latestRun.status)}</div>}
-    </main>
+    <AppShell
+      activeObservation={activeObservation}
+      activeSection={activeSection}
+      emotionalCharacters={emotionalCharacters}
+      latestRun={latestRun}
+      onSectionChange={setActiveSection}
+      syncEnabled={state.syncProfile.enabled}
+    >
+      {renderSection()}
+    </AppShell>
   );
 }

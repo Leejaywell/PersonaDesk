@@ -1,0 +1,30 @@
+import type { FormEvent } from "react";
+
+export interface TaskFormState {
+  goal: string;
+  constraints: string;
+  desiredOutput: string;
+}
+
+export interface DraftFormState {
+  text: string;
+  image: File | null;
+}
+
+export interface ObservationFormState {
+  allowedApps: string;
+  summary: string;
+}
+
+export interface AppActions {
+  runTask: (event: FormEvent<HTMLFormElement>) => void;
+  generateCharacterDraft: (event: FormEvent<HTMLFormElement>) => void;
+  confirmCharacterDraft: (draftId: string) => void;
+  rejectCharacterDraft: (draftId: string) => void;
+  confirmMemoryCandidate: (candidateId: string) => void;
+  rejectMemoryCandidate: (candidateId: string) => void;
+  startObservation: () => void;
+  stopObservation: () => void;
+  addObservationSummary: () => void;
+  setSyncEnabled: (enabled: boolean) => void;
+}

@@ -32,7 +32,13 @@ This repository currently implements the Phase 1 thin slice from the design spec
   - only local text summaries are stored,
   - raw screen frames are not stored by this implementation.
 - Versioned localStorage persistence.
-- UI panels for characters, task cards, memory review, executor status, observation, voice provider slots, and optional sync.
+- Product navigation for Phase 1 areas:
+  - Desktop: emotional presence and light task status.
+  - Tasks: task intake, task characters, task cards, validation, artifacts, and approval gates.
+  - Characters: emotional characters, task characters, and inactive character drafts.
+  - Memory: pending memory candidates and confirmed memory counts.
+  - Executors: model API, local model, local agent, deterministic, ASR, TTS, and vision provider status.
+  - Privacy: observation allowlists, local summaries, and optional sync boundaries.
 - Rust/Tauri command for safe local agent detection helpers.
 
 ## What Is Not Pretended
@@ -94,6 +100,11 @@ npm run tauri dev
 
 - Design spec: `docs/superpowers/specs/2026-06-15-personadesk-platform-design.md`
 - Implementation plan: `docs/superpowers/plans/2026-06-15-personadesk-phase-1.md`
+- Product navigation plan: `docs/superpowers/plans/2026-06-15-personadesk-product-navigation.md`
+
+## UX Notes
+
+The first Phase 1 UI exposed every capability on one engineering validation page. The current interface keeps the desktop stage focused on emotional presence and moves management workflows into separate console sections. This keeps companion behavior visible without mixing it with executor, privacy, memory, and task administration controls.
 
 ## Repository
 

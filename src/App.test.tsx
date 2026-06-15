@@ -9,19 +9,27 @@ describe("PersonaDesk app", () => {
     window.localStorage.clear();
   });
 
-  it("shows emotional characters, task characters, and executor status", () => {
+  it("shows product navigation and keeps management controls out of the desktop stage", async () => {
+    const user = userEvent.setup();
     render(<App />);
 
     expect(screen.getByText("PersonaDesk")).toBeInTheDocument();
-    expect(screen.getByText("Emotional Characters")).toBeInTheDocument();
-    expect(screen.getByText("Task Characters")).toBeInTheDocument();
+    expect(screen.getByText("Desktop Stage")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Tasks/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Run autonomous task" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Executor Registry")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Executors/i }));
+
     expect(screen.getByText("Executor Registry")).toBeInTheDocument();
+    expect(screen.getByText("Voice Providers")).toBeInTheDocument();
   });
 
   it("can run a local deterministic task from the UI", async () => {
     const user = userEvent.setup();
     render(<App />);
 
+    await user.click(screen.getByRole("button", { name: /Tasks/i }));
     await user.type(screen.getByLabelText("Task goal"), "Create a privacy checklist");
     await user.click(screen.getByRole("button", { name: "Run autonomous task" }));
 
@@ -33,6 +41,7 @@ describe("PersonaDesk app", () => {
     const user = userEvent.setup();
     render(<App />);
 
+    await user.click(screen.getByRole("button", { name: /Characters/i }));
     await user.clear(screen.getByLabelText("Text import"));
     await user.type(screen.getByLabelText("Text import"), "A focused reviewer who checks privacy boundaries.");
     await user.upload(
