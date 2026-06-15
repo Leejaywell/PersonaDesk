@@ -4,13 +4,18 @@ import { StatusPill } from "../ui/StatusPill";
 export function TaskCard({
   run,
   task,
-  onGrantApproval
+  onGrantApproval,
+  onRecordAcceptance
 }: {
   run: TaskRun;
   task: Task | undefined;
   onGrantApproval?: (taskId: string, runId: string) => void;
+  onRecordAcceptance?: (taskId: string, runId: string, decision: "accepted" | "revision-requested", note?: string) => void;
 }) {
   const canGrantApproval = Boolean(task && task.status === "blocked" && run.status === "blocked" && run.approvalRequests.length > 0);
+  const canRecordAcceptance = Boolean(
+    task && task.status === "delivered" && run.status === "delivered" && run.acceptance?.status === "pending"
+  );
 
   return (
     <article className="task-card">
@@ -23,6 +28,7 @@ export function TaskCard({
               <span className="meta-chip">Mode: {task.supervisionMode}</span>
               <span className="meta-chip">Scope: {task.authorizationScope}</span>
               <span className="meta-chip">Allowed executors: {task.allowedExecutorIds.join(", ")}</span>
+              <span className="meta-chip">Task status: {task.status}</span>
             </div>
           )}
         </div>
@@ -54,6 +60,25 @@ export function TaskCard({
               <p>{call.disclosure}</p>
             </article>
           ))}
+        </div>
+      )}
+      {run.acceptance && (
+        <div className="acceptance-panel">
+          <div className="task-card-header">
+            <strong>User acceptance</strong>
+            <StatusPill status={run.acceptance.status} />
+          </div>
+          <p>{run.acceptance.note}</p>
+          {canRecordAcceptance && task && (
+            <div className="button-row">
+              <button onClick={() => onRecordAcceptance?.(task.id, run.id, "accepted")} type="button">
+                Accept deliverable
+              </button>
+              <button onClick={() => onRecordAcceptance?.(task.id, run.id, "revision-requested")} type="button">
+                Request revision
+              </button>
+            </div>
+          )}
         </div>
       )}
       {run.artifacts.map((artifact) => (

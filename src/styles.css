@@ -367,7 +367,8 @@ label {
 }
 
 .voice-request-form,
-.voice-request-card {
+.voice-request-card,
+.acceptance-panel {
   display: grid;
   gap: 10px;
   border: 1px solid #e4ebf3;
@@ -386,6 +387,17 @@ label {
   color: #52606d;
   font-size: 13px;
   overflow-wrap: anywhere;
+}
+
+.acceptance-panel {
+  margin-top: 10px;
+  background: #f8fafc;
+}
+
+.acceptance-panel p {
+  margin: 0;
+  color: #52606d;
+  font-size: 13px;
 }
 
 .character-select-row {

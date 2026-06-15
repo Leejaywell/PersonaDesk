@@ -132,6 +132,29 @@ function normalizeTasks(persisted: unknown): Task[] {
   }));
 }
 
+function normalizeTaskRuns(persisted: unknown): TaskRun[] {
+  return arrayOrEmpty<TaskRun>(persisted).map((run) => ({
+    ...run,
+    acceptance:
+      isRecord(run.acceptance)
+        ? {
+            status:
+              run.acceptance.status === "accepted" || run.acceptance.status === "revision-requested"
+                ? run.acceptance.status
+                : "pending",
+            note: typeof run.acceptance.note === "string" ? run.acceptance.note : "Awaiting final user acceptance.",
+            decidedAt: typeof run.acceptance.decidedAt === "string" ? run.acceptance.decidedAt : null
+          }
+        : run.status === "delivered"
+          ? {
+              status: "pending",
+              note: "Awaiting final user acceptance.",
+              decidedAt: null
+            }
+          : null
+  }));
+}
+
 function mergeRoleBoundaries(persisted: unknown, defaults: Record<string, RoleBoundary>): Record<string, RoleBoundary> {
   return {
     ...defaults,
@@ -169,7 +192,7 @@ function normalizeState(state: PersonaDeskState): PersonaDeskState {
     roleBoundaries: mergeRoleBoundaries(state.roleBoundaries, defaults.roleBoundaries),
     executors: normalizeExecutors(state.executors, defaults.executors),
     tasks: normalizeTasks(state.tasks),
-    taskRuns: arrayOrEmpty<TaskRun>(state.taskRuns),
+    taskRuns: normalizeTaskRuns(state.taskRuns),
     memories: arrayOrEmpty<MemoryItem>(state.memories),
     memoryCandidates: arrayOrEmpty<MemoryCandidate>(state.memoryCandidates),
     conversationMessages: normalizeConversationMessages(state.conversationMessages),

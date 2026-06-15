@@ -156,6 +156,7 @@ export function TaskRoomPage({
               <TaskCard
                 key={run.id}
                 onGrantApproval={actions.grantTaskApproval}
+                onRecordAcceptance={actions.recordTaskAcceptance}
                 run={run}
                 task={tasks.find((item) => item.id === run.taskId)}
               />

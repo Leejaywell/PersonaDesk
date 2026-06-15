@@ -2,7 +2,7 @@ import type { FormEvent } from "react";
 import type { CharacterSettingsUpdate } from "../domain/characters";
 import type { ExecutorConfigurationInput } from "../domain/executors";
 import type { MemoryCandidateReview } from "../domain/memory";
-import type { SupervisionMode } from "../domain/types";
+import type { SupervisionMode, TaskAcceptanceStatus } from "../domain/types";
 import type { VoiceRequestInput } from "../domain/voice";
 
 export interface TaskFormState {
@@ -44,4 +44,10 @@ export interface AppActions {
   scanLocalAgents: () => Promise<void>;
   configureExecutor: (executorId: string, configuration: ExecutorConfigurationInput) => void;
   createVoiceRequest: (input: VoiceRequestInput) => void;
+  recordTaskAcceptance: (
+    taskId: string,
+    runId: string,
+    decision: Exclude<TaskAcceptanceStatus, "pending">,
+    note?: string
+  ) => void;
 }

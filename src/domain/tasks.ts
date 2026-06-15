@@ -4,6 +4,7 @@ import type {
   Artifact,
   PersonaDeskState,
   SupervisionMode,
+  TaskAcceptanceStatus,
   Task,
   TaskRun,
   TaskStep,
@@ -121,6 +122,7 @@ export function runAutonomyCycle(state: PersonaDeskState, taskId: string): Perso
       validationResults: [],
       artifacts: [],
       approvalRequests: approvals,
+      acceptance: null,
       finalSummary: "Task is blocked until the user grants additional permission."
     };
 
@@ -158,6 +160,7 @@ export function runAutonomyCycle(state: PersonaDeskState, taskId: string): Perso
       validationResults: [],
       artifacts: [],
       approvalRequests: [],
+      acceptance: null,
       finalSummary: "Task is blocked because no allowed executor is available."
     };
 
@@ -194,6 +197,13 @@ export function runAutonomyCycle(state: PersonaDeskState, taskId: string): Perso
     validationResults,
     artifacts: [artifact],
     approvalRequests: [],
+    acceptance: passed
+      ? {
+          status: "pending",
+          note: "Awaiting final user acceptance.",
+          decidedAt: null
+        }
+      : null,
     finalSummary: passed
       ? "Delivered a validated local planning artifact."
       : "Artifact needs user review before delivery."
@@ -294,6 +304,45 @@ export function grantApprovalScopesAndResumeTask(
   };
 
   return runAutonomyCycle(stateWithExpandedScope, taskId);
+}
+
+export function recordTaskAcceptance(
+  state: PersonaDeskState,
+  taskId: string,
+  runId: string,
+  decision: Exclude<TaskAcceptanceStatus, "pending">,
+  note = ""
+): PersonaDeskState {
+  const run = state.taskRuns.find((item) => item.id === runId && item.taskId === taskId);
+  const task = state.tasks.find((item) => item.id === taskId);
+
+  if (!task || !run || run.status !== "delivered" || (run.acceptance?.status ?? "pending") !== "pending") {
+    return state;
+  }
+
+  const acceptanceNote =
+    note.trim() ||
+    (decision === "accepted"
+      ? "User accepted this deliverable."
+      : "User requested revision before accepting this deliverable.");
+
+  return {
+    ...state,
+    tasks: state.tasks.map((item) => (item.id === taskId ? { ...item, status: decision } : item)),
+    taskRuns: state.taskRuns.map((item) =>
+      item.id === runId
+        ? {
+            ...item,
+            acceptance: {
+              status: decision,
+              note: acceptanceNote,
+              decidedAt: nowIso()
+            },
+            logs: [...item.logs, `User acceptance decision: ${decision}. ${acceptanceNote}`]
+          }
+        : item
+    )
+  };
 }
 
 export function buildDeterministicArtifact(task: Task): Artifact {

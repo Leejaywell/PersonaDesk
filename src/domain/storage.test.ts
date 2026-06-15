@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createInitialState } from "./defaultState";
 import { deserializeState, serializeState } from "./storage";
+import { createTask, runAutonomyCycle } from "./tasks";
 
 describe("state storage", () => {
   it("round-trips the current state version", () => {
@@ -115,6 +116,36 @@ describe("state storage", () => {
     const restored = deserializeState(JSON.stringify({ version: 1, state: legacyState }));
 
     expect(restored.tasks[0].allowedExecutorIds).toEqual(["local-planner"]);
+  });
+
+  it("adds pending acceptance state to older delivered task runs", () => {
+    let state = createInitialState();
+    state = createTask(state, {
+      goal: "Create checklist",
+      constraints: "",
+      desiredOutput: "Checklist",
+      supervisionMode: "unsupervised",
+      authorizationScope: "text-planning-only",
+      allowedExecutorIds: ["local-planner"]
+    });
+    state = runAutonomyCycle(state, state.tasks[0].id);
+    const legacyState = {
+      ...state,
+      taskRuns: state.taskRuns.map((run) => {
+        const legacyRun = { ...run } as Partial<typeof run>;
+        delete legacyRun.acceptance;
+
+        return legacyRun;
+      })
+    };
+
+    const restored = deserializeState(JSON.stringify({ version: 1, state: legacyState }));
+
+    expect(restored.taskRuns[0].acceptance).toMatchObject({
+      status: "pending",
+      note: "Awaiting final user acceptance.",
+      decidedAt: null
+    });
   });
 
   it("normalizes old conversation messages with missing source event ids", () => {

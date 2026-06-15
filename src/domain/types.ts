@@ -16,10 +16,11 @@ export type MemoryLayer =
   | "short-term"
   | "import-summary";
 export type Sensitivity = "low" | "medium" | "high";
-export type TaskStatus = "draft" | "running" | "delivered" | "blocked" | "failed";
+export type TaskStatus = "draft" | "running" | "delivered" | "accepted" | "revision-requested" | "blocked" | "failed";
 export type TaskRunStatus = "planning" | "running" | "validating" | "delivered" | "blocked" | "failed";
 export type SupervisionMode = "supervised" | "unsupervised";
 export type RiskLevel = "low" | "medium" | "high";
+export type TaskAcceptanceStatus = "pending" | "accepted" | "revision-requested";
 export type VoiceRequestKind = "asr-transcript" | "tts-preview";
 export type VoiceRequestStatus = "ready" | "configured-not-verified" | "skipped";
 
@@ -186,6 +187,12 @@ export interface ApprovalRequest {
   riskLevel: RiskLevel;
 }
 
+export interface TaskAcceptance {
+  status: TaskAcceptanceStatus;
+  note: string;
+  decidedAt: string | null;
+}
+
 export interface TaskRun {
   id: string;
   taskId: string;
@@ -198,6 +205,7 @@ export interface TaskRun {
   validationResults: ValidationResult[];
   artifacts: Artifact[];
   approvalRequests: ApprovalRequest[];
+  acceptance: TaskAcceptance | null;
   finalSummary: string;
 }
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createInitialState } from "./defaultState";
-import { createTask, grantApprovalScopesAndResumeTask, runAutonomyCycle } from "./tasks";
+import { createTask, grantApprovalScopesAndResumeTask, recordTaskAcceptance, runAutonomyCycle } from "./tasks";
 
 describe("task autonomy", () => {
   it("plans, executes, validates, and delivers with a real deterministic executor", () => {
@@ -22,6 +22,55 @@ describe("task autonomy", () => {
     expect(run.validationResults.every((result) => result.passed)).toBe(true);
     expect(run.artifacts[0].content).toContain("PersonaDesk");
     expect(state.tasks[0].allowedExecutorIds).toEqual(["local-planner"]);
+    expect(run.acceptance).toMatchObject({
+      status: "pending",
+      note: "Awaiting final user acceptance.",
+      decidedAt: null
+    });
+  });
+
+  it("records final user acceptance on delivered task runs", () => {
+    let state = createInitialState();
+    state = createTask(state, {
+      goal: "Draft a launch checklist for PersonaDesk",
+      constraints: "Keep it local-first and privacy aware",
+      desiredOutput: "Checklist",
+      supervisionMode: "unsupervised",
+      authorizationScope: "text-planning-only",
+      allowedExecutorIds: ["local-planner"]
+    });
+    state = runAutonomyCycle(state, state.tasks[0].id);
+    state = recordTaskAcceptance(state, state.tasks[0].id, state.taskRuns[0].id, "accepted");
+
+    expect(state.tasks[0].status).toBe("accepted");
+    expect(state.taskRuns[0].acceptance?.status).toBe("accepted");
+    expect(state.taskRuns[0].acceptance?.note).toBe("User accepted this deliverable.");
+    expect(state.taskRuns[0].acceptance?.decidedAt).toBeTruthy();
+    expect(state.taskRuns[0].logs.some((log) => log.includes("User acceptance decision: accepted"))).toBe(true);
+  });
+
+  it("records requested revision without accepting the delivered task", () => {
+    let state = createInitialState();
+    state = createTask(state, {
+      goal: "Draft a launch checklist for PersonaDesk",
+      constraints: "Keep it local-first and privacy aware",
+      desiredOutput: "Checklist",
+      supervisionMode: "unsupervised",
+      authorizationScope: "text-planning-only",
+      allowedExecutorIds: ["local-planner"]
+    });
+    state = runAutonomyCycle(state, state.tasks[0].id);
+    state = recordTaskAcceptance(
+      state,
+      state.tasks[0].id,
+      state.taskRuns[0].id,
+      "revision-requested",
+      "Needs a clearer testing section."
+    );
+
+    expect(state.tasks[0].status).toBe("revision-requested");
+    expect(state.taskRuns[0].acceptance?.status).toBe("revision-requested");
+    expect(state.taskRuns[0].acceptance?.note).toBe("Needs a clearer testing section.");
   });
 
   it("blocks instead of falling back when only unconfigured executors are allowed", () => {

@@ -26,7 +26,7 @@ import {
 } from "./domain/observation";
 import { loadState, saveState } from "./domain/storage";
 import { buildSyncPreview, type SyncPreview } from "./domain/sync";
-import { createTask, grantApprovalScopesAndResumeTask, runAutonomyCycle } from "./domain/tasks";
+import { createTask, grantApprovalScopesAndResumeTask, recordTaskAcceptance, runAutonomyCycle } from "./domain/tasks";
 import type { PersonaDeskState } from "./domain/types";
 import { createVoiceRequest } from "./domain/voice";
 
@@ -185,6 +185,12 @@ export default function App() {
       setState((current) => configureExecutor(current, executorId, configuration)),
     createVoiceRequest: (input: Parameters<typeof createVoiceRequest>[1]) =>
       setState((current) => createVoiceRequest(current, input)),
+    recordTaskAcceptance: (
+      taskId: string,
+      runId: string,
+      decision: Parameters<typeof recordTaskAcceptance>[3],
+      note?: string
+    ) => setState((current) => recordTaskAcceptance(current, taskId, runId, decision, note)),
     setSyncEnabled: (enabled: boolean) =>
       updateState({
         ...state,

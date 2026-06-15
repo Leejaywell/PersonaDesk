@@ -1,7 +1,14 @@
 import type { ReactNode } from "react";
-import type { ExecutorStatus, TaskRunStatus, VoiceRequestStatus } from "../../domain/types";
+import type { ExecutorStatus, TaskAcceptanceStatus, TaskRunStatus, TaskStatus, VoiceRequestStatus } from "../../domain/types";
 
-export type DisplayStatus = ExecutorStatus | TaskRunStatus | VoiceRequestStatus | "active" | "inactive";
+export type DisplayStatus =
+  | ExecutorStatus
+  | TaskAcceptanceStatus
+  | TaskRunStatus
+  | TaskStatus
+  | VoiceRequestStatus
+  | "active"
+  | "inactive";
 
 export function statusLabel(status: DisplayStatus): string {
   return status
@@ -11,11 +18,17 @@ export function statusLabel(status: DisplayStatus): string {
 }
 
 export function statusClass(status: DisplayStatus): string {
-  if (status === "available" || status === "delivered" || status === "active" || status === "ready") {
+  if (
+    status === "accepted" ||
+    status === "available" ||
+    status === "delivered" ||
+    status === "active" ||
+    status === "ready"
+  ) {
     return "status-ok";
   }
 
-  if (status === "blocked" || status === "missing" || status === "failed") {
+  if (status === "blocked" || status === "missing" || status === "failed" || status === "revision-requested") {
     return "status-risk";
   }
 

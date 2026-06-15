@@ -109,6 +109,22 @@ describe("PersonaDesk app", () => {
     expect(screen.getByText(/No model provider was called/)).toBeInTheDocument();
   });
 
+  it("lets the user accept a delivered task result", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /Tasks/i }));
+    await user.type(screen.getByLabelText("Task goal"), "Create an acceptance checklist");
+    await user.click(screen.getByRole("button", { name: "Run autonomous task" }));
+
+    expect(await screen.findByText("Awaiting final user acceptance.")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Accept deliverable" }));
+
+    expect(screen.getByText("User accepted this deliverable.")).toBeInTheDocument();
+    expect(screen.getByText("Task status: accepted")).toBeInTheDocument();
+    expect(screen.getByText("Accepted")).toBeInTheDocument();
+  });
+
   it("blocks task execution when the allowed executor list has no available provider", async () => {
     const user = userEvent.setup();
     render(<App />);
