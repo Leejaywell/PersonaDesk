@@ -82,6 +82,30 @@ describe("state storage", () => {
     expect(restored.conversationMessages).toEqual([]);
   });
 
+  it("normalizes old conversation messages with missing source event ids", () => {
+    const state = createInitialState();
+    const restored = deserializeState(
+      JSON.stringify({
+        version: 2,
+        state: {
+          ...state,
+          conversationMessages: [
+            {
+              id: "conversation-old",
+              characterId: "mira",
+              speaker: "character",
+              text: "Old local reply",
+              source: "desktop-companion",
+              createdAt: "2026-06-15T00:00:00.000Z"
+            }
+          ]
+        }
+      })
+    );
+
+    expect(restored.conversationMessages[0].sourceEventId).toBeNull();
+  });
+
   it("merges default sync classes while preserving persisted sync settings", () => {
     const state = createInitialState();
     const restored = deserializeState(

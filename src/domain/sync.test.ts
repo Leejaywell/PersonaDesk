@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { sendCompanionMessage } from "./conversation";
 import { createInitialState } from "./defaultState";
 import { configureExecutor } from "./executors";
 import { confirmMemoryCandidate, proposeMemoryCandidate } from "./memory";
@@ -85,5 +86,25 @@ describe("sync preview", () => {
 
     expect(preview.included).toHaveLength(0);
     expect(preview.excluded.some((item) => item.id === "sync:disabled")).toBe(true);
+  });
+
+  it("excludes raw companion conversations from sync previews", () => {
+    let state = createInitialState();
+    state = {
+      ...state,
+      syncProfile: {
+        ...state.syncProfile,
+        enabled: true
+      }
+    };
+    state = sendCompanionMessage(state, {
+      characterId: "mira",
+      text: "Private desk-side thought"
+    });
+
+    const preview = buildSyncPreview(state);
+
+    expect(preview.included.some((item) => item.detail.includes("Private desk-side thought"))).toBe(false);
+    expect(preview.excluded.some((item) => item.dataClass === "raw-companion-conversations")).toBe(true);
   });
 });

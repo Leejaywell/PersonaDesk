@@ -22,8 +22,10 @@ This repository currently implements the Phase 1 thin slice from the design spec
   - appearance backend, avatar label, accent color, and voice profile fields.
 - Desktop companion chat:
   - emotional characters can exchange local deterministic messages with the user,
+  - emotional characters with task-comment permission can leave local reactions after task delivery or approval blocks,
   - task characters cannot act as desktop companions,
-  - no model provider is called by this Phase 1 chat.
+  - no model provider is called by this Phase 1 chat,
+  - raw companion conversations remain local-only and are excluded from sync preview.
 - A real deterministic local planner executor for text planning and validation.
 - Autonomous task loop:
   - creates a task,

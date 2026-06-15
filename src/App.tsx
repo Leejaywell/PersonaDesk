@@ -15,7 +15,7 @@ import {
   rejectCharacterDraft as rejectDraft
 } from "./domain/characterDrafts";
 import { updateCharacterSettings } from "./domain/characters";
-import { sendCompanionMessage } from "./domain/conversation";
+import { addTaskRunCompanionReactions, sendCompanionMessage } from "./domain/conversation";
 import { configureExecutor, mergeDetectedLocalAgents } from "./domain/executors";
 import { confirmMemoryCandidate as confirmMemory, rejectMemoryCandidate as rejectMemory } from "./domain/memory";
 import {
@@ -86,8 +86,9 @@ export default function App() {
     });
     const taskId = next.tasks[next.tasks.length - 1].id;
     next = runAutonomyCycle(next, taskId);
+    const runId = next.taskRuns[next.taskRuns.length - 1]?.id;
 
-    updateState(next);
+    updateState(runId ? addTaskRunCompanionReactions(next, runId) : next);
     setTaskForm({ ...taskForm, goal: "" });
   }
 
@@ -155,7 +156,12 @@ export default function App() {
   const actions = {
     runTask,
     grantTaskApproval: (taskId: string, runId: string) =>
-      setState((current) => grantApprovalScopesAndResumeTask(current, taskId, runId)),
+      setState((current) => {
+        const next = grantApprovalScopesAndResumeTask(current, taskId, runId);
+        const latestRunId = next.taskRuns[next.taskRuns.length - 1]?.id;
+
+        return latestRunId ? addTaskRunCompanionReactions(next, latestRunId) : next;
+      }),
     sendCompanionMessage: (characterId: string, text: string) =>
       setState((current) => sendCompanionMessage(current, { characterId, text })),
     generateCharacterDraft: generateDraft,

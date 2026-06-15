@@ -90,6 +90,10 @@ describe("PersonaDesk app", () => {
 
     expect(await screen.findByText("Delivered")).toBeInTheDocument();
     expect(screen.getAllByText(/privacy checklist/i).length).toBeGreaterThan(0);
+
+    await user.click(screen.getByRole("button", { name: /Desktop/i }));
+    expect(screen.getByText(/land as delivered/)).toBeInTheDocument();
+    expect(screen.getByText(/No model provider was called/)).toBeInTheDocument();
   });
 
   it("can review memory layer, owner, sensitivity, and sync policy before confirmation", async () => {

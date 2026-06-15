@@ -103,6 +103,15 @@ export function buildSyncPreview(state: PersonaDeskState): SyncPreview {
     });
   }
 
+  for (const message of state.conversationMessages) {
+    excluded.push({
+      id: `conversation:${message.id}`,
+      dataClass: "raw-companion-conversations",
+      label: message.speaker === "user" ? "User companion message" : "Character companion message",
+      reason: "Raw companion conversations remain local-only by default."
+    });
+  }
+
   return {
     generatedAt: nowIso(),
     included: state.syncProfile.enabled ? included : [],

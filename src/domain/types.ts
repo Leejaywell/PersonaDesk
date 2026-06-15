@@ -119,7 +119,8 @@ export interface ConversationMessage {
   characterId: string;
   speaker: "user" | "character";
   text: string;
-  source: "desktop-companion";
+  source: "desktop-companion" | "task-reaction";
+  sourceEventId: string | null;
   createdAt: string;
 }
 

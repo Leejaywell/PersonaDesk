@@ -115,6 +115,13 @@ function normalizeExecutors(persisted: unknown, defaults: Executor[]): Executor[
   }));
 }
 
+function normalizeConversationMessages(persisted: unknown): ConversationMessage[] {
+  return arrayOrEmpty<ConversationMessage>(persisted).map((message) => ({
+    ...message,
+    sourceEventId: message.sourceEventId ?? null
+  }));
+}
+
 function mergeRoleBoundaries(persisted: unknown, defaults: Record<string, RoleBoundary>): Record<string, RoleBoundary> {
   return {
     ...defaults,
@@ -155,7 +162,7 @@ function normalizeState(state: PersonaDeskState): PersonaDeskState {
     taskRuns: arrayOrEmpty<TaskRun>(state.taskRuns),
     memories: arrayOrEmpty<MemoryItem>(state.memories),
     memoryCandidates: arrayOrEmpty<MemoryCandidate>(state.memoryCandidates),
-    conversationMessages: arrayOrEmpty<ConversationMessage>(state.conversationMessages),
+    conversationMessages: normalizeConversationMessages(state.conversationMessages),
     observationSessions: arrayOrEmpty<ObservationSession>(state.observationSessions).map(normalizeObservationSession),
     syncProfile: mergeSyncProfile(state.syncProfile, defaults.syncProfile)
   };

@@ -355,7 +355,14 @@ export function createInitialState(): PersonaDeskState {
       enabled: false,
       accountId: null,
       allowedDataClasses: ["confirmed-character-definitions", "confirmed-memory-summaries", "non-sensitive-settings"],
-      localOnlyClasses: ["raw-imports", "raw-audio", "raw-screen-frames", "local-agent-logs", "sensitive-memory"],
+      localOnlyClasses: [
+        "raw-imports",
+        "raw-audio",
+        "raw-screen-frames",
+        "local-agent-logs",
+        "raw-companion-conversations",
+        "sensitive-memory"
+      ],
       conflictPolicy: "local-first-review",
       lastSyncStatus: "never"
     }
