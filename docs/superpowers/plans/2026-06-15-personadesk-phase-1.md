@@ -736,7 +736,7 @@ git commit -m "feat: build PersonaDesk thin-slice UI"
 - Create: `README.md`
 - Modify: `docs/superpowers/plans/2026-06-15-personadesk-phase-1.md`
 
-- [ ] **Step 1: Write README**
+- [x] **Step 1: Write README**
 
 Create `README.md` with:
 
@@ -748,7 +748,7 @@ Create `README.md` with:
 - Setup commands.
 - Test commands.
 
-- [ ] **Step 2: Run all verification**
+- [x] **Step 2: Run all verification**
 
 Run:
 
@@ -760,18 +760,18 @@ cargo test --manifest-path src-tauri/Cargo.toml
 
 Expected: all tests pass and frontend build succeeds.
 
-- [ ] **Step 3: Update plan checkboxes**
+- [x] **Step 3: Update plan checkboxes**
 
 Mark each completed step in this plan with `[x]`.
 
-- [ ] **Step 4: Commit docs and plan completion**
+- [x] **Step 4: Commit docs and plan completion**
 
 ```bash
 git add README.md docs/superpowers/plans/2026-06-15-personadesk-phase-1.md
 git commit -m "docs: add PersonaDesk implementation guide"
 ```
 
-- [ ] **Step 5: Push branch**
+- [x] **Step 5: Push branch**
 
 Run:
 
