@@ -548,7 +548,7 @@ git commit -m "feat: add autonomous task runtime"
 - Test: `src/domain/observation.test.ts`
 - Test: `src/domain/storage.test.ts`
 
-- [ ] **Step 1: Write failing observation tests**
+- [x] **Step 1: Write failing observation tests**
 
 Create `src/domain/observation.test.ts`:
 
@@ -584,7 +584,7 @@ describe("observation privacy", () => {
 });
 ```
 
-- [ ] **Step 2: Write failing storage tests**
+- [x] **Step 2: Write failing storage tests**
 
 Create `src/domain/storage.test.ts`:
 
@@ -614,7 +614,7 @@ describe("state storage", () => {
 });
 ```
 
-- [ ] **Step 3: Implement observation and storage**
+- [x] **Step 3: Implement observation and storage**
 
 Observation must never store raw screenshots or raw frames. It stores only typed local summary events with app/window metadata.
 
@@ -627,7 +627,7 @@ Storage must use a versioned envelope:
 }
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run:
 
@@ -637,7 +637,7 @@ npm test -- src/domain/observation.test.ts src/domain/storage.test.ts
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit privacy boundaries**
+- [x] **Step 5: Commit privacy boundaries**
 
 ```bash
 git add src/domain/observation.ts src/domain/storage.ts src/domain/observation.test.ts src/domain/storage.test.ts
