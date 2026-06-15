@@ -2,6 +2,12 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import type { SectionId } from "./app/navigation";
 import type { DraftFormState, ObservationFormState, TaskFormState } from "./app/actions";
 import {
+  fallbackDesktopPresencePlan,
+  loadDesktopPresencePlan,
+  previewLocalDesktopNotification,
+  type DesktopPresencePlan
+} from "./app/desktopPresence";
+import {
   fallbackDesktopWindowPlan,
   isTauriRuntime,
   loadDesktopWindowPlan,
@@ -28,6 +34,7 @@ import {
   addTaskRunCompanionReactions,
   sendCompanionMessage
 } from "./domain/conversation";
+import { recordDesktopNotificationAudit } from "./domain/desktopPresence";
 import { configureExecutor, mergeDetectedLocalAgents, recordExecutorHealthCheck } from "./domain/executors";
 import { confirmMemoryCandidate as confirmMemory, rejectMemoryCandidate as rejectMemory } from "./domain/memory";
 import {
@@ -82,6 +89,7 @@ export default function App() {
   const [syncPackageText, setSyncPackageText] = useState("");
   const [syncImportPreview, setSyncImportPreview] = useState<SyncPackageImportPreview | null>(null);
   const [desktopWindowPlan, setDesktopWindowPlan] = useState<DesktopWindowPlanResult>(() => fallbackDesktopWindowPlan());
+  const [desktopPresencePlan, setDesktopPresencePlan] = useState<DesktopPresencePlan>(() => fallbackDesktopPresencePlan());
 
   useEffect(() => {
     saveState(state);
@@ -93,6 +101,7 @@ export default function App() {
     }
 
     void loadDesktopWindowPlan().then(setDesktopWindowPlan);
+    void loadDesktopPresencePlan().then(setDesktopPresencePlan);
   }, []);
 
   const emotionalCharacters = useMemo(
@@ -199,6 +208,26 @@ export default function App() {
     setLocalAgentScanStatus(result.message);
   }
 
+  async function previewDesktopNotification() {
+    const title =
+      latestRun?.status === "blocked"
+        ? "PersonaDesk task needs approval"
+        : latestRun
+          ? "PersonaDesk task delivered"
+          : "PersonaDesk companion is standing by";
+    const body = latestRun?.finalSummary || "Mira can stay visible while the console handles deeper work.";
+    const result = await previewLocalDesktopNotification({ title, body });
+
+    setState((current) =>
+      recordDesktopNotificationAudit(current, {
+        title,
+        body,
+        status: result.status,
+        disclosure: result.disclosure
+      })
+    );
+  }
+
   const actions = {
     runTask,
     grantTaskApproval: (taskId: string, runId: string) =>
@@ -258,6 +287,7 @@ export default function App() {
       const result = await playLocalSpeechPreview(request.text);
       setState((current) => recordVoicePlaybackResult(current, requestId, result));
     },
+    previewDesktopNotification,
     recordTaskAcceptance: (
       taskId: string,
       runId: string,
@@ -353,6 +383,8 @@ export default function App() {
           <DesktopStagePage
             actions={actions}
             conversationMessages={state.conversationMessages}
+            desktopPresenceAudits={state.desktopPresenceAudits}
+            desktopPresencePlan={desktopPresencePlan}
             desktopWindowPlan={desktopWindowPlan}
             emotionalCharacters={emotionalCharacters}
             latestRun={latestRun}

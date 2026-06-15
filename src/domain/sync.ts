@@ -206,6 +206,15 @@ export function buildSyncPreview(state: PersonaDeskState): SyncPreview {
     });
   }
 
+  for (const audit of state.desktopPresenceAudits) {
+    excluded.push({
+      id: `desktop-presence:${audit.id}`,
+      dataClass: "desktop-presence-audits",
+      label: audit.title,
+      reason: "Desktop notification and tray audit records remain local-only by default."
+    });
+  }
+
   for (const check of state.executorHealthChecks) {
     excluded.push({
       id: `executor-health:${check.id}`,

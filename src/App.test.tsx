@@ -51,6 +51,24 @@ describe("PersonaDesk app", () => {
     expect(screen.getByText("Taskbar: hidden")).toBeInTheDocument();
   });
 
+  it("shows native presence contracts and records local notification preview audits", async () => {
+    const user = userEvent.setup();
+    Object.defineProperty(window, "Notification", { value: undefined, configurable: true });
+    render(<App />);
+
+    expect(screen.getByText("Native Presence")).toBeInTheDocument();
+    expect(screen.getByText("Tray Menu")).toBeInTheDocument();
+    expect(screen.getByText("Show or hide companion")).toBeInTheDocument();
+    expect(screen.getByText("Task delivered")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Preview local desktop notification" }));
+
+    const desktopPresenceAudit = screen.getByLabelText("Desktop presence audit");
+    expect(within(desktopPresenceAudit).getByText("PersonaDesk companion is standing by")).toBeInTheDocument();
+    expect(within(desktopPresenceAudit).getByText("Unavailable")).toBeInTheDocument();
+    expect(within(desktopPresenceAudit).getByText(/does not expose Web Notification/i)).toBeInTheDocument();
+  });
+
   it("renders the compact companion surface without management navigation", () => {
     window.history.pushState({}, "", "/?surface=companion");
 

@@ -26,6 +26,8 @@ export type VoiceRequestStatus = "ready" | "configured-not-verified" | "skipped"
 export type VoicePlaybackStatus = "not-requested" | "played" | "unavailable" | "failed";
 export type VoiceRouteTarget = "audit-only" | "companion" | "task-goal";
 export type ExecutorHealthCheckStatus = "ready" | "configured-not-verified" | "skipped" | "missing";
+export type DesktopPresenceAuditKind = "notification-preview";
+export type DesktopPresenceAuditStatus = "sent" | "permission-required" | "unavailable" | "failed";
 
 export interface RoleBoundary {
   id: string;
@@ -151,6 +153,16 @@ export interface VoiceRequest {
   playbackStatus: VoicePlaybackStatus;
   playbackDisclosure: string;
   playedAt: string | null;
+  disclosure: string;
+  createdAt: string;
+}
+
+export interface DesktopPresenceAudit {
+  id: string;
+  kind: DesktopPresenceAuditKind;
+  title: string;
+  body: string;
+  status: DesktopPresenceAuditStatus;
   disclosure: string;
   createdAt: string;
 }
@@ -308,6 +320,7 @@ export interface PersonaDeskState {
   memoryCandidates: MemoryCandidate[];
   conversationMessages: ConversationMessage[];
   voiceRequests: VoiceRequest[];
+  desktopPresenceAudits: DesktopPresenceAudit[];
   executorHealthChecks: ExecutorHealthCheck[];
   observationSessions: ObservationSession[];
   syncProfile: SyncProfile;

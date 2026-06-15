@@ -216,6 +216,16 @@ describe("state storage", () => {
     expect(restored.executorHealthChecks).toEqual([]);
   });
 
+  it("adds missing desktop presence audit state for older persisted states", () => {
+    const state = createInitialState();
+    const legacyState = { ...state } as Partial<typeof state>;
+    delete legacyState.desktopPresenceAudits;
+
+    const restored = deserializeState(JSON.stringify({ version: 1, state: legacyState }));
+
+    expect(restored.desktopPresenceAudits).toEqual([]);
+  });
+
   it("adds default allowed executors to older persisted tasks", () => {
     const state = createInitialState();
     const legacyState = {
@@ -321,6 +331,7 @@ describe("state storage", () => {
     expect(restored.syncProfile.allowedDataClasses).toContain("custom-safe-summary");
     expect(restored.syncProfile.localOnlyClasses).toContain("raw-screen-frames");
     expect(restored.syncProfile.localOnlyClasses).toContain("executor-health-checks");
+    expect(restored.syncProfile.localOnlyClasses).toContain("desktop-presence-audits");
     expect(restored.syncProfile.localOnlyClasses).toContain("custom-local-secret");
   });
 });

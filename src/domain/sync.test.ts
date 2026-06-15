@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { sendCompanionMessage } from "./conversation";
 import { createInitialState } from "./defaultState";
+import { recordDesktopNotificationAudit } from "./desktopPresence";
 import { configureExecutor, recordExecutorHealthCheck } from "./executors";
 import { confirmMemoryCandidate, proposeMemoryCandidate } from "./memory";
 import { buildLocalSyncPackage, buildSyncPreview, previewLocalSyncPackageImport, serializeLocalSyncPackage } from "./sync";
@@ -152,6 +153,28 @@ describe("sync preview", () => {
     expect(preview.excluded.some((item) => item.dataClass === "executor-health-checks")).toBe(true);
     expect(JSON.stringify(preview)).not.toContain("https://api.example.test/v1");
     expect(JSON.stringify(preview)).not.toContain("OPENAI_COMPATIBLE_API_KEY");
+  });
+
+  it("excludes desktop presence notification audits from sync previews", () => {
+    let state = createInitialState();
+    state = {
+      ...state,
+      syncProfile: {
+        ...state.syncProfile,
+        enabled: true
+      }
+    };
+    state = recordDesktopNotificationAudit(state, {
+      title: "Private task delivered",
+      body: "Open the companion window to review.",
+      status: "sent",
+      disclosure: "Local notification preview only."
+    });
+
+    const preview = buildSyncPreview(state);
+
+    expect(preview.included.some((item) => item.detail.includes("Open the companion window"))).toBe(false);
+    expect(preview.excluded.some((item) => item.dataClass === "desktop-presence-audits")).toBe(true);
   });
 
   it("exports a local sync package without raw data, endpoints, or secret references", () => {

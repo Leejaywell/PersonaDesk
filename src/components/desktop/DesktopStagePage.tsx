@@ -1,8 +1,9 @@
 import { Sparkles } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import type { AppActions } from "../../app/actions";
+import type { DesktopPresencePlan } from "../../app/desktopPresence";
 import type { DesktopWindowPlanResult } from "../../app/desktopWindows";
-import type { Character, ConversationMessage, RoleBoundary, TaskRun } from "../../domain/types";
+import type { Character, ConversationMessage, DesktopPresenceAudit, RoleBoundary, TaskRun } from "../../domain/types";
 import { CharacterCard } from "../characters/CharacterCard";
 import { Panel } from "../ui/Panel";
 import { StatusPill } from "../ui/StatusPill";
@@ -12,6 +13,8 @@ export function DesktopStagePage({
   roleBoundaries,
   latestRun,
   conversationMessages,
+  desktopPresenceAudits,
+  desktopPresencePlan,
   desktopWindowPlan,
   actions
 }: {
@@ -19,6 +22,8 @@ export function DesktopStagePage({
   roleBoundaries: Record<string, RoleBoundary>;
   latestRun: TaskRun | undefined;
   conversationMessages: ConversationMessage[];
+  desktopPresenceAudits: DesktopPresenceAudit[];
+  desktopPresencePlan: DesktopPresencePlan;
   desktopWindowPlan: DesktopWindowPlanResult;
   actions: AppActions;
 }) {
@@ -27,6 +32,7 @@ export function DesktopStagePage({
   const [taskStageExpanded, setTaskStageExpanded] = useState(Boolean(latestRun));
   const selectedCharacter = emotionalCharacters.find((character) => character.id === selectedCharacterId) ?? emotionalCharacters[0];
   const visibleMessages = conversationMessages.filter((message) => message.characterId === selectedCharacter?.id).slice(-8);
+  const recentDesktopPresenceAudits = desktopPresenceAudits.slice(-4).reverse();
   const passedValidations = latestRun?.validationResults.filter((result) => result.passed).length ?? 0;
 
   useEffect(() => {
@@ -150,6 +156,68 @@ export function DesktopStagePage({
             </article>
           ))}
         </div>
+      </Panel>
+
+      <Panel
+        description="Tray and notification contracts stay local-first while native event wiring is added incrementally."
+        title="Native Presence"
+      >
+        <p className="local-only">{desktopPresencePlan.message}</p>
+        <div className="native-window-list">
+          <article className="summary-card">
+            <div className="task-card-header">
+              <div>
+                <strong>Tray Menu</strong>
+                <p>{desktopPresencePlan.trayMenuItems.length} planned desktop actions</p>
+              </div>
+              <StatusPill status="active">Contract ready</StatusPill>
+            </div>
+            <div className="task-meta-row">
+              {desktopPresencePlan.trayMenuItems.map((item) => (
+                <span className="meta-chip" key={item.id}>
+                  {item.label}
+                </span>
+              ))}
+            </div>
+          </article>
+          <article className="summary-card">
+            <div className="task-card-header">
+              <div>
+                <strong>Notifications</strong>
+                <p>{desktopPresencePlan.notificationTriggers.length} local trigger contracts</p>
+              </div>
+              <button onClick={actions.previewDesktopNotification} type="button">
+                Preview local desktop notification
+              </button>
+            </div>
+            <div className="task-meta-row">
+              {desktopPresencePlan.notificationTriggers.map((trigger) => (
+                <span className="meta-chip" key={trigger.id}>
+                  {trigger.label}
+                </span>
+              ))}
+            </div>
+          </article>
+        </div>
+        <div className="voice-request-list" aria-label="Desktop presence audit">
+          {recentDesktopPresenceAudits.length === 0 ? (
+            <p className="empty-state">No desktop presence audits yet.</p>
+          ) : (
+            recentDesktopPresenceAudits.map((audit) => (
+              <article className="voice-request-card" key={audit.id}>
+                <div className="task-card-header">
+                  <div>
+                    <strong>{audit.title}</strong>
+                    <p>{audit.body}</p>
+                  </div>
+                  <StatusPill status={audit.status} />
+                </div>
+                <p>{audit.disclosure}</p>
+              </article>
+            ))
+          )}
+        </div>
+        <p className="local-only">{desktopPresencePlan.disclosures.join(" ")}</p>
       </Panel>
 
       <Panel

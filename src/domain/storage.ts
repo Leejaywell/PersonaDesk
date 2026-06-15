@@ -3,6 +3,7 @@ import type {
   Character,
   CloudUploadApproval,
   ConversationMessage,
+  DesktopPresenceAudit,
   Executor,
   ExecutorConfiguration,
   ExecutorHealthCheck,
@@ -247,6 +248,7 @@ function normalizeState(state: PersonaDeskState): PersonaDeskState {
     memoryCandidates: arrayOrEmpty<MemoryCandidate>(state.memoryCandidates),
     conversationMessages: normalizeConversationMessages(state.conversationMessages),
     voiceRequests: normalizeVoiceRequests(state.voiceRequests),
+    desktopPresenceAudits: arrayOrEmpty<DesktopPresenceAudit>(state.desktopPresenceAudits),
     executorHealthChecks: arrayOrEmpty<ExecutorHealthCheck>(state.executorHealthChecks),
     observationSessions: arrayOrEmpty<ObservationSession>(state.observationSessions).map(normalizeObservationSession),
     syncProfile: mergeSyncProfile(state.syncProfile, defaults.syncProfile)

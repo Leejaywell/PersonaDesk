@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type {
+  DesktopPresenceAuditStatus,
   ExecutorHealthCheckStatus,
   ExecutorStatus,
   TaskAcceptanceStatus,
@@ -17,6 +18,7 @@ export type DisplayStatus =
   | VoiceRequestStatus
   | VoicePlaybackStatus
   | ExecutorHealthCheckStatus
+  | DesktopPresenceAuditStatus
   | "active"
   | "inactive";
 
@@ -34,7 +36,8 @@ export function statusClass(status: DisplayStatus): string {
     status === "delivered" ||
     status === "active" ||
     status === "ready" ||
-    status === "played"
+    status === "played" ||
+    status === "sent"
   ) {
     return "status-ok";
   }
@@ -44,6 +47,7 @@ export function statusClass(status: DisplayStatus): string {
     status === "missing" ||
     status === "failed" ||
     status === "unavailable" ||
+    status === "permission-required" ||
     status === "revision-requested"
   ) {
     return "status-risk";
