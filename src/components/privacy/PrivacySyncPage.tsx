@@ -57,12 +57,51 @@ export function PrivacySyncPage({
           <Check aria-hidden="true" size={15} />
           Add local summary
         </button>
+        <label>
+          Cloud vision approval reason
+          <input
+            value={observationForm.cloudVisionReason}
+            onChange={(event) =>
+              setObservationForm({ ...observationForm, cloudVisionReason: event.target.value })
+            }
+          />
+        </label>
         <div className="summary-list">
           {observationSessions.flatMap((session) =>
-            session.localSummaryStream.map((summary) => (
-              <p key={summary.id}>
-                <strong>{summary.appName}</strong>: {summary.summary}
-              </p>
+            session.localSummaryStream.map((summary) => {
+              const approved = session.cloudUploadApprovals.some((approval) => approval.summaryId === summary.id);
+
+              return (
+                <article className="summary-card" key={summary.id}>
+                  <p>
+                    <strong>{summary.appName}</strong>: {summary.summary}
+                  </p>
+                  <button
+                    disabled={approved}
+                    onClick={() => actions.approveCloudVisionUpload(session.id, summary.id)}
+                    type="button"
+                  >
+                    <Shield aria-hidden="true" size={15} />
+                    {approved ? "Cloud vision approved" : "Approve cloud vision review"}
+                  </button>
+                </article>
+              );
+            })
+          )}
+        </div>
+        <div className="approval-list" aria-label="Cloud vision approval audit">
+          {observationSessions.flatMap((session) =>
+            session.cloudUploadApprovals.map((approval) => (
+              <article className="review-card" key={approval.id}>
+                <div className="task-card-header">
+                  <div>
+                    <h3>{approval.appName}</h3>
+                    <p>{approval.reason}</p>
+                  </div>
+                  <StatusPill status={approval.providerStatus} />
+                </div>
+                <p>{approval.disclosure}</p>
+              </article>
             ))
           )}
         </div>

@@ -299,6 +299,21 @@ const executors: Executor[] = [
     status: "unconfigured",
     statusReason: "No TTS provider selected.",
     detectionSource: "user-config"
+  },
+  {
+    id: "vision-provider",
+    displayName: "Vision provider",
+    type: "vision",
+    capabilities: ["image-understanding", "screen-summary-if-approved"],
+    modalities: ["image", "text"],
+    contextLimit: null,
+    costProfile: "provider-dependent",
+    latencyProfile: "provider-dependent",
+    permissionRiskLevel: "high",
+    requiredSecret: null,
+    status: "unconfigured",
+    statusReason: "No vision provider selected. Cloud vision review requires explicit user approval.",
+    detectionSource: "user-config"
   }
 ];
 

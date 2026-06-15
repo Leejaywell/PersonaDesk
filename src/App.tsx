@@ -17,7 +17,12 @@ import {
 import { updateCharacterSettings } from "./domain/characters";
 import { mergeDetectedLocalAgents } from "./domain/executors";
 import { confirmMemoryCandidate as confirmMemory, rejectMemoryCandidate as rejectMemory } from "./domain/memory";
-import { startObservationSession, stopObservationSession, summarizeObservationEvent } from "./domain/observation";
+import {
+  approveCloudVisionUpload,
+  startObservationSession,
+  stopObservationSession,
+  summarizeObservationEvent
+} from "./domain/observation";
 import { loadState, saveState } from "./domain/storage";
 import { createTask, runAutonomyCycle } from "./domain/tasks";
 import type { PersonaDeskState } from "./domain/types";
@@ -34,7 +39,8 @@ export default function App() {
   });
   const [observationForm, setObservationForm] = useState<ObservationFormState>({
     allowedApps: "Safari, Notes",
-    summary: ""
+    summary: "",
+    cloudVisionReason: "User requested additional visual interpretation for this local summary."
   });
   const [draftForm, setDraftForm] = useState<DraftFormState>({
     text: "A gentle companion who speaks softly and likes quiet encouragement.",
@@ -128,6 +134,10 @@ export default function App() {
     setObservationForm({ ...observationForm, summary: "" });
   }
 
+  function approveCloudVision(sessionId: string, summaryId: string) {
+    updateState(approveCloudVisionUpload(state, sessionId, summaryId, observationForm.cloudVisionReason));
+  }
+
   async function scanLocalAgents() {
     setLocalAgentScanStatus("Scanning known local agents...");
     const result = await scanKnownLocalAgents();
@@ -151,6 +161,7 @@ export default function App() {
     startObservation,
     stopObservation,
     addObservationSummary,
+    approveCloudVisionUpload: approveCloudVision,
     scanLocalAgents,
     setSyncEnabled: (enabled: boolean) =>
       updateState({

@@ -519,6 +519,7 @@ label {
   margin-top: 12px;
 }
 
+.summary-card,
 .summary-list p {
   margin: 0;
   border: 1px solid #e4ebf3;
@@ -526,6 +527,23 @@ label {
   padding: 8px;
   background: #fbfdff;
   font-size: 13px;
+}
+
+.summary-card {
+  display: grid;
+  gap: 8px;
+}
+
+.summary-card p {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.approval-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
 }
 
 .disclosure-list {

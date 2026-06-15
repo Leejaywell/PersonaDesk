@@ -198,12 +198,23 @@ export interface ObservationSummary {
   createdAt: string;
 }
 
+export interface CloudUploadApproval {
+  id: string;
+  summaryId: string;
+  appName: string;
+  providerStatus: ExecutorStatus;
+  reason: string;
+  uploaded: false;
+  disclosure: string;
+  approvedAt: string;
+}
+
 export interface ObservationSession {
   id: string;
   allowedApps: string[];
   active: boolean;
   localSummaryStream: ObservationSummary[];
-  cloudUploadApprovals: string[];
+  cloudUploadApprovals: CloudUploadApproval[];
   retentionPolicy: "summaries-only" | "discard-on-stop";
   startedAt: string;
   endedAt: string | null;

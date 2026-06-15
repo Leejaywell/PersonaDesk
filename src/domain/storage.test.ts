@@ -20,4 +20,30 @@ describe("state storage", () => {
     expect(restored.characters.length).toBeGreaterThan(0);
     expect(restored.syncProfile.enabled).toBe(false);
   });
+
+  it("migrates old cloud upload approval arrays to structured audit records", () => {
+    const state = createInitialState();
+    const legacy = {
+      version: 1,
+      state: {
+        ...state,
+        observationSessions: [
+          {
+            id: "observation-legacy",
+            allowedApps: ["Safari"],
+            active: false,
+            localSummaryStream: [],
+            cloudUploadApprovals: ["old-string-approval"],
+            retentionPolicy: "summaries-only",
+            startedAt: "2026-06-15T00:00:00.000Z",
+            endedAt: "2026-06-15T00:01:00.000Z"
+          }
+        ]
+      }
+    };
+
+    const restored = deserializeState(JSON.stringify(legacy));
+
+    expect(restored.observationSessions[0].cloudUploadApprovals).toEqual([]);
+  });
 });

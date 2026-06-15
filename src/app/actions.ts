@@ -18,6 +18,7 @@ export interface DraftFormState {
 export interface ObservationFormState {
   allowedApps: string;
   summary: string;
+  cloudVisionReason: string;
 }
 
 export interface AppActions {
@@ -31,6 +32,7 @@ export interface AppActions {
   startObservation: () => void;
   stopObservation: () => void;
   addObservationSummary: () => void;
+  approveCloudVisionUpload: (sessionId: string, summaryId: string) => void;
   setSyncEnabled: (enabled: boolean) => void;
   scanLocalAgents: () => Promise<void>;
 }

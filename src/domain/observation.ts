@@ -1,4 +1,4 @@
-import type { ObservationSession, ObservationSummary, PersonaDeskState } from "./types";
+import type { CloudUploadApproval, ExecutorStatus, ObservationSession, ObservationSummary, PersonaDeskState } from "./types";
 
 export interface ObservationEventInput {
   appName: string;
@@ -81,5 +81,61 @@ export function stopObservationSession(state: PersonaDeskState, sessionId: strin
           }
         : session
     )
+  };
+}
+
+function visionProviderStatus(state: PersonaDeskState): ExecutorStatus {
+  return state.executors.find((executor) => executor.type === "vision")?.status ?? "missing";
+}
+
+function cloudApprovalDisclosure(providerStatus: ExecutorStatus): string {
+  if (providerStatus === "available") {
+    return "Cloud vision approval was recorded, but Phase 1 does not upload raw screen frames automatically.";
+  }
+
+  return "Cloud vision approval was recorded for audit only; no configured vision provider is available and no raw screen frame was uploaded.";
+}
+
+export function approveCloudVisionUpload(
+  state: PersonaDeskState,
+  sessionId: string,
+  summaryId: string,
+  reason: string
+): PersonaDeskState {
+  const providerStatus = visionProviderStatus(state);
+
+  return {
+    ...state,
+    observationSessions: state.observationSessions.map((session) => {
+      if (session.id !== sessionId) {
+        return session;
+      }
+
+      if (session.cloudUploadApprovals.some((approval) => approval.summaryId === summaryId)) {
+        return session;
+      }
+
+      const summary = session.localSummaryStream.find((item) => item.id === summaryId);
+
+      if (!summary) {
+        return session;
+      }
+
+      const approval: CloudUploadApproval = {
+        id: createId("cloud-vision-approval"),
+        summaryId,
+        appName: summary.appName,
+        providerStatus,
+        reason: reason.trim() || "User explicitly approved this local summary for cloud vision review.",
+        uploaded: false,
+        disclosure: cloudApprovalDisclosure(providerStatus),
+        approvedAt: nowIso()
+      };
+
+      return {
+        ...session,
+        cloudUploadApprovals: [...session.cloudUploadApprovals, approval]
+      };
+    })
   };
 }

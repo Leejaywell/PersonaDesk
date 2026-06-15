@@ -122,4 +122,18 @@ describe("PersonaDesk app", () => {
     expect(screen.getAllByText("A CEO spouse companion who remembers private context.").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Quiet observer").length).toBeGreaterThan(0);
   });
+
+  it("records cloud vision approval from a local observation summary without uploading frames", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /Privacy/i }));
+    await user.click(screen.getByRole("button", { name: "Start observation" }));
+    await user.type(screen.getByLabelText("Local summary"), "User reviewed a design document");
+    await user.click(screen.getByRole("button", { name: "Add local summary" }));
+    await user.click(screen.getByRole("button", { name: "Approve cloud vision review" }));
+
+    expect(await screen.findByText(/no raw screen frame was uploaded/i)).toBeInTheDocument();
+    expect(screen.getByText("Cloud vision approved")).toBeInTheDocument();
+  });
 });
