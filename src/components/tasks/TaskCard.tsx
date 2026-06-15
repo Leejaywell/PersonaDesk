@@ -1,7 +1,17 @@
 import type { Task, TaskRun } from "../../domain/types";
 import { StatusPill } from "../ui/StatusPill";
 
-export function TaskCard({ run, task }: { run: TaskRun; task: Task | undefined }) {
+export function TaskCard({
+  run,
+  task,
+  onGrantApproval
+}: {
+  run: TaskRun;
+  task: Task | undefined;
+  onGrantApproval?: (taskId: string, runId: string) => void;
+}) {
+  const canGrantApproval = Boolean(task && task.status === "blocked" && run.status === "blocked" && run.approvalRequests.length > 0);
+
   return (
     <article className="task-card">
       <div className="task-card-header">
@@ -20,8 +30,15 @@ export function TaskCard({ run, task }: { run: TaskRun; task: Task | undefined }
       {run.approvalRequests.length > 0 && (
         <div className="notice danger">
           {run.approvalRequests.map((request) => (
-            <p key={request.id}>{request.reason}</p>
+            <p key={request.id}>
+              {request.reason} Requested scope: {request.requestedScope}.
+            </p>
           ))}
+          {canGrantApproval && task && (
+            <button onClick={() => onGrantApproval?.(task.id, run.id)} type="button">
+              Grant requested scopes and continue
+            </button>
+          )}
         </div>
       )}
       {run.artifacts.map((artifact) => (

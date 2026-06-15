@@ -29,7 +29,8 @@ This repository currently implements the Phase 1 thin slice from the design spec
   - generates a deterministic artifact,
   - validates the artifact,
   - delivers a task card,
-  - blocks when the request exceeds the authorization scope.
+  - blocks when the request exceeds the authorization scope,
+  - lets the user grant requested scopes and resume the same blocked task while preserving the blocked run as history.
 - Memory candidate workflow:
   - candidates are proposed,
   - long-term memory is written only after confirmation,

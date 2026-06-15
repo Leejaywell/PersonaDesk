@@ -65,7 +65,7 @@ describe("PersonaDesk app", () => {
     expect(screen.getAllByText(/privacy checklist/i).length).toBeGreaterThan(0);
   });
 
-  it("blocks risky tasks until authorization scope is expanded", async () => {
+  it("blocks risky tasks until requested scopes are granted on the same task", async () => {
     const user = userEvent.setup();
     render(<App />);
 
@@ -74,20 +74,12 @@ describe("PersonaDesk app", () => {
     await user.click(screen.getByRole("button", { name: "Run autonomous task" }));
 
     expect(await screen.findByText("Blocked")).toBeInTheDocument();
-    expect(screen.getByText("The task appears to require destructive file operations.")).toBeInTheDocument();
-
-    await user.clear(screen.getByLabelText("Task goal"));
-    await user.type(screen.getByLabelText("Task goal"), "Delete old files and publish the release");
-    await user.selectOptions(screen.getByLabelText("Supervision mode"), "supervised");
-    await user.selectOptions(
-      screen.getByLabelText("Authorization scope"),
-      "text-planning-only destructive-filesystem external-publishing"
-    );
-    await user.click(screen.getByRole("button", { name: "Run autonomous task" }));
+    expect(screen.getByText(/The task appears to require destructive file operations/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Grant requested scopes and continue" }));
 
     expect(screen.getAllByText("Delivered").length).toBeGreaterThan(0);
-    expect(screen.getByText("Mode: supervised")).toBeInTheDocument();
-    expect(screen.getByText("Scope: text-planning-only destructive-filesystem external-publishing")).toBeInTheDocument();
+    expect(screen.getAllByText("Mode: unsupervised").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Scope: text-planning-only destructive-filesystem external-publishing").length).toBeGreaterThan(0);
   });
 
   it("can generate and confirm an honest character draft", async () => {

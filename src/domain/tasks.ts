@@ -213,6 +213,49 @@ function buildTaskTree(assignedCharacters: string[]): TaskStep[] {
   ];
 }
 
+function mergeAuthorizationScope(currentScope: string, requestedScopes: string[]): string {
+  const parts = new Set(
+    currentScope
+      .split(/\s+/)
+      .map((part) => part.trim())
+      .filter(Boolean)
+  );
+
+  for (const scope of requestedScopes) {
+    parts.add(scope);
+  }
+
+  return Array.from(parts).join(" ");
+}
+
+export function grantApprovalScopesAndResumeTask(
+  state: PersonaDeskState,
+  taskId: string,
+  runId: string
+): PersonaDeskState {
+  const run = state.taskRuns.find((item) => item.id === runId && item.taskId === taskId);
+
+  if (!run || run.status !== "blocked" || run.approvalRequests.length === 0) {
+    return state;
+  }
+
+  const requestedScopes = run.approvalRequests.map((request) => request.requestedScope);
+  const stateWithExpandedScope: PersonaDeskState = {
+    ...state,
+    tasks: state.tasks.map((task) =>
+      task.id === taskId
+        ? {
+            ...task,
+            authorizationScope: mergeAuthorizationScope(task.authorizationScope, requestedScopes),
+            status: "running"
+          }
+        : task
+    )
+  };
+
+  return runAutonomyCycle(stateWithExpandedScope, taskId);
+}
+
 export function buildDeterministicArtifact(task: Task): Artifact {
   const checklist = [
     `Goal: ${task.goal}`,

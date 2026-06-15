@@ -23,6 +23,7 @@ export interface ObservationFormState {
 
 export interface AppActions {
   runTask: (event: FormEvent<HTMLFormElement>) => void;
+  grantTaskApproval: (taskId: string, runId: string) => void;
   generateCharacterDraft: (event: FormEvent<HTMLFormElement>) => void;
   confirmCharacterDraft: (draftId: string) => void;
   rejectCharacterDraft: (draftId: string) => void;

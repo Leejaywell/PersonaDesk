@@ -117,7 +117,12 @@ export function TaskRoomPage({
         ) : (
           <div className="task-card-list">
             {taskRuns.map((run) => (
-              <TaskCard key={run.id} run={run} task={tasks.find((item) => item.id === run.taskId)} />
+              <TaskCard
+                key={run.id}
+                onGrantApproval={actions.grantTaskApproval}
+                run={run}
+                task={tasks.find((item) => item.id === run.taskId)}
+              />
             ))}
           </div>
         )}

@@ -24,7 +24,7 @@ import {
   summarizeObservationEvent
 } from "./domain/observation";
 import { loadState, saveState } from "./domain/storage";
-import { createTask, runAutonomyCycle } from "./domain/tasks";
+import { createTask, grantApprovalScopesAndResumeTask, runAutonomyCycle } from "./domain/tasks";
 import type { PersonaDeskState } from "./domain/types";
 
 export default function App() {
@@ -151,6 +151,8 @@ export default function App() {
 
   const actions = {
     runTask,
+    grantTaskApproval: (taskId: string, runId: string) =>
+      setState((current) => grantApprovalScopesAndResumeTask(current, taskId, runId)),
     generateCharacterDraft: generateDraft,
     confirmCharacterDraft: (draftId: string) => updateState(confirmDraft(state, draftId)),
     rejectCharacterDraft: (draftId: string) => updateState(rejectDraft(state, draftId)),

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createInitialState } from "./defaultState";
-import { createTask, runAutonomyCycle } from "./tasks";
+import { createTask, grantApprovalScopesAndResumeTask, runAutonomyCycle } from "./tasks";
 
 describe("task autonomy", () => {
   it("plans, executes, validates, and delivers with a real deterministic executor", () => {
@@ -53,5 +53,27 @@ describe("task autonomy", () => {
     expect(state.tasks[0].supervisionMode).toBe("supervised");
     expect(state.taskRuns[0].status).toBe("delivered");
     expect(state.taskRuns[0].approvalRequests).toEqual([]);
+  });
+
+  it("grants requested approval scopes and resumes the same blocked task", () => {
+    let state = createInitialState();
+    state = createTask(state, {
+      goal: "Delete old files and publish the release",
+      constraints: "Needs filesystem and external publishing",
+      desiredOutput: "Release checklist",
+      supervisionMode: "unsupervised",
+      authorizationScope: "text-planning-only"
+    });
+    state = runAutonomyCycle(state, state.tasks[0].id);
+
+    const blockedRun = state.taskRuns[0];
+    state = grantApprovalScopesAndResumeTask(state, state.tasks[0].id, blockedRun.id);
+
+    expect(state.tasks[0].authorizationScope).toContain("destructive-filesystem");
+    expect(state.tasks[0].authorizationScope).toContain("external-publishing");
+    expect(state.taskRuns).toHaveLength(2);
+    expect(state.taskRuns[0].status).toBe("blocked");
+    expect(state.taskRuns[1].status).toBe("delivered");
+    expect(state.taskRuns[1].approvalRequests).toEqual([]);
   });
 });
