@@ -43,6 +43,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
   - lets the user choose the current authorization scope,
   - lets the user choose which task executors are allowed for that run,
   - assigns task characters,
+  - records structured executor dispatch attempts with executor type, dispatch mode, status, timestamps, output summary, and disclosure,
   - generates a deterministic artifact,
   - validates the artifact,
   - delivers a task card,
@@ -52,6 +53,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
   - uses allowlisted local observation summaries only when the task authorization scope includes observation-summaries,
   - blocks when the request exceeds the authorization scope,
   - blocks when the allowed executor list has no available executor instead of silently falling back,
+  - blocks detected local agents and configured provider slots that do not yet have a Phase 1 task execution adapter instead of pretending they ran,
   - lets the user grant requested scopes and resume the same blocked task while preserving the blocked run as history.
 - Memory candidate workflow:
   - candidates are proposed from task outcomes, memory-shaped companion messages, and allowlisted observation summaries,
@@ -107,7 +109,8 @@ This repository currently implements the Phase 1 thin slice from the design spec
 - Cloud model APIs are not treated as available until configured.
 - Local model servers are not treated as available until configured.
 - Codex/Claude/Cursor/Gemini local agents are not treated as available unless safe detection finds them.
-- Tasks only run through executors allowed for that task; unavailable allowed executors create a visible blocked run.
+- Tasks only run through executors allowed for that task; unavailable or not-yet-adapted allowed executors create a visible blocked run.
+- Detected local agents are not launched by the task loop yet; the task card records that no local agent process was started.
 - ASR and TTS are exposed as provider slots, local request audit records, manual transcript routing, and local browser speech playback for TTS previews. Microphone capture, transcription adapters, and external/cloud audio generation are not implemented yet.
 - Screen observation stores local summaries only. It does not capture or upload raw frames.
 - Cloud vision approvals are recorded as audit entries only until a real vision provider and upload path are configured.

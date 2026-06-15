@@ -5,6 +5,10 @@ import type {
   ConversationMessage,
   DesktopPresenceAudit,
   Executor,
+  ExecutorCall,
+  ExecutorCallStatus,
+  ExecutorDispatchKind,
+  ExecutorType,
   ExecutorConfiguration,
   ExecutorHealthCheck,
   MemoryCandidate,
@@ -182,10 +186,61 @@ function normalizeTasks(persisted: unknown): Task[] {
   }));
 }
 
+const executorCallStatuses: ExecutorCallStatus[] = ["succeeded", "failed", "skipped", "blocked"];
+const executorDispatchKinds: ExecutorDispatchKind[] = [
+  "local-deterministic",
+  "model-api",
+  "local-model",
+  "local-agent",
+  "provider-slot"
+];
+const executorTypes: ExecutorType[] = ["model-api", "local-model", "local-agent", "asr", "tts", "vision", "deterministic"];
+
+function normalizeExecutorCall(value: unknown): ExecutorCall | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const executorId = typeof value.executorId === "string" ? value.executorId : "";
+  const purpose = typeof value.purpose === "string" ? value.purpose : "Executor dispatch";
+
+  if (!executorId) {
+    return null;
+  }
+
+  return {
+    executorId,
+    executorType:
+      typeof value.executorType === "string" && executorTypes.includes(value.executorType as ExecutorType)
+        ? (value.executorType as ExecutorType)
+        : "deterministic",
+    characterId: typeof value.characterId === "string" ? value.characterId : "orion",
+    purpose,
+    status:
+      typeof value.status === "string" && executorCallStatuses.includes(value.status as ExecutorCallStatus)
+        ? (value.status as ExecutorCallStatus)
+        : "skipped",
+    dispatchKind:
+      typeof value.dispatchKind === "string" && executorDispatchKinds.includes(value.dispatchKind as ExecutorDispatchKind)
+        ? (value.dispatchKind as ExecutorDispatchKind)
+        : "provider-slot",
+    startedAt: typeof value.startedAt === "string" ? value.startedAt : "",
+    completedAt: typeof value.completedAt === "string" ? value.completedAt : null,
+    outputSummary:
+      typeof value.outputSummary === "string"
+        ? value.outputSummary
+        : "Legacy executor call restored without a structured output summary.",
+    disclosure: typeof value.disclosure === "string" ? value.disclosure : "Legacy executor call restored."
+  };
+}
+
 function normalizeTaskRuns(persisted: unknown): TaskRun[] {
   return arrayOrEmpty<TaskRun>(persisted).map((run) => ({
     ...run,
     revisionOfRunId: typeof run.revisionOfRunId === "string" ? run.revisionOfRunId : null,
+    executorCalls: arrayOrEmpty(run.executorCalls)
+      .map(normalizeExecutorCall)
+      .filter((call): call is ExecutorCall => Boolean(call)),
     acceptance:
       isRecord(run.acceptance)
         ? {

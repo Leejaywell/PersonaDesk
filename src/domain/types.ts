@@ -21,6 +21,8 @@ export type TaskRunStatus = "planning" | "running" | "validating" | "delivered" 
 export type SupervisionMode = "supervised" | "unsupervised";
 export type RiskLevel = "low" | "medium" | "high";
 export type TaskAcceptanceStatus = "pending" | "accepted" | "revision-requested";
+export type ExecutorCallStatus = "succeeded" | "failed" | "skipped" | "blocked";
+export type ExecutorDispatchKind = "local-deterministic" | "model-api" | "local-model" | "local-agent" | "provider-slot";
 export type VoiceRequestKind = "asr-transcript" | "tts-preview";
 export type VoiceRequestStatus = "ready" | "configured-not-verified" | "skipped";
 export type VoicePlaybackStatus = "not-requested" | "played" | "unavailable" | "failed";
@@ -190,9 +192,14 @@ export interface TaskStep {
 
 export interface ExecutorCall {
   executorId: string;
+  executorType: ExecutorType;
   characterId: string;
   purpose: string;
-  status: "succeeded" | "failed" | "skipped";
+  status: ExecutorCallStatus;
+  dispatchKind: ExecutorDispatchKind;
+  startedAt: string;
+  completedAt: string | null;
+  outputSummary: string;
   disclosure: string;
 }
 

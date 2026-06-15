@@ -283,6 +283,41 @@ describe("state storage", () => {
     expect(restored.taskRuns[0].revisionOfRunId).toBeNull();
   });
 
+  it("normalizes legacy task executor call records", () => {
+    let state = createInitialState();
+    state = createTask(state, {
+      goal: "Create checklist",
+      constraints: "",
+      desiredOutput: "Checklist",
+      supervisionMode: "unsupervised",
+      authorizationScope: "text-planning-only",
+      allowedExecutorIds: ["local-planner"]
+    });
+    state = runAutonomyCycle(state, state.tasks[0].id);
+    const legacyState = {
+      ...state,
+      taskRuns: state.taskRuns.map((run) => ({
+        ...run,
+        executorCalls: run.executorCalls.map((call) => ({
+          executorId: call.executorId,
+          characterId: call.characterId,
+          purpose: call.purpose,
+          status: call.status,
+          disclosure: call.disclosure
+        }))
+      }))
+    };
+
+    const restored = deserializeState(JSON.stringify({ version: 1, state: legacyState }));
+
+    expect(restored.taskRuns[0].executorCalls[0]).toMatchObject({
+      executorId: "local-planner",
+      executorType: "deterministic",
+      dispatchKind: "provider-slot",
+      outputSummary: "Legacy executor call restored without a structured output summary."
+    });
+  });
+
   it("normalizes old conversation messages with missing source event ids", () => {
     const state = createInitialState();
     const restored = deserializeState(

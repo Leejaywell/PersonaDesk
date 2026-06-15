@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Task, TaskRun } from "../../domain/types";
-import { StatusPill } from "../ui/StatusPill";
+import { StatusPill, statusLabel } from "../ui/StatusPill";
 
 export function TaskCard({
   run,
@@ -62,9 +62,18 @@ export function TaskCard({
             <article className="summary-card" key={`${run.id}-${call.executorId}-${call.purpose}`}>
               <div className="task-card-header">
                 <strong>{call.executorId}</strong>
-                <StatusPill>{call.status}</StatusPill>
+                <StatusPill status={call.status} />
+              </div>
+              <div className="task-meta-row">
+                <span className="meta-chip">Type: {call.executorType}</span>
+                <span className="meta-chip">Dispatch: {call.dispatchKind}</span>
+                <span className="meta-chip">Started: {call.startedAt || "legacy"}</span>
+                <span className="meta-chip">Completed: {call.completedAt ?? "pending"}</span>
               </div>
               <p>{call.purpose}</p>
+              <p>
+                <strong>{statusLabel(call.status)}:</strong> {call.outputSummary}
+              </p>
               <p>{call.disclosure}</p>
             </article>
           ))}

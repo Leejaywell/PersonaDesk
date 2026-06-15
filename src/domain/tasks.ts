@@ -2,6 +2,10 @@ import { executorDisclosure, routeExecutorForTask } from "./executors";
 import type {
   ApprovalRequest,
   Artifact,
+  Executor,
+  ExecutorCall,
+  ExecutorCallStatus,
+  ExecutorDispatchKind,
   ObservationSummary,
   PersonaDeskState,
   SupervisionMode,
@@ -63,6 +67,86 @@ function observationLog(summaries: ObservationSummary[]): string {
   return summaries.length > 0
     ? "Task characters used allowlisted local observation summaries as text-only context; raw screen frames were not accessed."
     : "No observation summary text was added to this task run.";
+}
+
+function dispatchKindForExecutor(executor: Executor): ExecutorDispatchKind {
+  if (executor.type === "deterministic") {
+    return "local-deterministic";
+  }
+
+  if (executor.type === "model-api" || executor.type === "local-model" || executor.type === "local-agent") {
+    return executor.type;
+  }
+
+  return "provider-slot";
+}
+
+function canProduceTaskArtifact(executor: Executor): boolean {
+  return executor.type === "deterministic" && executor.status === "available";
+}
+
+function blockedExecutorCallStatus(executor: Executor): ExecutorCallStatus {
+  return executor.status === "available" ? "blocked" : "skipped";
+}
+
+function createExecutorCall(
+  executor: Executor,
+  purpose: string,
+  status: ExecutorCallStatus,
+  outputSummary: string
+): ExecutorCall {
+  const timestamp = nowIso();
+  const completedAt =
+    status === "succeeded" || status === "failed" || status === "skipped" || status === "blocked" ? timestamp : null;
+
+  return {
+    executorId: executor.id,
+    executorType: executor.type,
+    characterId: "orion",
+    purpose,
+    status,
+    dispatchKind: dispatchKindForExecutor(executor),
+    startedAt: timestamp,
+    completedAt,
+    outputSummary,
+    disclosure: executorDisclosure(executor)
+  };
+}
+
+function taskExecutorPurpose(kind: "plan" | "revision"): string {
+  return kind === "plan"
+    ? "Create a task plan and delivery artifact with an allowed executor."
+    : "Revise the delivered artifact with an allowed executor.";
+}
+
+function blockedExecutorOutput(executor: Executor): string {
+  if (executor.status !== "available") {
+    return "No executor dispatch was sent because the selected provider is not available. No network request, model call, process launch, or secret read was attempted.";
+  }
+
+  if (executor.type === "local-agent") {
+    return "PersonaDesk confirmed the local agent slot is available, but Phase 1 has not wired the guarded launch adapter for task execution. No local agent process was started.";
+  }
+
+  if (executor.type === "model-api" || executor.type === "local-model") {
+    return "PersonaDesk found a callable-looking provider slot, but Phase 1 has not wired the task execution adapter for this executor type. No prompt or task data was sent.";
+  }
+
+  return "PersonaDesk did not dispatch this executor type for task execution in Phase 1.";
+}
+
+function blockedExecutorDecision(executor: Executor, task: Task, kind: "plan" | "revision"): string {
+  if (executor.status !== "available") {
+    return `Paused because the task allowed-executor list does not include an available ${kind === "plan" ? "planning" : "revision"} executor.`;
+  }
+
+  return `Paused because ${executor.displayName} is allowed but has no Phase 1 task execution adapter. Allowed executors: ${task.allowedExecutorIds.join(", ")}.`;
+}
+
+function blockedExecutorFinalSummary(executor: Executor): string {
+  return executor.status === "available"
+    ? "Task is blocked because the selected executor has no Phase 1 execution adapter."
+    : "Task is blocked because no allowed executor is available.";
 }
 
 export function createTask(state: PersonaDeskState, input: CreateTaskInput): PersonaDeskState {
@@ -168,7 +252,15 @@ export function runAutonomyCycle(state: PersonaDeskState, taskId: string): Perso
     allowedExecutorIds: task.allowedExecutorIds
   });
 
-  if (executor.status !== "available") {
+  const executorPurpose = taskExecutorPurpose("plan");
+
+  if (!canProduceTaskArtifact(executor)) {
+    const executorCall = createExecutorCall(
+      executor,
+      executorPurpose,
+      blockedExecutorCallStatus(executor),
+      blockedExecutorOutput(executor)
+    );
     const blockedRun: TaskRun = {
       id: createId("task-run"),
       taskId: task.id,
@@ -176,25 +268,17 @@ export function runAutonomyCycle(state: PersonaDeskState, taskId: string): Perso
       status: "blocked",
       assignedCharacters,
       taskTree: taskTree.map((step) => ({ ...step, status: "blocked" })),
-      executorCalls: [
-        {
-          executorId: executor.id,
-          characterId: "orion",
-          purpose: "Create a task plan and delivery artifact with an allowed executor.",
-          status: "skipped",
-          disclosure: executorDisclosure(executor)
-        }
-      ],
+      executorCalls: [executorCall],
       decisions: [
-        "Paused because the task allowed-executor list does not include an available planning executor.",
-        `Allowed executors: ${task.allowedExecutorIds.join(", ")}.`
+        blockedExecutorDecision(executor, task, "plan"),
+        ...(executor.status !== "available" ? [`Allowed executors: ${task.allowedExecutorIds.join(", ")}.`] : [])
       ],
-      logs: ["No task artifact was produced because no allowed executor was available."],
+      logs: [executorCall.outputSummary],
       validationResults: [],
       artifacts: [],
       approvalRequests: [],
       acceptance: null,
-      finalSummary: "Task is blocked because no allowed executor is available."
+      finalSummary: blockedExecutorFinalSummary(executor)
     };
 
     return appendRun(state, task.id, blockedRun, "blocked");
@@ -212,13 +296,12 @@ export function runAutonomyCycle(state: PersonaDeskState, taskId: string): Perso
     assignedCharacters,
     taskTree: taskTree.map((step) => ({ ...step, status: passed ? "completed" : "blocked" })),
     executorCalls: [
-      {
-        executorId: executor.id,
-        characterId: "orion",
-        purpose: "Create a deterministic task plan and delivery artifact.",
-        status: executor.status === "available" ? "succeeded" : "skipped",
-        disclosure: executorDisclosure(executor)
-      }
+      createExecutorCall(
+        executor,
+        "Create a deterministic task plan and delivery artifact.",
+        "succeeded",
+        "Produced one local deterministic planning artifact in the app runtime. No model provider, local model server, or local agent process was called."
+      )
     ],
     decisions: [
       "Used the local deterministic planner because no configured model API is required for text planning.",
@@ -426,7 +509,15 @@ export function runTaskRevision(state: PersonaDeskState, taskId: string, previou
     allowedExecutorIds: task.allowedExecutorIds
   });
 
-  if (executor.status !== "available") {
+  const executorPurpose = taskExecutorPurpose("revision");
+
+  if (!canProduceTaskArtifact(executor)) {
+    const executorCall = createExecutorCall(
+      executor,
+      executorPurpose,
+      blockedExecutorCallStatus(executor),
+      blockedExecutorOutput(executor)
+    );
     const blockedRun: TaskRun = {
       id: createId("task-run"),
       taskId: task.id,
@@ -434,25 +525,18 @@ export function runTaskRevision(state: PersonaDeskState, taskId: string, previou
       status: "blocked",
       assignedCharacters,
       taskTree: taskTree.map((step) => ({ ...step, status: "blocked" })),
-      executorCalls: [
-        {
-          executorId: executor.id,
-          characterId: "orion",
-          purpose: "Revise the delivered artifact with an allowed executor.",
-          status: "skipped",
-          disclosure: executorDisclosure(executor)
-        }
-      ],
+      executorCalls: [executorCall],
       decisions: [
-        "Paused because the task allowed-executor list does not include an available revision executor.",
+        blockedExecutorDecision(executor, task, "revision"),
+        ...(executor.status !== "available" ? [`Allowed executors: ${task.allowedExecutorIds.join(", ")}.`] : []),
         `Revision feedback preserved: ${revisionFeedback}`
       ],
-      logs: ["No revised artifact was produced because no allowed executor was available."],
+      logs: [executorCall.outputSummary],
       validationResults: [],
       artifacts: [],
       approvalRequests: [],
       acceptance: null,
-      finalSummary: "Task revision is blocked because no allowed executor is available."
+      finalSummary: blockedExecutorFinalSummary(executor)
     };
 
     return appendRun(state, task.id, blockedRun, "blocked");
@@ -470,13 +554,12 @@ export function runTaskRevision(state: PersonaDeskState, taskId: string, previou
     assignedCharacters,
     taskTree: taskTree.map((step) => ({ ...step, status: passed ? "completed" : "blocked" })),
     executorCalls: [
-      {
-        executorId: executor.id,
-        characterId: "orion",
-        purpose: "Revise the deterministic task artifact from user feedback.",
-        status: "succeeded",
-        disclosure: executorDisclosure(executor)
-      }
+      createExecutorCall(
+        executor,
+        "Revise the deterministic task artifact from user feedback.",
+        "succeeded",
+        "Produced one revised local deterministic planning artifact in the app runtime. No model provider, local model server, or local agent process was called."
+      )
     ],
     decisions: [
       "Used the local deterministic planner to revise the delivered artifact.",

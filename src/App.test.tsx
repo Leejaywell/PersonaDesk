@@ -243,6 +243,8 @@ describe("PersonaDesk app", () => {
 
     expect(await screen.findByText("Delivered")).toBeInTheDocument();
     expect(screen.getAllByText(/privacy checklist/i).length).toBeGreaterThan(0);
+    expect(screen.getByText("Dispatch: local-deterministic")).toBeInTheDocument();
+    expect(screen.getByText(/Produced one local deterministic planning artifact/i)).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /Desktop/i }));
     expect(screen.getByText(/land as delivered/)).toBeInTheDocument();
@@ -341,7 +343,32 @@ describe("PersonaDesk app", () => {
 
     expect(await screen.findByText("Task is blocked because no allowed executor is available.")).toBeInTheDocument();
     expect(screen.getByText("Allowed executors: openai-compatible")).toBeInTheDocument();
+    expect(screen.getByText("Dispatch: model-api")).toBeInTheDocument();
+    expect(screen.getByText(/No executor dispatch was sent/i)).toBeInTheDocument();
     expect(screen.getByText(/OpenAI-compatible chat API is unconfigured/)).toBeInTheDocument();
+  });
+
+  it("blocks a detected local agent task instead of pretending the agent ran", async () => {
+    const user = userEvent.setup();
+    scanLocalAgentsMock.mockResolvedValue({
+      agents: [{ id: "codex-cli", displayName: "Codex CLI", available: true, version: "codex 1.2.3" }],
+      message: "Scanned 1 known local agent slot."
+    });
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /Executors/i }));
+    await user.click(screen.getByRole("button", { name: "Scan local agents" }));
+    expect(await screen.findByText("Scanned 1 known local agent slot.")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Tasks/i }));
+    await user.click(screen.getByLabelText(/Allow Local deterministic planner/i));
+    await user.click(screen.getByLabelText(/Allow Codex CLI/i));
+    await user.type(screen.getByLabelText("Task goal"), "Implement a local agent only change");
+    await user.click(screen.getByRole("button", { name: "Run autonomous task" }));
+
+    expect(await screen.findByText("Task is blocked because the selected executor has no Phase 1 execution adapter.")).toBeInTheDocument();
+    expect(screen.getByText("Dispatch: local-agent")).toBeInTheDocument();
+    expect(screen.getByText(/No local agent process was started/i)).toBeInTheDocument();
   });
 
   it("can review memory layer, owner, sensitivity, and sync policy before confirmation", async () => {

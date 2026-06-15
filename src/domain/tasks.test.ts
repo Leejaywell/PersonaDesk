@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createInitialState } from "./defaultState";
+import { mergeDetectedLocalAgents } from "./executors";
 import { startObservationSession, summarizeObservationEvent } from "./observation";
 import {
   createTask,
@@ -28,6 +29,15 @@ describe("task autonomy", () => {
     expect(run.taskTree.length).toBeGreaterThan(0);
     expect(run.validationResults.every((result) => result.passed)).toBe(true);
     expect(run.artifacts[0].content).toContain("PersonaDesk");
+    expect(run.executorCalls[0]).toMatchObject({
+      executorId: "local-planner",
+      executorType: "deterministic",
+      status: "succeeded",
+      dispatchKind: "local-deterministic"
+    });
+    expect(run.executorCalls[0].outputSummary).toContain("No model provider");
+    expect(run.executorCalls[0].startedAt).toBeTruthy();
+    expect(run.executorCalls[0].completedAt).toBeTruthy();
     expect(state.tasks[0].allowedExecutorIds).toEqual(["local-planner"]);
     expect(run.acceptance).toMatchObject({
       status: "pending",
@@ -129,9 +139,41 @@ describe("task autonomy", () => {
     expect(run.executorCalls).toHaveLength(1);
     expect(run.executorCalls[0]).toMatchObject({
       executorId: "openai-compatible",
-      status: "skipped"
+      executorType: "model-api",
+      status: "skipped",
+      dispatchKind: "model-api"
     });
+    expect(run.executorCalls[0].outputSummary).toContain("No executor dispatch was sent");
     expect(run.finalSummary).toContain("no allowed executor is available");
+  });
+
+  it("does not pretend a detected local agent executed without a guarded adapter", () => {
+    let state = createInitialState();
+    state = mergeDetectedLocalAgents(state, [
+      { id: "codex-cli", displayName: "Codex CLI", available: true, version: "codex 1.2.3" }
+    ]);
+    state = createTask(state, {
+      goal: "Implement a small code change",
+      constraints: "Use only Codex if available",
+      desiredOutput: "Patch summary",
+      supervisionMode: "unsupervised",
+      authorizationScope: "text-planning-only",
+      allowedExecutorIds: ["codex-cli"]
+    });
+
+    state = runAutonomyCycle(state, state.tasks[0].id);
+
+    const run = state.taskRuns[0];
+    expect(run.status).toBe("blocked");
+    expect(run.artifacts).toEqual([]);
+    expect(run.executorCalls[0]).toMatchObject({
+      executorId: "codex-cli",
+      executorType: "local-agent",
+      status: "blocked",
+      dispatchKind: "local-agent"
+    });
+    expect(run.executorCalls[0].outputSummary).toContain("No local agent process was started");
+    expect(run.finalSummary).toContain("no Phase 1 execution adapter");
   });
 
   it("pauses when a task asks for access outside authorization scope", () => {

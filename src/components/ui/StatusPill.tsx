@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type {
   DesktopPresenceAuditStatus,
+  ExecutorCallStatus,
   ExecutorHealthCheckStatus,
   ExecutorStatus,
   TaskAcceptanceStatus,
@@ -12,6 +13,7 @@ import type {
 
 export type DisplayStatus =
   | ExecutorStatus
+  | ExecutorCallStatus
   | TaskAcceptanceStatus
   | TaskRunStatus
   | TaskStatus
@@ -37,7 +39,8 @@ export function statusClass(status: DisplayStatus): string {
     status === "active" ||
     status === "ready" ||
     status === "played" ||
-    status === "sent"
+    status === "sent" ||
+    status === "succeeded"
   ) {
     return "status-ok";
   }
