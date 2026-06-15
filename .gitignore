@@ -64,6 +64,7 @@ coverage/
 # Rust and Tauri build output
 target/
 src-tauri/target/
+src-tauri/gen/
 **/*.rs.bk
 
 # Desktop packaging artifacts

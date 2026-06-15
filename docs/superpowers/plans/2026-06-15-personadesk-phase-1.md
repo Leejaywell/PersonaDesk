@@ -362,7 +362,7 @@ git commit -m "feat: add confirmed memory workflow"
 - Create: `src-tauri/src/agent_detection.rs`
 - Modify: `src-tauri/src/main.rs`
 
-- [ ] **Step 1: Write failing TypeScript tests**
+- [x] **Step 1: Write failing TypeScript tests**
 
 Create `src/domain/executors.test.ts`:
 
@@ -395,7 +395,7 @@ describe("executor routing", () => {
 });
 ```
 
-- [ ] **Step 2: Run the test and verify it fails**
+- [x] **Step 2: Run the test and verify it fails**
 
 Run:
 
@@ -405,7 +405,7 @@ npm test -- src/domain/executors.test.ts
 
 Expected: FAIL because `executors.ts` does not exist.
 
-- [ ] **Step 3: Implement TypeScript executor logic**
+- [x] **Step 3: Implement TypeScript executor logic**
 
 Create:
 
@@ -415,7 +415,7 @@ Create:
 
 The router must return an available executor or a clearly unavailable executor with a status reason. It must never return `available` for unconfigured model APIs.
 
-- [ ] **Step 4: Implement Rust local agent detection**
+- [x] **Step 4: Implement Rust local agent detection**
 
 Create `src-tauri/src/agent_detection.rs` with:
 
@@ -430,7 +430,7 @@ Modify `src-tauri/src/main.rs` to expose:
 .invoke_handler(tauri::generate_handler![platform_name, detect_local_agents])
 ```
 
-- [ ] **Step 5: Run tests**
+- [x] **Step 5: Run tests**
 
 Run:
 
@@ -441,7 +441,7 @@ cargo test --manifest-path src-tauri/Cargo.toml
 
 Expected: TypeScript tests PASS and Rust tests PASS.
 
-- [ ] **Step 6: Commit executors**
+- [x] **Step 6: Commit executors**
 
 ```bash
 git add src/domain/executors.ts src/domain/executors.test.ts src-tauri/src/main.rs src-tauri/src/agent_detection.rs
