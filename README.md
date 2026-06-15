@@ -54,6 +54,10 @@ This repository currently implements the Phase 1 thin slice from the design spec
   - Executors: model API, local model, local agent, deterministic, ASR, TTS, and vision provider status.
   - Privacy: observation allowlists, local summaries, and optional sync boundaries.
 - Manual local agent scan from the Executors section, backed by a Rust/Tauri safe detection command.
+- Provider configuration metadata for model API, local model, ASR, TTS, and vision slots:
+  - stores endpoint/model/secret-reference notes,
+  - does not store raw secrets,
+  - marks providers as configured but not verified or callable.
 
 ## What Is Not Pretended
 

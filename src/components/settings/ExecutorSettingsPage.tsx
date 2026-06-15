@@ -1,4 +1,5 @@
 import { Bot, Mic, Search } from "lucide-react";
+import type { FormEvent } from "react";
 import type { AppActions } from "../../app/actions";
 import { executorDisclosure } from "../../domain/executors";
 import type { Executor } from "../../domain/types";
@@ -16,6 +17,21 @@ export function ExecutorSettingsPage({
   scanStatus: string;
 }) {
   const voiceExecutors = executors.filter((executor) => executor.type === "asr" || executor.type === "tts");
+  const configurableExecutors = executors.filter(
+    (executor) => executor.type !== "deterministic" && executor.type !== "local-agent"
+  );
+
+  function saveExecutorConfiguration(event: FormEvent<HTMLFormElement>, executorId: string) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+
+    actions.configureExecutor(executorId, {
+      endpoint: String(form.get("endpoint") ?? ""),
+      model: String(form.get("model") ?? ""),
+      secretRef: String(form.get("secretRef") ?? ""),
+      notes: String(form.get("notes") ?? "")
+    });
+  }
 
   return (
     <div className="page-grid executor-page">
@@ -44,6 +60,49 @@ export function ExecutorSettingsPage({
               </div>
               <StatusPill status={executor.status} />
             </article>
+          ))}
+        </div>
+      </Panel>
+
+      <Panel
+        className="wide-panel"
+        description="Save provider metadata without storing raw secrets or marking providers as verified."
+        title="Provider Configuration"
+      >
+        <div className="executor-config-list">
+          {configurableExecutors.map((executor) => (
+            <form
+              className="executor-config-card"
+              key={executor.id}
+              onSubmit={(event) => saveExecutorConfiguration(event, executor.id)}
+            >
+              <div className="task-card-header">
+                <div>
+                  <h3>{executor.displayName}</h3>
+                  <p>{executor.statusReason}</p>
+                </div>
+                <StatusPill status={executor.status} />
+              </div>
+              <div className="settings-grid">
+                <label>
+                  {executor.displayName} endpoint / base URL
+                  <input defaultValue={executor.configuration.endpoint} name="endpoint" />
+                </label>
+                <label>
+                  {executor.displayName} model / voice
+                  <input defaultValue={executor.configuration.model} name="model" />
+                </label>
+                <label>
+                  {executor.displayName} secret reference
+                  <input defaultValue={(executor.configuration.secretRef || executor.requiredSecret) ?? ""} name="secretRef" />
+                </label>
+                <label>
+                  {executor.displayName} notes
+                  <input defaultValue={executor.configuration.notes} name="notes" />
+                </label>
+              </div>
+              <button type="submit">Save {executor.displayName} configuration</button>
+            </form>
           ))}
         </div>
       </Panel>

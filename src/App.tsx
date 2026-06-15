@@ -15,7 +15,7 @@ import {
   rejectCharacterDraft as rejectDraft
 } from "./domain/characterDrafts";
 import { updateCharacterSettings } from "./domain/characters";
-import { mergeDetectedLocalAgents } from "./domain/executors";
+import { configureExecutor, mergeDetectedLocalAgents } from "./domain/executors";
 import { confirmMemoryCandidate as confirmMemory, rejectMemoryCandidate as rejectMemory } from "./domain/memory";
 import {
   approveCloudVisionUpload,
@@ -166,6 +166,8 @@ export default function App() {
     addObservationSummary,
     approveCloudVisionUpload: approveCloudVision,
     scanLocalAgents,
+    configureExecutor: (executorId: string, configuration: Parameters<typeof configureExecutor>[2]) =>
+      setState((current) => configureExecutor(current, executorId, configuration)),
     setSyncEnabled: (enabled: boolean) =>
       updateState({
         ...state,

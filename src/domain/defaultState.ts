@@ -1,5 +1,13 @@
 import type { Character, Executor, PersonaDeskState, RoleBoundary } from "./types";
 
+const emptyExecutorConfiguration = {
+  endpoint: "",
+  model: "",
+  secretRef: "",
+  notes: "",
+  configuredAt: null
+};
+
 const supportedStates = [
   "idle",
   "listening",
@@ -223,7 +231,8 @@ const executors: Executor[] = [
     requiredSecret: null,
     status: "available",
     statusReason: "Runs deterministic planning logic in the app; it is not an AI model.",
-    detectionSource: "built-in"
+    detectionSource: "built-in",
+    configuration: emptyExecutorConfiguration
   },
   {
     id: "openai-compatible",
@@ -238,7 +247,11 @@ const executors: Executor[] = [
     requiredSecret: "OPENAI_COMPATIBLE_API_KEY",
     status: "unconfigured",
     statusReason: "No endpoint or API key configured.",
-    detectionSource: "user-config"
+    detectionSource: "user-config",
+    configuration: {
+      ...emptyExecutorConfiguration,
+      secretRef: "OPENAI_COMPATIBLE_API_KEY"
+    }
   },
   {
     id: "local-model-server",
@@ -253,7 +266,8 @@ const executors: Executor[] = [
     requiredSecret: null,
     status: "unconfigured",
     statusReason: "No local model endpoint configured.",
-    detectionSource: "user-config"
+    detectionSource: "user-config",
+    configuration: emptyExecutorConfiguration
   },
   {
     id: "codex-cli",
@@ -268,7 +282,8 @@ const executors: Executor[] = [
     requiredSecret: null,
     status: "missing",
     statusReason: "Not detected yet. Run local agent detection to verify.",
-    detectionSource: "safe-detection"
+    detectionSource: "safe-detection",
+    configuration: emptyExecutorConfiguration
   },
   {
     id: "asr-provider",
@@ -283,7 +298,8 @@ const executors: Executor[] = [
     requiredSecret: null,
     status: "unconfigured",
     statusReason: "No ASR provider selected.",
-    detectionSource: "user-config"
+    detectionSource: "user-config",
+    configuration: emptyExecutorConfiguration
   },
   {
     id: "tts-provider",
@@ -298,7 +314,8 @@ const executors: Executor[] = [
     requiredSecret: null,
     status: "unconfigured",
     statusReason: "No TTS provider selected.",
-    detectionSource: "user-config"
+    detectionSource: "user-config",
+    configuration: emptyExecutorConfiguration
   },
   {
     id: "vision-provider",
@@ -313,7 +330,8 @@ const executors: Executor[] = [
     requiredSecret: null,
     status: "unconfigured",
     statusReason: "No vision provider selected. Cloud vision review requires explicit user approval.",
-    detectionSource: "user-config"
+    detectionSource: "user-config",
+    configuration: emptyExecutorConfiguration
   }
 ];
 

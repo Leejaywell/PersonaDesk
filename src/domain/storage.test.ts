@@ -69,6 +69,7 @@ describe("state storage", () => {
     expect(restored.executors.find((executor) => executor.id === "vision-provider")?.status).toBe("unconfigured");
     expect(restored.executors.find((executor) => executor.id === "codex-cli")?.status).toBe("available");
     expect(restored.executors.find((executor) => executor.id === "codex-cli")?.statusReason).toContain("codex 1.2.3");
+    expect(restored.executors.find((executor) => executor.id === "codex-cli")?.configuration.endpoint).toBe("");
   });
 
   it("merges default sync classes while preserving persisted sync settings", () => {

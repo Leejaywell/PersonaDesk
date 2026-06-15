@@ -311,10 +311,31 @@ label {
 .card-list,
 .executor-list,
 .task-card-list,
+.executor-config-list,
 .character-settings-editor,
 .memory-review-form {
   display: grid;
   gap: 10px;
+}
+
+.executor-config-card {
+  display: grid;
+  gap: 10px;
+  border: 1px solid #e4ebf3;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fbfdff;
+}
+
+.executor-config-card h3 {
+  margin: 0 0 5px;
+  font-size: 15px;
+}
+
+.executor-config-card p {
+  margin: 0;
+  color: #52606d;
+  font-size: 13px;
 }
 
 .character-select-row {

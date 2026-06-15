@@ -53,6 +53,22 @@ describe("PersonaDesk app", () => {
     expect(scanLocalAgentsMock).toHaveBeenCalledTimes(1);
   });
 
+  it("can save executor provider metadata without marking it available", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /Executors/i }));
+    await user.type(
+      screen.getByLabelText("OpenAI-compatible chat API endpoint / base URL"),
+      "https://api.example.test/v1"
+    );
+    await user.type(screen.getByLabelText("OpenAI-compatible chat API model / voice"), "gpt-compatible");
+    await user.click(screen.getByRole("button", { name: "Save OpenAI-compatible chat API configuration" }));
+
+    expect(screen.getAllByText("Configured").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/does not store raw secrets/).length).toBeGreaterThan(0);
+  });
+
   it("can run a local deterministic task from the UI", async () => {
     const user = userEvent.setup();
     render(<App />);

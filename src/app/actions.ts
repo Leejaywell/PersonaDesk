@@ -1,5 +1,6 @@
 import type { FormEvent } from "react";
 import type { CharacterSettingsUpdate } from "../domain/characters";
+import type { ExecutorConfigurationInput } from "../domain/executors";
 import type { MemoryCandidateReview } from "../domain/memory";
 import type { SupervisionMode } from "../domain/types";
 
@@ -37,4 +38,5 @@ export interface AppActions {
   approveCloudVisionUpload: (sessionId: string, summaryId: string) => void;
   setSyncEnabled: (enabled: boolean) => void;
   scanLocalAgents: () => Promise<void>;
+  configureExecutor: (executorId: string, configuration: ExecutorConfigurationInput) => void;
 }

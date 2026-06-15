@@ -7,7 +7,7 @@ export type ExecutorType =
   | "tts"
   | "vision"
   | "deterministic";
-export type ExecutorStatus = "available" | "unconfigured" | "missing" | "disabled";
+export type ExecutorStatus = "available" | "configured" | "unconfigured" | "missing" | "disabled";
 export type MemoryLayer =
   | "user-profile"
   | "shared-world"
@@ -89,6 +89,14 @@ export interface CharacterDraft {
   createdAt: string;
 }
 
+export interface ExecutorConfiguration {
+  endpoint: string;
+  model: string;
+  secretRef: string;
+  notes: string;
+  configuredAt: string | null;
+}
+
 export interface Executor {
   id: string;
   displayName: string;
@@ -103,6 +111,7 @@ export interface Executor {
   status: ExecutorStatus;
   statusReason: string;
   detectionSource: string;
+  configuration: ExecutorConfiguration;
 }
 
 export interface Task {

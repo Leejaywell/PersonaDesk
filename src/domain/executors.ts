@@ -1,4 +1,4 @@
-import type { Executor, ExecutorStatus, PersonaDeskState } from "./types";
+import type { Executor, ExecutorConfiguration, ExecutorStatus, PersonaDeskState } from "./types";
 
 export interface ExecutorRouteRequest {
   taskCharacterId: string;
@@ -11,6 +11,41 @@ export interface DetectedLocalAgent {
   displayName: string;
   available: boolean;
   version: string | null;
+}
+
+export interface ExecutorConfigurationInput {
+  endpoint: string;
+  model: string;
+  secretRef: string;
+  notes: string;
+}
+
+function nowIso(): string {
+  return new Date().toISOString();
+}
+
+function emptyConfiguration(): ExecutorConfiguration {
+  return {
+    endpoint: "",
+    model: "",
+    secretRef: "",
+    notes: "",
+    configuredAt: null
+  };
+}
+
+function normalizeConfiguration(input: ExecutorConfigurationInput): ExecutorConfiguration {
+  return {
+    endpoint: input.endpoint.trim(),
+    model: input.model.trim(),
+    secretRef: input.secretRef.trim(),
+    notes: input.notes.trim(),
+    configuredAt: nowIso()
+  };
+}
+
+function hasConfiguration(configuration: ExecutorConfiguration): boolean {
+  return Boolean(configuration.endpoint || configuration.model || configuration.secretRef || configuration.notes);
 }
 
 export function routeExecutorForTask(
@@ -84,12 +119,42 @@ export function mergeDetectedLocalAgents(
       statusReason: agent.available
         ? `Detected locally${agent.version ? ` (${agent.version})` : ""}. Use still requires task authorization.`
         : "Executable was not found during safe local detection.",
-      detectionSource: "safe-detection"
+      detectionSource: "safe-detection",
+      configuration: emptyConfiguration()
     }));
 
   return {
     ...state,
     executors: [...mergedExecutors, ...newExecutors]
+  };
+}
+
+export function configureExecutor(
+  state: PersonaDeskState,
+  executorId: string,
+  input: ExecutorConfigurationInput
+): PersonaDeskState {
+  return {
+    ...state,
+    executors: state.executors.map((executor) => {
+      if (executor.id !== executorId || executor.type === "deterministic" || executor.type === "local-agent") {
+        return executor;
+      }
+
+      const configuration = normalizeConfiguration(input);
+      const configured = hasConfiguration(configuration);
+      const nextConfiguration = configured ? configuration : { ...configuration, configuredAt: null };
+
+      return {
+        ...executor,
+        configuration: nextConfiguration,
+        status: configured ? "configured" : "unconfigured",
+        statusReason: configured
+          ? "Configuration metadata saved. PersonaDesk does not store raw secrets and this provider is not verified as callable yet."
+          : "No provider configuration saved.",
+        detectionSource: "user-config"
+      };
+    })
   };
 }
 

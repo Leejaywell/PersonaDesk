@@ -3,6 +3,7 @@ import type {
   Character,
   CloudUploadApproval,
   Executor,
+  ExecutorConfiguration,
   MemoryCandidate,
   MemoryItem,
   ObservationSession,
@@ -91,6 +92,28 @@ function mergeById<T extends { id: string }>(persisted: unknown, defaults: T[]):
   return [...persistedItems, ...missingDefaults];
 }
 
+function defaultConfiguration(): ExecutorConfiguration {
+  return {
+    endpoint: "",
+    model: "",
+    secretRef: "",
+    notes: "",
+    configuredAt: null
+  };
+}
+
+function normalizeExecutors(persisted: unknown, defaults: Executor[]): Executor[] {
+  const defaultById = new Map(defaults.map((executor) => [executor.id, executor]));
+
+  return mergeById<Executor>(persisted, defaults).map((executor) => ({
+    ...executor,
+    configuration: {
+      ...(defaultById.get(executor.id)?.configuration ?? defaultConfiguration()),
+      ...(isRecord(executor.configuration) ? executor.configuration : {})
+    }
+  }));
+}
+
 function mergeRoleBoundaries(persisted: unknown, defaults: Record<string, RoleBoundary>): Record<string, RoleBoundary> {
   return {
     ...defaults,
@@ -126,7 +149,7 @@ function normalizeState(state: PersonaDeskState): PersonaDeskState {
     characters: mergeById<Character>(state.characters, defaults.characters),
     characterDrafts: arrayOrEmpty(state.characterDrafts),
     roleBoundaries: mergeRoleBoundaries(state.roleBoundaries, defaults.roleBoundaries),
-    executors: mergeById<Executor>(state.executors, defaults.executors),
+    executors: normalizeExecutors(state.executors, defaults.executors),
     tasks: arrayOrEmpty<Task>(state.tasks),
     taskRuns: arrayOrEmpty<TaskRun>(state.taskRuns),
     memories: arrayOrEmpty<MemoryItem>(state.memories),
