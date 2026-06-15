@@ -266,7 +266,7 @@ git commit -m "feat: add PersonaDesk domain state"
 - Create: `src/domain/memory.ts`
 - Test: `src/domain/memory.test.ts`
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 Create `src/domain/memory.test.ts`:
 
@@ -316,7 +316,7 @@ describe("memory review", () => {
 });
 ```
 
-- [ ] **Step 2: Run the test and verify it fails**
+- [x] **Step 2: Run the test and verify it fails**
 
 Run:
 
@@ -326,7 +326,7 @@ npm test -- src/domain/memory.test.ts
 
 Expected: FAIL because `memory.ts` does not exist.
 
-- [ ] **Step 3: Implement memory operations**
+- [x] **Step 3: Implement memory operations**
 
 Create functions:
 
@@ -337,7 +337,7 @@ Create functions:
 
 Implementation must be immutable and must not move a candidate into `memories` until `confirmMemoryCandidate` is called.
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run:
 
@@ -347,7 +347,7 @@ npm test -- src/domain/memory.test.ts
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit memory review**
+- [x] **Step 5: Commit memory review**
 
 ```bash
 git add src/domain/memory.ts src/domain/memory.test.ts
