@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
-import type { ExecutorStatus, TaskRunStatus } from "../../domain/types";
+import type { ExecutorStatus, TaskRunStatus, VoiceRequestStatus } from "../../domain/types";
 
-export type DisplayStatus = ExecutorStatus | TaskRunStatus | "active" | "inactive";
+export type DisplayStatus = ExecutorStatus | TaskRunStatus | VoiceRequestStatus | "active" | "inactive";
 
 export function statusLabel(status: DisplayStatus): string {
   return status
@@ -11,7 +11,7 @@ export function statusLabel(status: DisplayStatus): string {
 }
 
 export function statusClass(status: DisplayStatus): string {
-  if (status === "available" || status === "delivered" || status === "active") {
+  if (status === "available" || status === "delivered" || status === "active" || status === "ready") {
     return "status-ok";
   }
 

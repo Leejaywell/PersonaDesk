@@ -80,6 +80,19 @@ describe("PersonaDesk app", () => {
     expect(screen.getAllByText(/does not store raw secrets/).length).toBeGreaterThan(0);
   });
 
+  it("records voice requests as local audit entries without capturing audio", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /Executors/i }));
+    await user.type(screen.getByLabelText("Voice request text"), "Please transcribe this local note.");
+    await user.click(screen.getByRole("button", { name: "Record voice request" }));
+
+    expect(screen.getAllByText("ASR transcript request").length).toBeGreaterThan(0);
+    expect(screen.getByText("Please transcribe this local note.")).toBeInTheDocument();
+    expect(screen.getByText(/no audio was captured, uploaded, generated, or played/i)).toBeInTheDocument();
+  });
+
   it("can run a local deterministic task from the UI", async () => {
     const user = userEvent.setup();
     render(<App />);

@@ -20,6 +20,8 @@ export type TaskStatus = "draft" | "running" | "delivered" | "blocked" | "failed
 export type TaskRunStatus = "planning" | "running" | "validating" | "delivered" | "blocked" | "failed";
 export type SupervisionMode = "supervised" | "unsupervised";
 export type RiskLevel = "low" | "medium" | "high";
+export type VoiceRequestKind = "asr-transcript" | "tts-preview";
+export type VoiceRequestStatus = "ready" | "configured-not-verified" | "skipped";
 
 export interface RoleBoundary {
   id: string;
@@ -121,6 +123,17 @@ export interface ConversationMessage {
   text: string;
   source: "desktop-companion" | "task-reaction";
   sourceEventId: string | null;
+  createdAt: string;
+}
+
+export interface VoiceRequest {
+  id: string;
+  kind: VoiceRequestKind;
+  executorId: string;
+  characterId: string | null;
+  text: string;
+  status: VoiceRequestStatus;
+  disclosure: string;
   createdAt: string;
 }
 
@@ -258,6 +271,7 @@ export interface PersonaDeskState {
   memories: MemoryItem[];
   memoryCandidates: MemoryCandidate[];
   conversationMessages: ConversationMessage[];
+  voiceRequests: VoiceRequest[];
   observationSessions: ObservationSession[];
   syncProfile: SyncProfile;
 }

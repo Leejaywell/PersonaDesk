@@ -2,7 +2,7 @@ import { Bot, Mic, Search } from "lucide-react";
 import type { FormEvent } from "react";
 import type { AppActions } from "../../app/actions";
 import { executorDisclosure } from "../../domain/executors";
-import type { Executor } from "../../domain/types";
+import type { Executor, VoiceRequest } from "../../domain/types";
 import { Panel } from "../ui/Panel";
 import { StatusPill } from "../ui/StatusPill";
 import { VoiceSettingsPanel } from "./VoiceSettingsPanel";
@@ -10,11 +10,13 @@ import { VoiceSettingsPanel } from "./VoiceSettingsPanel";
 export function ExecutorSettingsPage({
   actions,
   executors,
-  scanStatus
+  scanStatus,
+  voiceRequests
 }: {
   actions: AppActions;
   executors: Executor[];
   scanStatus: string;
+  voiceRequests: VoiceRequest[];
 }) {
   const voiceExecutors = executors.filter((executor) => executor.type === "asr" || executor.type === "tts");
   const configurableExecutors = executors.filter(
@@ -112,7 +114,7 @@ export function ExecutorSettingsPage({
         icon={<Mic aria-hidden="true" size={19} />}
         title="Voice Providers"
       >
-        <VoiceSettingsPanel voiceExecutors={voiceExecutors} />
+        <VoiceSettingsPanel actions={actions} voiceExecutors={voiceExecutors} voiceRequests={voiceRequests} />
       </Panel>
     </div>
   );

@@ -28,6 +28,7 @@ import { loadState, saveState } from "./domain/storage";
 import { buildSyncPreview, type SyncPreview } from "./domain/sync";
 import { createTask, grantApprovalScopesAndResumeTask, runAutonomyCycle } from "./domain/tasks";
 import type { PersonaDeskState } from "./domain/types";
+import { createVoiceRequest } from "./domain/voice";
 
 export default function App() {
   const [state, setState] = useState<PersonaDeskState>(() => loadState());
@@ -180,6 +181,8 @@ export default function App() {
     scanLocalAgents,
     configureExecutor: (executorId: string, configuration: Parameters<typeof configureExecutor>[2]) =>
       setState((current) => configureExecutor(current, executorId, configuration)),
+    createVoiceRequest: (input: Parameters<typeof createVoiceRequest>[1]) =>
+      setState((current) => createVoiceRequest(current, input)),
     setSyncEnabled: (enabled: boolean) =>
       updateState({
         ...state,
@@ -227,7 +230,14 @@ export default function App() {
           />
         );
       case "executors":
-        return <ExecutorSettingsPage actions={actions} executors={state.executors} scanStatus={localAgentScanStatus} />;
+        return (
+          <ExecutorSettingsPage
+            actions={actions}
+            executors={state.executors}
+            scanStatus={localAgentScanStatus}
+            voiceRequests={state.voiceRequests}
+          />
+        );
       case "privacy":
         return (
           <PrivacySyncPage

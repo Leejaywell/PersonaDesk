@@ -4,6 +4,7 @@ import { createInitialState } from "./defaultState";
 import { configureExecutor } from "./executors";
 import { confirmMemoryCandidate, proposeMemoryCandidate } from "./memory";
 import { buildSyncPreview } from "./sync";
+import { createVoiceRequest } from "./voice";
 
 describe("sync preview", () => {
   it("includes eligible character definitions and memories when sync is enabled", () => {
@@ -106,5 +107,26 @@ describe("sync preview", () => {
 
     expect(preview.included.some((item) => item.detail.includes("Private desk-side thought"))).toBe(false);
     expect(preview.excluded.some((item) => item.dataClass === "raw-companion-conversations")).toBe(true);
+  });
+
+  it("excludes voice request audit records from sync previews", () => {
+    let state = createInitialState();
+    state = {
+      ...state,
+      syncProfile: {
+        ...state.syncProfile,
+        enabled: true
+      }
+    };
+    state = createVoiceRequest(state, {
+      kind: "tts-preview",
+      executorId: "tts-provider",
+      text: "Read this private note."
+    });
+
+    const preview = buildSyncPreview(state);
+
+    expect(preview.included.some((item) => item.detail.includes("Read this private note"))).toBe(false);
+    expect(preview.excluded.some((item) => item.dataClass === "raw-audio")).toBe(true);
   });
 });

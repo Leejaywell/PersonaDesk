@@ -82,6 +82,16 @@ describe("state storage", () => {
     expect(restored.conversationMessages).toEqual([]);
   });
 
+  it("adds missing voice request state for older persisted states", () => {
+    const state = createInitialState();
+    const legacyState = { ...state } as Partial<typeof state>;
+    delete legacyState.voiceRequests;
+
+    const restored = deserializeState(JSON.stringify({ version: 1, state: legacyState }));
+
+    expect(restored.voiceRequests).toEqual([]);
+  });
+
   it("normalizes old conversation messages with missing source event ids", () => {
     const state = createInitialState();
     const restored = deserializeState(

@@ -350,6 +350,7 @@ export function createInitialState(): PersonaDeskState {
     memories: [],
     memoryCandidates: [],
     conversationMessages: [],
+    voiceRequests: [],
     observationSessions: [],
     syncProfile: {
       enabled: false,

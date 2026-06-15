@@ -315,7 +315,9 @@ label {
 .character-settings-editor,
 .memory-review-form,
 .companion-chat-form,
-.conversation-list {
+.conversation-list,
+.voice-settings,
+.voice-request-list {
   display: grid;
   gap: 10px;
 }
@@ -361,6 +363,28 @@ label {
   margin: 0;
   color: #52606d;
   font-size: 13px;
+}
+
+.voice-request-form,
+.voice-request-card {
+  display: grid;
+  gap: 10px;
+  border: 1px solid #e4ebf3;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fbfdff;
+}
+
+.voice-request-list h3 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.voice-request-card p {
+  margin: 0;
+  color: #52606d;
+  font-size: 13px;
+  overflow-wrap: anywhere;
 }
 
 .character-select-row {

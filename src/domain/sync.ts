@@ -112,6 +112,15 @@ export function buildSyncPreview(state: PersonaDeskState): SyncPreview {
     });
   }
 
+  for (const request of state.voiceRequests) {
+    excluded.push({
+      id: `voice-request:${request.id}`,
+      dataClass: "raw-audio",
+      label: request.kind === "asr-transcript" ? "ASR transcript request" : "TTS preview request",
+      reason: "Voice request text and audio-adjacent audit records remain local-only by default."
+    });
+  }
+
   return {
     generatedAt: nowIso(),
     included: state.syncProfile.enabled ? included : [],

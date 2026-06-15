@@ -12,7 +12,8 @@ import type {
   RoleBoundary,
   SyncProfile,
   Task,
-  TaskRun
+  TaskRun,
+  VoiceRequest
 } from "./types";
 
 const STORAGE_VERSION = 2;
@@ -163,6 +164,7 @@ function normalizeState(state: PersonaDeskState): PersonaDeskState {
     memories: arrayOrEmpty<MemoryItem>(state.memories),
     memoryCandidates: arrayOrEmpty<MemoryCandidate>(state.memoryCandidates),
     conversationMessages: normalizeConversationMessages(state.conversationMessages),
+    voiceRequests: arrayOrEmpty<VoiceRequest>(state.voiceRequests),
     observationSessions: arrayOrEmpty<ObservationSession>(state.observationSessions).map(normalizeObservationSession),
     syncProfile: mergeSyncProfile(state.syncProfile, defaults.syncProfile)
   };

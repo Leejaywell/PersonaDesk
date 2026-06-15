@@ -68,13 +68,17 @@ This repository currently implements the Phase 1 thin slice from the design spec
   - stores endpoint/model/secret-reference notes,
   - does not store raw secrets,
   - marks providers as configured but not verified or callable.
+- Voice request audit for ASR/TTS slots:
+  - records transcript and speech-preview requests locally,
+  - reports skipped/configured-not-verified status from the selected provider,
+  - does not capture microphone audio, generate audio, play audio, or upload raw audio in this Phase 1 implementation.
 
 ## What Is Not Pretended
 
 - Cloud model APIs are not treated as available until configured.
 - Local model servers are not treated as available until configured.
 - Codex/Claude/Cursor/Gemini local agents are not treated as available unless safe detection finds them.
-- ASR and TTS are exposed as provider slots, but no provider is selected by default.
+- ASR and TTS are exposed as provider slots and local request audit records, but no microphone capture, transcription adapter, audio generation, or playback adapter is implemented yet.
 - Screen observation stores local summaries only. It does not capture or upload raw frames.
 - Cloud vision approvals are recorded as audit entries only until a real vision provider and upload path are configured.
 - Optional sync is represented by local settings and a local preview. A cloud sync backend is not implemented yet.
