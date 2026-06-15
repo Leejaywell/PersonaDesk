@@ -290,6 +290,20 @@ describe("PersonaDesk app", () => {
     expect(screen.getByText("Cloud vision approved")).toBeInTheDocument();
   });
 
+  it("lets emotional companions react to allowlisted observation summaries", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /Privacy/i }));
+    await user.click(screen.getByRole("button", { name: "Start observation" }));
+    await user.type(screen.getByLabelText("Local summary"), "User reviewed a design document");
+    await user.click(screen.getByRole("button", { name: "Add local summary" }));
+    await user.click(screen.getByRole("button", { name: /Desktop/i }));
+
+    expect(screen.getByText(/I noticed Safari locally/i)).toBeInTheDocument();
+    expect(screen.getByText(/no raw screen frames were captured or uploaded/i)).toBeInTheDocument();
+  });
+
   it("records observation boundary violations for non-allowlisted apps", async () => {
     const user = userEvent.setup();
     render(<App />);

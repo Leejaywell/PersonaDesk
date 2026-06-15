@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { createInitialState } from "./defaultState";
-import { addTaskRunCompanionReactions, sendCompanionMessage } from "./conversation";
+import {
+  addObservationSummaryCompanionReactions,
+  addTaskRunCompanionReactions,
+  sendCompanionMessage
+} from "./conversation";
+import { startObservationSession, summarizeObservationEvent } from "./observation";
 import { createTask, runAutonomyCycle } from "./tasks";
 
 describe("companion conversation", () => {
@@ -67,5 +72,39 @@ describe("companion conversation", () => {
     state = addTaskRunCompanionReactions(state, state.taskRuns[0].id);
 
     expect(state.conversationMessages).toHaveLength(1);
+  });
+
+  it("adds local companion reactions for allowlisted observation summaries", () => {
+    let state = createInitialState();
+    state = startObservationSession(state, ["Safari"]);
+    state = summarizeObservationEvent(state, state.observationSessions[0].id, {
+      appName: "Safari",
+      summary: "User reviewed a design document"
+    });
+    state = addObservationSummaryCompanionReactions(state, state.observationSessions[0].id);
+
+    const summary = state.observationSessions[0].localSummaryStream[0];
+    expect(state.conversationMessages).toHaveLength(1);
+    expect(state.conversationMessages[0]).toMatchObject({
+      characterId: "mira",
+      speaker: "character",
+      source: "observation-reaction",
+      sourceEventId: summary.id
+    });
+    expect(state.conversationMessages[0].text).toContain("User reviewed a design document");
+    expect(state.conversationMessages[0].text).toContain("no raw screen frames");
+  });
+
+  it("does not add companion reactions for blocked observation sources", () => {
+    let state = createInitialState();
+    state = startObservationSession(state, ["Safari"]);
+    state = summarizeObservationEvent(state, state.observationSessions[0].id, {
+      appName: "Terminal",
+      summary: "User ran a command"
+    });
+    state = addObservationSummaryCompanionReactions(state, state.observationSessions[0].id);
+
+    expect(state.observationSessions[0].localSummaryStream).toHaveLength(0);
+    expect(state.conversationMessages).toHaveLength(0);
   });
 });

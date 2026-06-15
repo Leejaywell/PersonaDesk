@@ -23,6 +23,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
 - Desktop companion chat:
   - emotional characters can exchange local deterministic messages with the user,
   - emotional characters with task-comment permission can leave local reactions after task delivery or approval blocks,
+  - emotional characters with observation-summary permission can react to allowlisted local observation summaries,
   - task characters cannot act as desktop companions,
   - no model provider is called by this Phase 1 chat,
   - raw companion conversations remain local-only and are excluded from sync preview.
@@ -56,6 +57,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
   - app allowlists are enforced,
   - non-allowlisted observation events are ignored and recorded in a boundary audit,
   - only local text summaries are stored,
+  - allowlisted local summaries can trigger local companion feedback for permitted emotional characters,
   - cloud vision review requires an explicit approval audit record,
   - approval records do not upload raw screen frames in this Phase 1 implementation,
   - raw screen frames are not stored by this implementation.

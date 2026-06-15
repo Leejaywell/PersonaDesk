@@ -15,7 +15,11 @@ import {
   rejectCharacterDraft as rejectDraft
 } from "./domain/characterDrafts";
 import { updateCharacterSettings } from "./domain/characters";
-import { addTaskRunCompanionReactions, sendCompanionMessage } from "./domain/conversation";
+import {
+  addObservationSummaryCompanionReactions,
+  addTaskRunCompanionReactions,
+  sendCompanionMessage
+} from "./domain/conversation";
 import { configureExecutor, mergeDetectedLocalAgents, recordExecutorHealthCheck } from "./domain/executors";
 import { confirmMemoryCandidate as confirmMemory, rejectMemoryCandidate as rejectMemory } from "./domain/memory";
 import {
@@ -139,12 +143,17 @@ export default function App() {
     }
 
     const appName = observationForm.sourceApp.trim();
-    updateState(
-      summarizeObservationEvent(state, activeObservation.id, {
-        appName,
-        summary: observationForm.summary
-      })
-    );
+    const summarized = summarizeObservationEvent(state, activeObservation.id, {
+      appName,
+      summary: observationForm.summary
+    });
+    const nextSession = summarized.observationSessions.find((session) => session.id === activeObservation.id);
+    const next =
+      nextSession && nextSession.localSummaryStream.length > activeObservation.localSummaryStream.length
+        ? addObservationSummaryCompanionReactions(summarized, activeObservation.id)
+        : summarized;
+
+    updateState(next);
     setObservationForm({ ...observationForm, summary: "" });
   }
 

@@ -134,7 +134,7 @@ export interface ConversationMessage {
   characterId: string;
   speaker: "user" | "character";
   text: string;
-  source: "desktop-companion" | "task-reaction" | "voice-transcript";
+  source: "desktop-companion" | "task-reaction" | "voice-transcript" | "observation-reaction";
   sourceEventId: string | null;
   createdAt: string;
 }
