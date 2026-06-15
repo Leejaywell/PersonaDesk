@@ -175,6 +175,35 @@ describe("state storage", () => {
     const restored = deserializeState(JSON.stringify({ version: 1, state: legacyState }));
 
     expect(restored.voiceRequests[0].routeTarget).toBe("audit-only");
+    expect(restored.voiceRequests[0].playbackStatus).toBe("not-requested");
+    expect(restored.voiceRequests[0].playbackDisclosure).toBe("Playback does not apply to ASR transcript requests.");
+    expect(restored.voiceRequests[0].playedAt).toBeNull();
+  });
+
+  it("defaults older TTS request audits to unplayed local playback state", () => {
+    const state = createInitialState();
+    const legacyState = {
+      ...state,
+      voiceRequests: [
+        {
+          id: "voice-request-tts-legacy",
+          kind: "tts-preview",
+          executorId: "browser-tts",
+          characterId: null,
+          routeTarget: "audit-only",
+          text: "Legacy speech preview",
+          status: "ready",
+          disclosure: "Legacy TTS preview.",
+          createdAt: "2026-06-15T00:00:00.000Z"
+        }
+      ]
+    };
+
+    const restored = deserializeState(JSON.stringify({ version: 2, state: legacyState }));
+
+    expect(restored.voiceRequests[0].playbackStatus).toBe("not-requested");
+    expect(restored.voiceRequests[0].playbackDisclosure).toBe("Speech playback has not been requested yet.");
+    expect(restored.voiceRequests[0].playedAt).toBeNull();
   });
 
   it("adds missing executor health check state for older persisted states", () => {

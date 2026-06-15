@@ -5,6 +5,7 @@ import type {
   TaskAcceptanceStatus,
   TaskRunStatus,
   TaskStatus,
+  VoicePlaybackStatus,
   VoiceRequestStatus
 } from "../../domain/types";
 
@@ -14,6 +15,7 @@ export type DisplayStatus =
   | TaskRunStatus
   | TaskStatus
   | VoiceRequestStatus
+  | VoicePlaybackStatus
   | ExecutorHealthCheckStatus
   | "active"
   | "inactive";
@@ -31,12 +33,19 @@ export function statusClass(status: DisplayStatus): string {
     status === "available" ||
     status === "delivered" ||
     status === "active" ||
-    status === "ready"
+    status === "ready" ||
+    status === "played"
   ) {
     return "status-ok";
   }
 
-  if (status === "blocked" || status === "missing" || status === "failed" || status === "revision-requested") {
+  if (
+    status === "blocked" ||
+    status === "missing" ||
+    status === "failed" ||
+    status === "unavailable" ||
+    status === "revision-requested"
+  ) {
     return "status-risk";
   }
 

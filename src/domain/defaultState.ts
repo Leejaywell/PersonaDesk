@@ -302,6 +302,22 @@ const executors: Executor[] = [
     configuration: emptyExecutorConfiguration
   },
   {
+    id: "browser-tts",
+    displayName: "Local browser speech",
+    type: "tts",
+    capabilities: ["speech-output", "local-browser-speech-synthesis"],
+    modalities: ["text", "audio"],
+    contextLimit: null,
+    costProfile: "local-runtime",
+    latencyProfile: "device-dependent",
+    permissionRiskLevel: "low",
+    requiredSecret: null,
+    status: "available",
+    statusReason: "Uses local Web Speech synthesis when the desktop WebView or browser exposes it.",
+    detectionSource: "runtime-capability",
+    configuration: emptyExecutorConfiguration
+  },
+  {
     id: "tts-provider",
     displayName: "Text-to-speech provider",
     type: "tts",

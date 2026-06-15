@@ -48,6 +48,7 @@ export interface AppActions {
   configureExecutor: (executorId: string, configuration: ExecutorConfigurationInput) => void;
   recordExecutorHealthCheck: (executorId: string) => void;
   createVoiceRequest: (input: VoiceRequestInput) => void;
+  playVoicePreview: (requestId: string) => Promise<void>;
   recordTaskAcceptance: (
     taskId: string,
     runId: string,

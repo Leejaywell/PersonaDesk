@@ -357,6 +357,21 @@ label {
   gap: 10px;
 }
 
+.voice-playback-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-top: 1px solid #e4ebf3;
+  margin-top: 9px;
+  padding-top: 9px;
+}
+
+.voice-playback-row p {
+  flex: 1 1 260px;
+  margin: 0;
+}
+
 .conversation-message {
   border: 1px solid #e4ebf3;
   border-radius: 8px;

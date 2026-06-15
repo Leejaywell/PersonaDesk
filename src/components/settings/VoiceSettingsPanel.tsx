@@ -12,6 +12,10 @@ function matchingType(kind: VoiceRequestKind): Executor["type"] {
   return kind === "asr-transcript" ? "asr" : "tts";
 }
 
+function preferredExecutorId(executors: Executor[]): string {
+  return executors.find((executor) => executor.status === "available")?.id ?? executors[0]?.id ?? "";
+}
+
 export function VoiceSettingsPanel({
   actions,
   emotionalCharacters,
@@ -24,7 +28,9 @@ export function VoiceSettingsPanel({
   voiceRequests: VoiceRequest[];
 }) {
   const [kind, setKind] = useState<VoiceRequestKind>("asr-transcript");
-  const [executorId, setExecutorId] = useState(voiceExecutors.find((executor) => executor.type === "asr")?.id ?? "");
+  const [executorId, setExecutorId] = useState(
+    preferredExecutorId(voiceExecutors.filter((executor) => executor.type === "asr"))
+  );
   const [routeTarget, setRouteTarget] = useState<VoiceRouteTarget>("audit-only");
   const [characterId, setCharacterId] = useState(emotionalCharacters[0]?.id ?? "");
   const [text, setText] = useState("");
@@ -34,12 +40,14 @@ export function VoiceSettingsPanel({
   );
   const selectedExecutorId = matchingExecutors.some((executor) => executor.id === executorId)
     ? executorId
-    : matchingExecutors[0]?.id ?? "";
+    : preferredExecutorId(matchingExecutors);
   const recentRequests = voiceRequests.slice(-5).reverse();
 
   function updateKind(nextKind: VoiceRequestKind) {
+    const nextExecutors = voiceExecutors.filter((executor) => executor.type === matchingType(nextKind));
+
     setKind(nextKind);
-    setExecutorId(voiceExecutors.find((executor) => executor.type === matchingType(nextKind))?.id ?? "");
+    setExecutorId(preferredExecutorId(nextExecutors));
     setRouteTarget("audit-only");
   }
 
@@ -152,6 +160,16 @@ export function VoiceSettingsPanel({
               <StatusPill status={request.status} />
             </div>
             <p>{request.disclosure}</p>
+            {request.kind === "tts-preview" ? (
+              <div className="voice-playback-row">
+                <button onClick={() => void actions.playVoicePreview(request.id)} type="button">
+                  <Volume2 aria-hidden="true" size={15} />
+                  Play local speech preview
+                </button>
+                <StatusPill status={request.playbackStatus} />
+                <p>{request.playbackDisclosure}</p>
+              </div>
+            ) : null}
           </article>
         ))}
       </div>

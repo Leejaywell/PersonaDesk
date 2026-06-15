@@ -89,8 +89,10 @@ This repository currently implements the Phase 1 thin slice from the design spec
 - Voice request audit for ASR/TTS slots:
   - records transcript and speech-preview requests locally,
   - routes manually entered ASR transcript text to companion chat or the task goal draft when selected,
+  - plays TTS preview text through local browser/WebView speech synthesis when available,
+  - records local speech playback status and disclosure on the voice audit entry,
   - reports skipped/configured-not-verified status from the selected provider,
-  - does not capture microphone audio, generate audio, play audio, or upload raw audio in this Phase 1 implementation.
+  - does not capture microphone audio, call external TTS providers, or upload raw audio in this Phase 1 implementation.
 
 ## What Is Not Pretended
 
@@ -98,7 +100,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
 - Local model servers are not treated as available until configured.
 - Codex/Claude/Cursor/Gemini local agents are not treated as available unless safe detection finds them.
 - Tasks only run through executors allowed for that task; unavailable allowed executors create a visible blocked run.
-- ASR and TTS are exposed as provider slots, local request audit records, and manual transcript routing, but no microphone capture, transcription adapter, audio generation, or playback adapter is implemented yet.
+- ASR and TTS are exposed as provider slots, local request audit records, manual transcript routing, and local browser speech playback for TTS previews. Microphone capture, transcription adapters, and external/cloud audio generation are not implemented yet.
 - Screen observation stores local summaries only. It does not capture or upload raw frames.
 - Cloud vision approvals are recorded as audit entries only until a real vision provider and upload path are configured.
 - Optional sync is represented by local settings, a local preview, and local sync package export/import preflight. A cloud sync backend and automatic import merge are not implemented yet.

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import type { SectionId } from "./app/navigation";
 import type { DraftFormState, ObservationFormState, TaskFormState } from "./app/actions";
 import { scanLocalAgents as scanKnownLocalAgents } from "./app/localAgents";
+import { playLocalSpeechPreview } from "./app/voicePlayback";
 import { AppShell } from "./components/layout/AppShell";
 import { CharacterStudioPage } from "./components/characters/CharacterStudioPage";
 import { DesktopStagePage } from "./components/desktop/DesktopStagePage";
@@ -45,7 +46,7 @@ import {
   runTaskRevision
 } from "./domain/tasks";
 import type { PersonaDeskState } from "./domain/types";
-import { createVoiceRequest } from "./domain/voice";
+import { createVoiceRequest, recordVoicePlaybackResult } from "./domain/voice";
 
 export default function App() {
   const [state, setState] = useState<PersonaDeskState>(() => loadState());
@@ -229,6 +230,16 @@ export default function App() {
       if (next !== state && input.kind === "asr-transcript" && input.routeTarget === "task-goal") {
         setTaskForm((current) => ({ ...current, goal: input.text.trim() }));
       }
+    },
+    playVoicePreview: async (requestId: string) => {
+      const request = state.voiceRequests.find((item) => item.id === requestId && item.kind === "tts-preview");
+
+      if (!request) {
+        return;
+      }
+
+      const result = await playLocalSpeechPreview(request.text);
+      setState((current) => recordVoicePlaybackResult(current, requestId, result));
     },
     recordTaskAcceptance: (
       taskId: string,

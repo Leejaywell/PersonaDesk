@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createInitialState } from "./defaultState";
 import { configureExecutor } from "./executors";
-import { createVoiceRequest } from "./voice";
+import { createVoiceRequest, recordVoicePlaybackResult } from "./voice";
 
 describe("voice requests", () => {
   it("records skipped ASR requests when the provider is unconfigured", () => {
@@ -64,6 +64,47 @@ describe("voice requests", () => {
     expect(state.voiceRequests[0].status).toBe("configured-not-verified");
     expect(state.voiceRequests[0].disclosure).toContain("no verified TTS adapter has run");
     expect(state.voiceRequests[0].disclosure).toContain("No audio was generated or played");
+  });
+
+  it("records local browser TTS playback results on preview requests", () => {
+    let state = createVoiceRequest(createInitialState(), {
+      kind: "tts-preview",
+      executorId: "browser-tts",
+      text: "Read this locally."
+    });
+
+    expect(state.voiceRequests[0]).toMatchObject({
+      kind: "tts-preview",
+      executorId: "browser-tts",
+      status: "ready",
+      playbackStatus: "not-requested",
+      playbackDisclosure: "Speech playback has not been requested yet.",
+      playedAt: null
+    });
+
+    state = recordVoicePlaybackResult(state, state.voiceRequests[0].id, {
+      status: "played",
+      disclosure: "Local browser speech synthesis accepted this TTS preview."
+    });
+
+    expect(state.voiceRequests[0].playbackStatus).toBe("played");
+    expect(state.voiceRequests[0].playbackDisclosure).toContain("Local browser speech synthesis");
+    expect(state.voiceRequests[0].playedAt).toBeTruthy();
+  });
+
+  it("does not apply playback results to ASR transcript requests", () => {
+    const initial = createVoiceRequest(createInitialState(), {
+      kind: "asr-transcript",
+      executorId: "asr-provider",
+      text: "Transcript only"
+    });
+
+    const next = recordVoicePlaybackResult(initial, initial.voiceRequests[0].id, {
+      status: "played",
+      disclosure: "Should not apply."
+    });
+
+    expect(next).toBe(initial);
   });
 
   it("ignores mismatched executor types and empty requests", () => {

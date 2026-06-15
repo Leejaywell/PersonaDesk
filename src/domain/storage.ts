@@ -161,7 +161,14 @@ function normalizeVoiceRequests(persisted: unknown): VoiceRequest[] {
     routeTarget:
       request.routeTarget === "companion" || request.routeTarget === "task-goal"
         ? request.routeTarget
-        : "audit-only"
+        : "audit-only",
+    playbackStatus: request.playbackStatus ?? "not-requested",
+    playbackDisclosure:
+      request.playbackDisclosure ??
+      (request.kind === "tts-preview"
+        ? "Speech playback has not been requested yet."
+        : "Playback does not apply to ASR transcript requests."),
+    playedAt: request.playedAt ?? null
   }));
 }
 

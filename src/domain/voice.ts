@@ -2,6 +2,7 @@ import { sendCompanionMessage } from "./conversation";
 import type {
   Executor,
   PersonaDeskState,
+  VoicePlaybackStatus,
   VoiceRequest,
   VoiceRequestKind,
   VoiceRequestStatus,
@@ -14,6 +15,11 @@ export interface VoiceRequestInput {
   characterId?: string | null;
   routeTarget?: VoiceRouteTarget;
   text: string;
+}
+
+export interface VoicePlaybackResult {
+  status: Exclude<VoicePlaybackStatus, "not-requested">;
+  disclosure: string;
 }
 
 function nowIso(): string {
@@ -90,6 +96,12 @@ function voiceDisclosure(
   return `${executor.displayName} is ${executor.status}; no audio was captured, uploaded, generated, or played.${routeDetail}`;
 }
 
+function initialPlaybackDisclosure(kind: VoiceRequestKind): string {
+  return kind === "tts-preview"
+    ? "Speech playback has not been requested yet."
+    : "Playback does not apply to ASR transcript requests.";
+}
+
 export function createVoiceRequest(state: PersonaDeskState, input: VoiceRequestInput): PersonaDeskState {
   const text = input.text.trim();
   const executor = state.executors.find((item) => item.id === input.executorId);
@@ -112,6 +124,9 @@ export function createVoiceRequest(state: PersonaDeskState, input: VoiceRequestI
     routeTarget,
     text,
     status,
+    playbackStatus: "not-requested",
+    playbackDisclosure: initialPlaybackDisclosure(input.kind),
+    playedAt: null,
     disclosure: voiceDisclosure(input.kind, executor, status, routeTarget, routeCharacter?.name),
     createdAt: nowIso()
   };
@@ -130,4 +145,28 @@ export function createVoiceRequest(state: PersonaDeskState, input: VoiceRequestI
     source: "voice-transcript",
     sourceEventId: request.id
   });
+}
+
+export function recordVoicePlaybackResult(
+  state: PersonaDeskState,
+  requestId: string,
+  result: VoicePlaybackResult
+): PersonaDeskState {
+  let updated = false;
+  const voiceRequests = state.voiceRequests.map((request) => {
+    if (request.id !== requestId || request.kind !== "tts-preview") {
+      return request;
+    }
+
+    updated = true;
+
+    return {
+      ...request,
+      playbackStatus: result.status,
+      playbackDisclosure: result.disclosure,
+      playedAt: result.status === "played" ? nowIso() : request.playedAt
+    };
+  });
+
+  return updated ? { ...state, voiceRequests } : state;
 }

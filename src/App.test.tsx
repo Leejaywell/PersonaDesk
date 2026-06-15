@@ -14,6 +14,8 @@ import App from "./App";
 describe("PersonaDesk app", () => {
   beforeEach(() => {
     window.localStorage.clear();
+    Object.defineProperty(window, "speechSynthesis", { value: undefined, configurable: true });
+    Object.defineProperty(window, "SpeechSynthesisUtterance", { value: undefined, configurable: true });
     scanLocalAgentsMock.mockReset();
     scanLocalAgentsMock.mockResolvedValue({
       agents: [],
@@ -118,6 +120,48 @@ describe("PersonaDesk app", () => {
     expect(screen.getByText("Please transcribe this local note.")).toBeInTheDocument();
     expect(screen.getByText(/no audio was captured, uploaded, generated, or played/i)).toBeInTheDocument();
     expect(screen.getByText("Route: audit-only")).toBeInTheDocument();
+  });
+
+  it("plays TTS preview text through local browser speech synthesis when available", async () => {
+    const user = userEvent.setup();
+    class FakeSpeechSynthesisUtterance {
+      onend: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      onstart: (() => void) | null = null;
+
+      constructor(public text: string) {}
+    }
+    const speak = vi.fn((utterance: FakeSpeechSynthesisUtterance) => {
+      utterance.onstart?.();
+    });
+    Object.defineProperty(window, "SpeechSynthesisUtterance", {
+      value: FakeSpeechSynthesisUtterance,
+      configurable: true
+    });
+    Object.defineProperty(window, "speechSynthesis", {
+      value: {
+        cancel: vi.fn(),
+        pending: false,
+        speak,
+        speaking: false
+      },
+      configurable: true
+    });
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /Executors/i }));
+    await user.selectOptions(screen.getByLabelText("Voice request kind"), "tts-preview");
+    expect(screen.getByLabelText("Voice provider")).toHaveValue("browser-tts");
+    await user.type(screen.getByLabelText("Voice request text"), "Read this through local speech.");
+    await user.click(screen.getByRole("button", { name: "Record voice request" }));
+
+    expect(screen.getByText("Read this through local speech.")).toBeInTheDocument();
+    expect(screen.getByText("Not Requested")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Play local speech preview" }));
+
+    expect(speak).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText("Played")).toBeInTheDocument();
+    expect(screen.getByText(/No cloud voice provider was called/i)).toBeInTheDocument();
   });
 
   it("routes ASR transcript text to companion chat", async () => {

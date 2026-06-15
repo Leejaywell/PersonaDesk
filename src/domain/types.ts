@@ -23,6 +23,7 @@ export type RiskLevel = "low" | "medium" | "high";
 export type TaskAcceptanceStatus = "pending" | "accepted" | "revision-requested";
 export type VoiceRequestKind = "asr-transcript" | "tts-preview";
 export type VoiceRequestStatus = "ready" | "configured-not-verified" | "skipped";
+export type VoicePlaybackStatus = "not-requested" | "played" | "unavailable" | "failed";
 export type VoiceRouteTarget = "audit-only" | "companion" | "task-goal";
 export type ExecutorHealthCheckStatus = "ready" | "configured-not-verified" | "skipped" | "missing";
 
@@ -147,6 +148,9 @@ export interface VoiceRequest {
   routeTarget: VoiceRouteTarget;
   text: string;
   status: VoiceRequestStatus;
+  playbackStatus: VoicePlaybackStatus;
+  playbackDisclosure: string;
+  playedAt: string | null;
   disclosure: string;
   createdAt: string;
 }
