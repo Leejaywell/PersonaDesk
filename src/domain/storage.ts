@@ -1,5 +1,17 @@
 import { createInitialState } from "./defaultState";
-import type { CloudUploadApproval, ObservationSession, PersonaDeskState } from "./types";
+import type {
+  Character,
+  CloudUploadApproval,
+  Executor,
+  MemoryCandidate,
+  MemoryItem,
+  ObservationSession,
+  PersonaDeskState,
+  RoleBoundary,
+  SyncProfile,
+  Task,
+  TaskRun
+} from "./types";
 
 const STORAGE_VERSION = 2;
 const STORAGE_KEY = "personadesk-state";
@@ -63,12 +75,64 @@ function normalizeObservationSession(session: ObservationSession): ObservationSe
   };
 }
 
-function normalizeState(state: PersonaDeskState): PersonaDeskState {
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function arrayOrEmpty<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
+function mergeById<T extends { id: string }>(persisted: unknown, defaults: T[]): T[] {
+  const persistedItems = arrayOrEmpty<T>(persisted);
+  const persistedIds = new Set(persistedItems.map((item) => item.id));
+  const missingDefaults = defaults.filter((item) => !persistedIds.has(item.id));
+
+  return [...persistedItems, ...missingDefaults];
+}
+
+function mergeRoleBoundaries(persisted: unknown, defaults: Record<string, RoleBoundary>): Record<string, RoleBoundary> {
   return {
+    ...defaults,
+    ...(isRecord(persisted) ? (persisted as Record<string, RoleBoundary>) : {})
+  };
+}
+
+function mergeList(persisted: unknown, defaults: string[]): string[] {
+  return Array.from(new Set([...defaults, ...arrayOrEmpty<string>(persisted)]));
+}
+
+function mergeSyncProfile(persisted: unknown, defaults: SyncProfile): SyncProfile {
+  if (!isRecord(persisted)) {
+    return defaults;
+  }
+
+  const profile = persisted as Partial<SyncProfile>;
+
+  return {
+    ...defaults,
+    ...profile,
+    allowedDataClasses: mergeList(profile.allowedDataClasses, defaults.allowedDataClasses),
+    localOnlyClasses: mergeList(profile.localOnlyClasses, defaults.localOnlyClasses)
+  };
+}
+
+function normalizeState(state: PersonaDeskState): PersonaDeskState {
+  const defaults = createInitialState();
+
+  return {
+    ...defaults,
     ...state,
-    observationSessions: Array.isArray(state.observationSessions)
-      ? state.observationSessions.map(normalizeObservationSession)
-      : []
+    characters: mergeById<Character>(state.characters, defaults.characters),
+    characterDrafts: arrayOrEmpty(state.characterDrafts),
+    roleBoundaries: mergeRoleBoundaries(state.roleBoundaries, defaults.roleBoundaries),
+    executors: mergeById<Executor>(state.executors, defaults.executors),
+    tasks: arrayOrEmpty<Task>(state.tasks),
+    taskRuns: arrayOrEmpty<TaskRun>(state.taskRuns),
+    memories: arrayOrEmpty<MemoryItem>(state.memories),
+    memoryCandidates: arrayOrEmpty<MemoryCandidate>(state.memoryCandidates),
+    observationSessions: arrayOrEmpty<ObservationSession>(state.observationSessions).map(normalizeObservationSession),
+    syncProfile: mergeSyncProfile(state.syncProfile, defaults.syncProfile)
   };
 }
 

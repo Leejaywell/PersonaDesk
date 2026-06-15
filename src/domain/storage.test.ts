@@ -46,4 +46,54 @@ describe("state storage", () => {
 
     expect(restored.observationSessions[0].cloudUploadApprovals).toEqual([]);
   });
+
+  it("adds new default executors to older persisted states without overwriting user state", () => {
+    const state = createInitialState();
+    const legacyState = {
+      ...state,
+      executors: state.executors
+        .filter((executor) => executor.id !== "vision-provider")
+        .map((executor) =>
+          executor.id === "codex-cli"
+            ? {
+                ...executor,
+                status: "available",
+                statusReason: "Detected locally (codex 1.2.3). Use still requires task authorization."
+              }
+            : executor
+        )
+    };
+
+    const restored = deserializeState(JSON.stringify({ version: 1, state: legacyState }));
+
+    expect(restored.executors.find((executor) => executor.id === "vision-provider")?.status).toBe("unconfigured");
+    expect(restored.executors.find((executor) => executor.id === "codex-cli")?.status).toBe("available");
+    expect(restored.executors.find((executor) => executor.id === "codex-cli")?.statusReason).toContain("codex 1.2.3");
+  });
+
+  it("merges default sync classes while preserving persisted sync settings", () => {
+    const state = createInitialState();
+    const restored = deserializeState(
+      JSON.stringify({
+        version: 1,
+        state: {
+          ...state,
+          syncProfile: {
+            ...state.syncProfile,
+            enabled: true,
+            allowedDataClasses: ["custom-safe-summary"],
+            localOnlyClasses: ["custom-local-secret"],
+            lastSyncStatus: "synced"
+          }
+        }
+      })
+    );
+
+    expect(restored.syncProfile.enabled).toBe(true);
+    expect(restored.syncProfile.lastSyncStatus).toBe("synced");
+    expect(restored.syncProfile.allowedDataClasses).toContain("confirmed-memory-summaries");
+    expect(restored.syncProfile.allowedDataClasses).toContain("custom-safe-summary");
+    expect(restored.syncProfile.localOnlyClasses).toContain("raw-screen-frames");
+    expect(restored.syncProfile.localOnlyClasses).toContain("custom-local-secret");
+  });
 });

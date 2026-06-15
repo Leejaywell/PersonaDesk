@@ -45,6 +45,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
   - approval records do not upload raw screen frames in this Phase 1 implementation,
   - raw screen frames are not stored by this implementation.
 - Versioned localStorage persistence.
+- LocalStorage migration that preserves user state while adding newly introduced default characters, role boundaries, executor slots, and sync data classes.
 - Product navigation for Phase 1 areas:
   - Desktop: emotional presence and light task status.
   - Tasks: task intake, task characters, task cards, validation, artifacts, and approval gates.
