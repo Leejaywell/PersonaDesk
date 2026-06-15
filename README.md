@@ -80,6 +80,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
   - records local executor health-check audits without contacting external providers.
 - Voice request audit for ASR/TTS slots:
   - records transcript and speech-preview requests locally,
+  - routes manually entered ASR transcript text to companion chat or the task goal draft when selected,
   - reports skipped/configured-not-verified status from the selected provider,
   - does not capture microphone audio, generate audio, play audio, or upload raw audio in this Phase 1 implementation.
 
@@ -89,7 +90,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
 - Local model servers are not treated as available until configured.
 - Codex/Claude/Cursor/Gemini local agents are not treated as available unless safe detection finds them.
 - Tasks only run through executors allowed for that task; unavailable allowed executors create a visible blocked run.
-- ASR and TTS are exposed as provider slots and local request audit records, but no microphone capture, transcription adapter, audio generation, or playback adapter is implemented yet.
+- ASR and TTS are exposed as provider slots, local request audit records, and manual transcript routing, but no microphone capture, transcription adapter, audio generation, or playback adapter is implemented yet.
 - Screen observation stores local summaries only. It does not capture or upload raw frames.
 - Cloud vision approvals are recorded as audit entries only until a real vision provider and upload path are configured.
 - Optional sync is represented by local settings and a local preview. A cloud sync backend is not implemented yet.

@@ -23,6 +23,7 @@ export type RiskLevel = "low" | "medium" | "high";
 export type TaskAcceptanceStatus = "pending" | "accepted" | "revision-requested";
 export type VoiceRequestKind = "asr-transcript" | "tts-preview";
 export type VoiceRequestStatus = "ready" | "configured-not-verified" | "skipped";
+export type VoiceRouteTarget = "audit-only" | "companion" | "task-goal";
 export type ExecutorHealthCheckStatus = "ready" | "configured-not-verified" | "skipped" | "missing";
 
 export interface RoleBoundary {
@@ -133,7 +134,7 @@ export interface ConversationMessage {
   characterId: string;
   speaker: "user" | "character";
   text: string;
-  source: "desktop-companion" | "task-reaction";
+  source: "desktop-companion" | "task-reaction" | "voice-transcript";
   sourceEventId: string | null;
   createdAt: string;
 }
@@ -143,6 +144,7 @@ export interface VoiceRequest {
   kind: VoiceRequestKind;
   executorId: string;
   characterId: string | null;
+  routeTarget: VoiceRouteTarget;
   text: string;
   status: VoiceRequestStatus;
   disclosure: string;

@@ -192,8 +192,15 @@ export default function App() {
       setState((current) => configureExecutor(current, executorId, configuration)),
     recordExecutorHealthCheck: (executorId: string) =>
       setState((current) => recordExecutorHealthCheck(current, executorId)),
-    createVoiceRequest: (input: Parameters<typeof createVoiceRequest>[1]) =>
-      setState((current) => createVoiceRequest(current, input)),
+    createVoiceRequest: (input: Parameters<typeof createVoiceRequest>[1]) => {
+      const next = createVoiceRequest(state, input);
+
+      updateState(next);
+
+      if (next !== state && input.kind === "asr-transcript" && input.routeTarget === "task-goal") {
+        setTaskForm((current) => ({ ...current, goal: input.text.trim() }));
+      }
+    },
     recordTaskAcceptance: (
       taskId: string,
       runId: string,
@@ -261,6 +268,7 @@ export default function App() {
         return (
           <ExecutorSettingsPage
             actions={actions}
+            emotionalCharacters={emotionalCharacters}
             executorHealthChecks={state.executorHealthChecks}
             executors={state.executors}
             scanStatus={localAgentScanStatus}

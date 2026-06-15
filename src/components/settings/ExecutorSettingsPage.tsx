@@ -2,19 +2,21 @@ import { Activity, Bot, Mic, Search } from "lucide-react";
 import type { FormEvent } from "react";
 import type { AppActions } from "../../app/actions";
 import { executorDisclosure } from "../../domain/executors";
-import type { Executor, ExecutorHealthCheck, VoiceRequest } from "../../domain/types";
+import type { Character, Executor, ExecutorHealthCheck, VoiceRequest } from "../../domain/types";
 import { Panel } from "../ui/Panel";
 import { StatusPill } from "../ui/StatusPill";
 import { VoiceSettingsPanel } from "./VoiceSettingsPanel";
 
 export function ExecutorSettingsPage({
   actions,
+  emotionalCharacters,
   executors,
   executorHealthChecks,
   scanStatus,
   voiceRequests
 }: {
   actions: AppActions;
+  emotionalCharacters: Character[];
   executors: Executor[];
   executorHealthChecks: ExecutorHealthCheck[];
   scanStatus: string;
@@ -123,7 +125,12 @@ export function ExecutorSettingsPage({
         icon={<Mic aria-hidden="true" size={19} />}
         title="Voice Providers"
       >
-        <VoiceSettingsPanel actions={actions} voiceExecutors={voiceExecutors} voiceRequests={voiceRequests} />
+        <VoiceSettingsPanel
+          actions={actions}
+          emotionalCharacters={emotionalCharacters}
+          voiceExecutors={voiceExecutors}
+          voiceRequests={voiceRequests}
+        />
       </Panel>
 
       <Panel description="Local audit records for executor readiness checks; no external provider is contacted." title="Executor Health Audit">

@@ -155,6 +155,16 @@ function normalizeConversationMessages(persisted: unknown): ConversationMessage[
   }));
 }
 
+function normalizeVoiceRequests(persisted: unknown): VoiceRequest[] {
+  return arrayOrEmpty<VoiceRequest>(persisted).map((request) => ({
+    ...request,
+    routeTarget:
+      request.routeTarget === "companion" || request.routeTarget === "task-goal"
+        ? request.routeTarget
+        : "audit-only"
+  }));
+}
+
 function normalizeTasks(persisted: unknown): Task[] {
   return arrayOrEmpty<Task>(persisted).map((task) => ({
     ...task,
@@ -229,7 +239,7 @@ function normalizeState(state: PersonaDeskState): PersonaDeskState {
     memories: arrayOrEmpty<MemoryItem>(state.memories),
     memoryCandidates: arrayOrEmpty<MemoryCandidate>(state.memoryCandidates),
     conversationMessages: normalizeConversationMessages(state.conversationMessages),
-    voiceRequests: arrayOrEmpty<VoiceRequest>(state.voiceRequests),
+    voiceRequests: normalizeVoiceRequests(state.voiceRequests),
     executorHealthChecks: arrayOrEmpty<ExecutorHealthCheck>(state.executorHealthChecks),
     observationSessions: arrayOrEmpty<ObservationSession>(state.observationSessions).map(normalizeObservationSession),
     syncProfile: mergeSyncProfile(state.syncProfile, defaults.syncProfile)

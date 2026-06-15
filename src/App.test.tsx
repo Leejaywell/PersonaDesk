@@ -97,6 +97,35 @@ describe("PersonaDesk app", () => {
     expect(screen.getAllByText("ASR transcript request").length).toBeGreaterThan(0);
     expect(screen.getByText("Please transcribe this local note.")).toBeInTheDocument();
     expect(screen.getByText(/no audio was captured, uploaded, generated, or played/i)).toBeInTheDocument();
+    expect(screen.getByText("Route: audit-only")).toBeInTheDocument();
+  });
+
+  it("routes ASR transcript text to companion chat", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /Executors/i }));
+    await user.selectOptions(screen.getByLabelText("ASR transcript route"), "companion");
+    await user.selectOptions(screen.getByLabelText("Transcript companion"), "mira");
+    await user.type(screen.getByLabelText("Voice request text"), "Can you stay with this transcript?");
+    await user.click(screen.getByRole("button", { name: "Record voice request" }));
+    await user.click(screen.getByRole("button", { name: /Desktop/i }));
+
+    expect(screen.getByText("Can you stay with this transcript?")).toBeInTheDocument();
+    expect(screen.getByText(/local transcript text/)).toBeInTheDocument();
+  });
+
+  it("routes ASR transcript text into the task goal draft", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /Executors/i }));
+    await user.selectOptions(screen.getByLabelText("ASR transcript route"), "task-goal");
+    await user.type(screen.getByLabelText("Voice request text"), "Create a voice-routed checklist");
+    await user.click(screen.getByRole("button", { name: "Record voice request" }));
+    await user.click(screen.getByRole("button", { name: /Tasks/i }));
+
+    expect(screen.getByLabelText("Task goal")).toHaveValue("Create a voice-routed checklist");
   });
 
   it("can run a local deterministic task from the UI", async () => {

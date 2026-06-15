@@ -17,10 +17,34 @@ describe("voice requests", () => {
       kind: "asr-transcript",
       executorId: "asr-provider",
       characterId: "mira",
+      routeTarget: "audit-only",
       status: "skipped",
       text: "Please transcribe this local note."
     });
     expect(state.voiceRequests[0].disclosure).toContain("no audio was captured");
+  });
+
+  it("routes ASR transcript text to an emotional companion chat", () => {
+    const state = createVoiceRequest(createInitialState(), {
+      kind: "asr-transcript",
+      executorId: "asr-provider",
+      characterId: "mira",
+      routeTarget: "companion",
+      text: "Can you stay with me while I sort this out?"
+    });
+
+    expect(state.voiceRequests).toHaveLength(1);
+    expect(state.voiceRequests[0].routeTarget).toBe("companion");
+    expect(state.voiceRequests[0].disclosure).toContain("routed to Mira");
+    expect(state.conversationMessages).toHaveLength(2);
+    expect(state.conversationMessages[0]).toMatchObject({
+      characterId: "mira",
+      speaker: "user",
+      source: "voice-transcript",
+      sourceEventId: state.voiceRequests[0].id,
+      text: "Can you stay with me while I sort this out?"
+    });
+    expect(state.conversationMessages[1].text).toContain("local transcript text");
   });
 
   it("marks configured TTS requests as configured but not verified", () => {

@@ -3,6 +3,8 @@ import type { ConversationMessage, PersonaDeskState } from "./types";
 export interface CompanionMessageInput {
   characterId: string;
   text: string;
+  source?: ConversationMessage["source"];
+  sourceEventId?: string | null;
 }
 
 function createId(prefix: string): string {
@@ -13,8 +15,12 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
-function deterministicReply(characterName: string, text: string): string {
+function deterministicReply(characterName: string, text: string, source: ConversationMessage["source"]): string {
   const trimmed = text.trim();
+
+  if (source === "voice-transcript") {
+    return `${characterName}: I received this as local transcript text. I can respond here without any model provider or microphone capture.`;
+  }
 
   if (trimmed.endsWith("?")) {
     return `${characterName}: I can stay with this and reflect it back locally. No model provider was called.`;
@@ -36,22 +42,24 @@ export function sendCompanionMessage(state: PersonaDeskState, input: CompanionMe
   }
 
   const timestamp = nowIso();
+  const source = input.source ?? "desktop-companion";
+  const sourceEventId = input.sourceEventId ?? null;
   const userMessage: ConversationMessage = {
     id: createId("conversation-user"),
     characterId: character.id,
     speaker: "user",
     text,
-    source: "desktop-companion",
-    sourceEventId: null,
+    source,
+    sourceEventId,
     createdAt: timestamp
   };
   const characterMessage: ConversationMessage = {
     id: createId("conversation-character"),
     characterId: character.id,
     speaker: "character",
-    text: deterministicReply(character.name, text),
-    source: "desktop-companion",
-    sourceEventId: null,
+    text: deterministicReply(character.name, text, source),
+    source,
+    sourceEventId,
     createdAt: timestamp
   };
 

@@ -1,7 +1,7 @@
 import { Mic, Volume2 } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
 import type { AppActions } from "../../app/actions";
-import type { Executor, VoiceRequest, VoiceRequestKind } from "../../domain/types";
+import type { Character, Executor, VoiceRequest, VoiceRequestKind, VoiceRouteTarget } from "../../domain/types";
 import { StatusPill } from "../ui/StatusPill";
 
 function requestKindLabel(kind: VoiceRequestKind): string {
@@ -14,15 +14,19 @@ function matchingType(kind: VoiceRequestKind): Executor["type"] {
 
 export function VoiceSettingsPanel({
   actions,
+  emotionalCharacters,
   voiceExecutors,
   voiceRequests
 }: {
   actions: AppActions;
+  emotionalCharacters: Character[];
   voiceExecutors: Executor[];
   voiceRequests: VoiceRequest[];
 }) {
   const [kind, setKind] = useState<VoiceRequestKind>("asr-transcript");
   const [executorId, setExecutorId] = useState(voiceExecutors.find((executor) => executor.type === "asr")?.id ?? "");
+  const [routeTarget, setRouteTarget] = useState<VoiceRouteTarget>("audit-only");
+  const [characterId, setCharacterId] = useState(emotionalCharacters[0]?.id ?? "");
   const [text, setText] = useState("");
   const matchingExecutors = useMemo(
     () => voiceExecutors.filter((executor) => executor.type === matchingType(kind)),
@@ -36,6 +40,7 @@ export function VoiceSettingsPanel({
   function updateKind(nextKind: VoiceRequestKind) {
     setKind(nextKind);
     setExecutorId(voiceExecutors.find((executor) => executor.type === matchingType(nextKind))?.id ?? "");
+    setRouteTarget("audit-only");
   }
 
   function submitVoiceRequest(event: FormEvent<HTMLFormElement>) {
@@ -48,7 +53,8 @@ export function VoiceSettingsPanel({
     actions.createVoiceRequest({
       kind,
       executorId: selectedExecutorId,
-      characterId: null,
+      characterId: routeTarget === "companion" ? characterId : null,
+      routeTarget,
       text
     });
     setText("");
@@ -90,6 +96,33 @@ export function VoiceSettingsPanel({
               ))}
             </select>
           </label>
+          {kind === "asr-transcript" ? (
+            <>
+              <label>
+                ASR transcript route
+                <select
+                  value={routeTarget}
+                  onChange={(event) => setRouteTarget(event.target.value as VoiceRouteTarget)}
+                >
+                  <option value="audit-only">Audit only</option>
+                  <option value="companion">Companion chat</option>
+                  <option value="task-goal">Task goal draft</option>
+                </select>
+              </label>
+              {routeTarget === "companion" ? (
+                <label>
+                  Transcript companion
+                  <select value={characterId} onChange={(event) => setCharacterId(event.target.value)}>
+                    {emotionalCharacters.map((character) => (
+                      <option key={character.id} value={character.id}>
+                        {character.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+            </>
+          ) : null}
           <label className="wide-field">
             Voice request text
             <textarea
@@ -114,6 +147,7 @@ export function VoiceSettingsPanel({
               <div>
                 <strong>{requestKindLabel(request.kind)}</strong>
                 <p>{request.text}</p>
+                <small>Route: {request.routeTarget}</small>
               </div>
               <StatusPill status={request.status} />
             </div>

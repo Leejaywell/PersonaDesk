@@ -1,9 +1,18 @@
-import type { Executor, PersonaDeskState, VoiceRequest, VoiceRequestKind, VoiceRequestStatus } from "./types";
+import { sendCompanionMessage } from "./conversation";
+import type {
+  Executor,
+  PersonaDeskState,
+  VoiceRequest,
+  VoiceRequestKind,
+  VoiceRequestStatus,
+  VoiceRouteTarget
+} from "./types";
 
 export interface VoiceRequestInput {
   kind: VoiceRequestKind;
   executorId: string;
   characterId?: string | null;
+  routeTarget?: VoiceRouteTarget;
   text: string;
 }
 
@@ -31,20 +40,54 @@ function voiceStatus(executor: Executor): VoiceRequestStatus {
   return "skipped";
 }
 
-function voiceDisclosure(kind: VoiceRequestKind, executor: Executor, status: VoiceRequestStatus): string {
+function normalizeRouteTarget(kind: VoiceRequestKind, routeTarget: VoiceRouteTarget | undefined): VoiceRouteTarget {
+  if (kind !== "asr-transcript") {
+    return "audit-only";
+  }
+
+  return routeTarget ?? "audit-only";
+}
+
+function routeDisclosure(routeTarget: VoiceRouteTarget, characterName: string | undefined): string {
+  if (routeTarget === "companion") {
+    return characterName
+      ? ` Transcript text was routed to ${characterName}'s local companion chat.`
+      : " Companion routing was requested, but no eligible emotional character was selected.";
+  }
+
+  if (routeTarget === "task-goal") {
+    return " Transcript text is available to copy into the task goal draft locally.";
+  }
+
+  return " Transcript text was kept as a local audit record only.";
+}
+
+function voiceDisclosure(
+  kind: VoiceRequestKind,
+  executor: Executor,
+  status: VoiceRequestStatus,
+  routeTarget: VoiceRouteTarget,
+  characterName: string | undefined
+): string {
+  const routeDetail = kind === "asr-transcript" ? routeDisclosure(routeTarget, characterName) : "";
+
   if (status === "ready") {
-    return kind === "asr-transcript"
+    const base = kind === "asr-transcript"
       ? "Provider is available, but Phase 1 records this transcript request only; no microphone audio was captured automatically."
       : "Provider is available, but Phase 1 records this speech request only; no audio was played automatically.";
+
+    return `${base}${routeDetail}`;
   }
 
   if (status === "configured-not-verified") {
-    return kind === "asr-transcript"
+    const base = kind === "asr-transcript"
       ? "Provider metadata exists, but no verified ASR adapter has run. No microphone audio was captured or uploaded."
       : "Provider metadata exists, but no verified TTS adapter has run. No audio was generated or played.";
+
+    return `${base}${routeDetail}`;
   }
 
-  return `${executor.displayName} is ${executor.status}; no audio was captured, uploaded, generated, or played.`;
+  return `${executor.displayName} is ${executor.status}; no audio was captured, uploaded, generated, or played.${routeDetail}`;
 }
 
 export function createVoiceRequest(state: PersonaDeskState, input: VoiceRequestInput): PersonaDeskState {
@@ -56,19 +99,35 @@ export function createVoiceRequest(state: PersonaDeskState, input: VoiceRequestI
   }
 
   const status = voiceStatus(executor);
+  const routeTarget = normalizeRouteTarget(input.kind, input.routeTarget);
+  const routeCharacter =
+    routeTarget === "companion"
+      ? state.characters.find((character) => character.id === input.characterId && character.kind === "emotional")
+      : undefined;
   const request: VoiceRequest = {
     id: createId("voice-request"),
     kind: input.kind,
     executorId: executor.id,
     characterId: input.characterId ?? null,
+    routeTarget,
     text,
     status,
-    disclosure: voiceDisclosure(input.kind, executor, status),
+    disclosure: voiceDisclosure(input.kind, executor, status, routeTarget, routeCharacter?.name),
     createdAt: nowIso()
   };
-
-  return {
+  const nextState = {
     ...state,
     voiceRequests: [...state.voiceRequests, request]
   };
+
+  if (routeTarget !== "companion" || !routeCharacter) {
+    return nextState;
+  }
+
+  return sendCompanionMessage(nextState, {
+    characterId: routeCharacter.id,
+    text,
+    source: "voice-transcript",
+    sourceEventId: request.id
+  });
 }

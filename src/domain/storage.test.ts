@@ -154,6 +154,29 @@ describe("state storage", () => {
     expect(restored.voiceRequests).toEqual([]);
   });
 
+  it("defaults older voice request audits to audit-only routing", () => {
+    const state = createInitialState();
+    const legacyState = {
+      ...state,
+      voiceRequests: [
+        {
+          id: "voice-request-legacy",
+          kind: "asr-transcript",
+          executorId: "asr-provider",
+          characterId: null,
+          text: "Legacy transcript",
+          status: "skipped",
+          disclosure: "Legacy voice request.",
+          createdAt: "2026-06-15T00:00:00.000Z"
+        }
+      ]
+    };
+
+    const restored = deserializeState(JSON.stringify({ version: 1, state: legacyState }));
+
+    expect(restored.voiceRequests[0].routeTarget).toBe("audit-only");
+  });
+
   it("adds missing executor health check state for older persisted states", () => {
     const state = createInitialState();
     const legacyState = { ...state } as Partial<typeof state>;
