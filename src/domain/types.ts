@@ -72,6 +72,23 @@ export interface Character {
   defaultExecutorId: string | null;
 }
 
+export interface CharacterDraft {
+  id: string;
+  nameSuggestion: string;
+  kind: CharacterKind;
+  relationshipTemplate: string;
+  personaSummary: string;
+  speakingStyle: string;
+  memoryPermissionProfile: string[];
+  appearanceAccent: string;
+  sourceText: string;
+  imageFileName: string | null;
+  imageMimeType: string | null;
+  imageSizeBytes: number | null;
+  disclosures: string[];
+  createdAt: string;
+}
+
 export interface Executor {
   id: string;
   displayName: string;
@@ -203,6 +220,7 @@ export interface SyncProfile {
 
 export interface PersonaDeskState {
   characters: Character[];
+  characterDrafts: CharacterDraft[];
   roleBoundaries: Record<string, RoleBoundary>;
   executors: Executor[];
   tasks: Task[];

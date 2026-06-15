@@ -28,4 +28,22 @@ describe("PersonaDesk app", () => {
     expect(await screen.findByText("Delivered")).toBeInTheDocument();
     expect(screen.getAllByText(/privacy checklist/i).length).toBeGreaterThan(0);
   });
+
+  it("can generate and confirm an honest character draft", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.clear(screen.getByLabelText("Text import"));
+    await user.type(screen.getByLabelText("Text import"), "A focused reviewer who checks privacy boundaries.");
+    await user.upload(
+      screen.getByLabelText("Optional image file"),
+      new File(["avatar"], "reviewer.png", { type: "image/png" })
+    );
+    await user.click(screen.getByRole("button", { name: "Generate character draft" }));
+
+    expect(screen.getByText("Image handling used file metadata only; no vision model is configured.")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Confirm character" }));
+
+    expect(screen.getByText("Vera")).toBeInTheDocument();
+  });
 });

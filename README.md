@@ -11,6 +11,9 @@ This repository currently implements the Phase 1 thin slice from the design spec
 - Multiple default characters:
   - Emotional characters stay in the desktop presence layer and cannot call executors by default.
   - Task characters can use permitted executors.
+- Character draft generation from text and optional image file metadata:
+  - drafts remain inactive until confirmed,
+  - image handling is disclosed as metadata-only when no vision provider is configured.
 - A real deterministic local planner executor for text planning and validation.
 - Autonomous task loop:
   - creates a task,

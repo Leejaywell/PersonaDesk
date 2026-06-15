@@ -12,6 +12,7 @@ import {
   X
 } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { confirmCharacterDraft, createCharacterDraft, rejectCharacterDraft } from "./domain/characterDrafts";
 import { executorDisclosure } from "./domain/executors";
 import { confirmMemoryCandidate, rejectMemoryCandidate } from "./domain/memory";
 import { startObservationSession, stopObservationSession, summarizeObservationEvent } from "./domain/observation";
@@ -63,6 +64,8 @@ export default function App() {
   const [desiredOutput, setDesiredOutput] = useState("Checklist");
   const [allowedApps, setAllowedApps] = useState("Safari, Notes");
   const [observationSummary, setObservationSummary] = useState("");
+  const [draftText, setDraftText] = useState("A gentle companion who speaks softly and likes quiet encouragement.");
+  const [draftImage, setDraftImage] = useState<File | null>(null);
 
   useEffect(() => {
     saveState(state);
@@ -103,6 +106,23 @@ export default function App() {
 
     updateState(next);
     setTaskGoal("");
+  }
+
+  function generateDraft(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!draftText.trim() && !draftImage) {
+      return;
+    }
+
+    updateState(
+      createCharacterDraft(state, {
+        textImport: draftText,
+        imageFileName: draftImage?.name ?? null,
+        imageMimeType: draftImage?.type || null,
+        imageSizeBytes: draftImage?.size ?? null
+      })
+    );
   }
 
   function startObservation() {
@@ -233,6 +253,77 @@ export default function App() {
               />
             ))}
           </div>
+        </section>
+
+        <section className="panel wide-panel" aria-labelledby="drafts-title">
+          <div className="panel-heading">
+            <div>
+              <h2 id="drafts-title">Character Drafts</h2>
+              <span>Generate draft roles from text and optional image metadata, then confirm before activation.</span>
+            </div>
+            <Sparkles aria-hidden="true" size={19} />
+          </div>
+          <form className="draft-form" onSubmit={generateDraft}>
+            <label>
+              Text import
+              <textarea
+                value={draftText}
+                onChange={(event) => setDraftText(event.target.value)}
+                placeholder="Describe the character's personality, tone, boundaries, and relationship."
+              />
+            </label>
+            <label>
+              Optional image file
+              <input
+                accept="image/*"
+                onChange={(event) => setDraftImage(event.target.files?.[0] ?? null)}
+                type="file"
+              />
+            </label>
+            <button className="primary-button" type="submit">
+              <Sparkles aria-hidden="true" size={16} />
+              Generate character draft
+            </button>
+          </form>
+          {state.characterDrafts.length === 0 ? (
+            <p className="empty-state">No pending character drafts.</p>
+          ) : (
+            <div className="card-list">
+              {state.characterDrafts.map((draft) => (
+                <article className="review-card" key={draft.id}>
+                  <div className="task-card-header">
+                    <div>
+                      <h3>{draft.nameSuggestion}</h3>
+                      <p>{draft.personaSummary}</p>
+                    </div>
+                    <span className="status-pill">{draft.kind}</span>
+                  </div>
+                  <p>{draft.speakingStyle}</p>
+                  {draft.imageFileName && (
+                    <p>
+                      Image metadata: {draft.imageFileName}, {draft.imageMimeType ?? "unknown type"},{" "}
+                      {draft.imageSizeBytes ?? 0} bytes
+                    </p>
+                  )}
+                  <div className="disclosure-list">
+                    {draft.disclosures.map((disclosure) => (
+                      <p key={disclosure}>{disclosure}</p>
+                    ))}
+                  </div>
+                  <div className="button-row">
+                    <button onClick={() => updateState(confirmCharacterDraft(state, draft.id))} type="button">
+                      <Check aria-hidden="true" size={15} />
+                      Confirm character
+                    </button>
+                    <button onClick={() => updateState(rejectCharacterDraft(state, draft.id))} type="button">
+                      <X aria-hidden="true" size={15} />
+                      Reject draft
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
         </section>
 
         <section className="panel wide-panel" aria-labelledby="task-cards-title">

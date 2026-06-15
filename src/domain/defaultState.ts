@@ -305,6 +305,7 @@ const executors: Executor[] = [
 export function createInitialState(): PersonaDeskState {
   return {
     characters,
+    characterDrafts: [],
     roleBoundaries: {
       [emotionalBoundary.id]: emotionalBoundary,
       [quietObserverBoundary.id]: quietObserverBoundary,
