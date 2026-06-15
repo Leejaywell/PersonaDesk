@@ -180,7 +180,7 @@ git commit -m "feat: scaffold PersonaDesk desktop app"
 - Create: `src/domain/defaultState.ts`
 - Test: `src/domain/defaultState.test.ts`
 
-- [ ] **Step 1: Write failing tests for default data**
+- [x] **Step 1: Write failing tests for default data**
 
 Create `src/domain/defaultState.test.ts`:
 
@@ -210,7 +210,7 @@ describe("createInitialState", () => {
 });
 ```
 
-- [ ] **Step 2: Run the test and verify it fails**
+- [x] **Step 2: Run the test and verify it fails**
 
 Run:
 
@@ -220,7 +220,7 @@ npm test -- src/domain/defaultState.test.ts
 
 Expected: FAIL because `src/domain/defaultState.ts` does not exist.
 
-- [ ] **Step 3: Implement the contracts and initial state**
+- [x] **Step 3: Implement the contracts and initial state**
 
 Create `src/domain/types.ts` with exported types for:
 
@@ -243,7 +243,7 @@ Create `src/domain/defaultState.ts` with `createInitialState()` returning:
 - OpenAI-compatible and local-agent executors marked `unconfigured` or `missing`.
 - Empty task runs, memory candidates, observation sessions, and local-first sync disabled.
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run:
 
@@ -253,7 +253,7 @@ npm test -- src/domain/defaultState.test.ts
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit domain contracts**
+- [x] **Step 5: Commit domain contracts**
 
 ```bash
 git add src/domain/types.ts src/domain/defaultState.ts src/domain/defaultState.test.ts
