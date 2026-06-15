@@ -1,2 +1,86 @@
+# Superpowers brainstorming scratch
 .superpowers/
 
+# OS files
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Editors and local IDE state
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/settings.json
+!.vscode/tasks.json
+*.swp
+*.swo
+*~
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Dependencies and package manager caches
+node_modules/
+.pnp.*
+.pnpm-store/
+.yarn/*
+!.yarn/releases/
+!.yarn/plugins/
+!.yarn/sdks/
+!.yarn/versions/
+
+# Frontend build output and caches
+dist/
+dist-ssr/
+build/
+out/
+.vite/
+.cache/
+.parcel-cache/
+.turbo/
+coverage/
+.nyc_output/
+.eslintcache
+.stylelintcache
+
+# Rust and Tauri build output
+target/
+src-tauri/target/
+**/*.rs.bk
+
+# Desktop packaging artifacts
+*.dmg
+*.pkg
+*.app
+*.AppImage
+*.deb
+*.rpm
+*.msi
+
+# Test artifacts
+playwright-report/
+test-results/
+
+# Local runtime data
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
