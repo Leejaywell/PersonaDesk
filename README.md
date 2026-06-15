@@ -14,6 +14,12 @@ This repository currently implements the Phase 1 thin slice from the design spec
 - Character draft generation from text and optional image file metadata:
   - drafts remain inactive until confirmed,
   - image handling is disclosed as metadata-only when no vision provider is configured.
+- Character Studio settings for activated characters:
+  - relationship template and custom relationship,
+  - role boundary selection constrained by emotional/task role type,
+  - proactive frequency, triggers, and do-not-disturb,
+  - memory permission scopes,
+  - appearance backend, avatar label, accent color, and voice profile fields.
 - A real deterministic local planner executor for text planning and validation.
 - Autonomous task loop:
   - creates a task,

@@ -81,6 +81,20 @@ describe("PersonaDesk app", () => {
     expect(screen.getByText("Image handling used file metadata only; no vision model is configured.")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Confirm character" }));
 
-    expect(screen.getByText("Vera")).toBeInTheDocument();
+    expect(screen.getAllByText("Vera").length).toBeGreaterThan(0);
+  });
+
+  it("can edit character relationship and boundary settings", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /Characters/i }));
+    await user.clear(screen.getByLabelText("Custom relationship"));
+    await user.type(screen.getByLabelText("Custom relationship"), "A CEO spouse companion who remembers private context.");
+    await user.selectOptions(screen.getByLabelText("Role boundary"), "boundary-quiet-observer");
+    await user.click(screen.getByRole("button", { name: "Save character settings" }));
+
+    expect(screen.getAllByText("A CEO spouse companion who remembers private context.").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Quiet observer").length).toBeGreaterThan(0);
   });
 });

@@ -1,4 +1,5 @@
 import type { FormEvent } from "react";
+import type { CharacterSettingsUpdate } from "../domain/characters";
 
 export interface TaskFormState {
   goal: string;
@@ -21,6 +22,7 @@ export interface AppActions {
   generateCharacterDraft: (event: FormEvent<HTMLFormElement>) => void;
   confirmCharacterDraft: (draftId: string) => void;
   rejectCharacterDraft: (draftId: string) => void;
+  updateCharacterSettings: (characterId: string, update: CharacterSettingsUpdate) => void;
   confirmMemoryCandidate: (candidateId: string) => void;
   rejectMemoryCandidate: (candidateId: string) => void;
   startObservation: () => void;

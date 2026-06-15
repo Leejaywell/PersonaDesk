@@ -14,6 +14,7 @@ import {
   createCharacterDraft,
   rejectCharacterDraft as rejectDraft
 } from "./domain/characterDrafts";
+import { updateCharacterSettings } from "./domain/characters";
 import { mergeDetectedLocalAgents } from "./domain/executors";
 import { confirmMemoryCandidate as confirmMemory, rejectMemoryCandidate as rejectMemory } from "./domain/memory";
 import { startObservationSession, stopObservationSession, summarizeObservationEvent } from "./domain/observation";
@@ -141,6 +142,8 @@ export default function App() {
     generateCharacterDraft: generateDraft,
     confirmCharacterDraft: (draftId: string) => updateState(confirmDraft(state, draftId)),
     rejectCharacterDraft: (draftId: string) => updateState(rejectDraft(state, draftId)),
+    updateCharacterSettings: (characterId: string, update: Parameters<typeof updateCharacterSettings>[2]) =>
+      setState((current) => updateCharacterSettings(current, characterId, update)),
     confirmMemoryCandidate: (candidateId: string) => updateState(confirmMemory(state, candidateId)),
     rejectMemoryCandidate: (candidateId: string) => updateState(rejectMemory(state, candidateId)),
     startObservation,
