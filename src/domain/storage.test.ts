@@ -134,6 +134,7 @@ describe("state storage", () => {
       taskRuns: state.taskRuns.map((run) => {
         const legacyRun = { ...run } as Partial<typeof run>;
         delete legacyRun.acceptance;
+        delete legacyRun.revisionOfRunId;
 
         return legacyRun;
       })
@@ -146,6 +147,7 @@ describe("state storage", () => {
       note: "Awaiting final user acceptance.",
       decidedAt: null
     });
+    expect(restored.taskRuns[0].revisionOfRunId).toBeNull();
   });
 
   it("normalizes old conversation messages with missing source event ids", () => {

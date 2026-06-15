@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { Task, TaskRun } from "../../domain/types";
 import { StatusPill } from "../ui/StatusPill";
 
@@ -5,16 +6,22 @@ export function TaskCard({
   run,
   task,
   onGrantApproval,
-  onRecordAcceptance
+  onRecordAcceptance,
+  onRunRevision
 }: {
   run: TaskRun;
   task: Task | undefined;
   onGrantApproval?: (taskId: string, runId: string) => void;
   onRecordAcceptance?: (taskId: string, runId: string, decision: "accepted" | "revision-requested", note?: string) => void;
+  onRunRevision?: (taskId: string, runId: string) => void;
 }) {
+  const [revisionNote, setRevisionNote] = useState("");
   const canGrantApproval = Boolean(task && task.status === "blocked" && run.status === "blocked" && run.approvalRequests.length > 0);
   const canRecordAcceptance = Boolean(
     task && task.status === "delivered" && run.status === "delivered" && run.acceptance?.status === "pending"
+  );
+  const canRunRevision = Boolean(
+    task && task.status === "revision-requested" && run.status === "delivered" && run.acceptance?.status === "revision-requested"
   );
 
   return (
@@ -29,6 +36,7 @@ export function TaskCard({
               <span className="meta-chip">Scope: {task.authorizationScope}</span>
               <span className="meta-chip">Allowed executors: {task.allowedExecutorIds.join(", ")}</span>
               <span className="meta-chip">Task status: {task.status}</span>
+              {run.revisionOfRunId ? <span className="meta-chip">Revision of: {run.revisionOfRunId}</span> : null}
             </div>
           )}
         </div>
@@ -70,14 +78,32 @@ export function TaskCard({
           </div>
           <p>{run.acceptance.note}</p>
           {canRecordAcceptance && task && (
-            <div className="button-row">
-              <button onClick={() => onRecordAcceptance?.(task.id, run.id, "accepted")} type="button">
-                Accept deliverable
-              </button>
-              <button onClick={() => onRecordAcceptance?.(task.id, run.id, "revision-requested")} type="button">
-                Request revision
-              </button>
-            </div>
+            <>
+              <label>
+                Revision request note
+                <textarea
+                  onChange={(event) => setRevisionNote(event.target.value)}
+                  placeholder="What should change before acceptance?"
+                  value={revisionNote}
+                />
+              </label>
+              <div className="button-row">
+                <button onClick={() => onRecordAcceptance?.(task.id, run.id, "accepted")} type="button">
+                  Accept deliverable
+                </button>
+                <button
+                  onClick={() => onRecordAcceptance?.(task.id, run.id, "revision-requested", revisionNote)}
+                  type="button"
+                >
+                  Request revision
+                </button>
+              </div>
+            </>
+          )}
+          {canRunRevision && task && (
+            <button onClick={() => onRunRevision?.(task.id, run.id)} type="button">
+              Run revision
+            </button>
           )}
         </div>
       )}

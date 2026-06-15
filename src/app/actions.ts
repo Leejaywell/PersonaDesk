@@ -50,4 +50,5 @@ export interface AppActions {
     decision: Exclude<TaskAcceptanceStatus, "pending">,
     note?: string
   ) => void;
+  runTaskRevision: (taskId: string, runId: string) => void;
 }

@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { createInitialState } from "./defaultState";
-import { createTask, grantApprovalScopesAndResumeTask, recordTaskAcceptance, runAutonomyCycle } from "./tasks";
+import {
+  createTask,
+  grantApprovalScopesAndResumeTask,
+  recordTaskAcceptance,
+  runAutonomyCycle,
+  runTaskRevision
+} from "./tasks";
 
 describe("task autonomy", () => {
   it("plans, executes, validates, and delivers with a real deterministic executor", () => {
@@ -71,6 +77,36 @@ describe("task autonomy", () => {
     expect(state.tasks[0].status).toBe("revision-requested");
     expect(state.taskRuns[0].acceptance?.status).toBe("revision-requested");
     expect(state.taskRuns[0].acceptance?.note).toBe("Needs a clearer testing section.");
+  });
+
+  it("creates a revised delivery run from revision feedback", () => {
+    let state = createInitialState();
+    state = createTask(state, {
+      goal: "Draft a launch checklist for PersonaDesk",
+      constraints: "Keep it local-first and privacy aware",
+      desiredOutput: "Checklist",
+      supervisionMode: "unsupervised",
+      authorizationScope: "text-planning-only",
+      allowedExecutorIds: ["local-planner"]
+    });
+    state = runAutonomyCycle(state, state.tasks[0].id);
+    const originalRunId = state.taskRuns[0].id;
+    state = recordTaskAcceptance(
+      state,
+      state.tasks[0].id,
+      originalRunId,
+      "revision-requested",
+      "Needs a clearer testing section."
+    );
+    state = runTaskRevision(state, state.tasks[0].id, originalRunId);
+
+    expect(state.tasks[0].status).toBe("delivered");
+    expect(state.taskRuns).toHaveLength(2);
+    expect(state.taskRuns[1].revisionOfRunId).toBe(originalRunId);
+    expect(state.taskRuns[1].status).toBe("delivered");
+    expect(state.taskRuns[1].acceptance?.status).toBe("pending");
+    expect(state.taskRuns[1].artifacts[0].content).toContain("Revision feedback addressed: Needs a clearer testing section.");
+    expect(state.taskRuns[1].decisions.some((decision) => decision.includes("Applied user revision feedback"))).toBe(true);
   });
 
   it("blocks instead of falling back when only unconfigured executors are allowed", () => {

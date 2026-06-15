@@ -135,6 +135,7 @@ function normalizeTasks(persisted: unknown): Task[] {
 function normalizeTaskRuns(persisted: unknown): TaskRun[] {
   return arrayOrEmpty<TaskRun>(persisted).map((run) => ({
     ...run,
+    revisionOfRunId: typeof run.revisionOfRunId === "string" ? run.revisionOfRunId : null,
     acceptance:
       isRecord(run.acceptance)
         ? {

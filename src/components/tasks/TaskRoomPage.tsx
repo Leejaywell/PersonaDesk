@@ -157,6 +157,7 @@ export function TaskRoomPage({
                 key={run.id}
                 onGrantApproval={actions.grantTaskApproval}
                 onRecordAcceptance={actions.recordTaskAcceptance}
+                onRunRevision={actions.runTaskRevision}
                 run={run}
                 task={tasks.find((item) => item.id === run.taskId)}
               />

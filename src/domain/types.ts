@@ -196,6 +196,7 @@ export interface TaskAcceptance {
 export interface TaskRun {
   id: string;
   taskId: string;
+  revisionOfRunId: string | null;
   status: TaskRunStatus;
   assignedCharacters: string[];
   taskTree: TaskStep[];

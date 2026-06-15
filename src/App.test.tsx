@@ -125,6 +125,27 @@ describe("PersonaDesk app", () => {
     expect(screen.getByText("Accepted")).toBeInTheDocument();
   });
 
+  it("can request a revision and produce a revised task run", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /Tasks/i }));
+    await user.type(screen.getByLabelText("Task goal"), "Create a revision checklist");
+    await user.click(screen.getByRole("button", { name: "Run autonomous task" }));
+
+    expect(await screen.findByText("Awaiting final user acceptance.")).toBeInTheDocument();
+    await user.type(screen.getByLabelText("Revision request note"), "Needs a clearer testing section.");
+    await user.click(screen.getByRole("button", { name: "Request revision" }));
+
+    expect(screen.getByText("Task status: revision-requested")).toBeInTheDocument();
+    expect(screen.getByText("Needs a clearer testing section.")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Run revision" }));
+
+    expect(screen.getByText("Delivered a revised local planning artifact.")).toBeInTheDocument();
+    expect(screen.getByText("Awaiting final user acceptance for the revised delivery.")).toBeInTheDocument();
+    expect(screen.getByText(/Revision feedback addressed: Needs a clearer testing section/)).toBeInTheDocument();
+  });
+
   it("blocks task execution when the allowed executor list has no available provider", async () => {
     const user = userEvent.setup();
     render(<App />);

@@ -113,6 +113,7 @@ export function runAutonomyCycle(state: PersonaDeskState, taskId: string): Perso
     const blockedRun: TaskRun = {
       id: createId("task-run"),
       taskId: task.id,
+      revisionOfRunId: null,
       status: "blocked",
       assignedCharacters,
       taskTree: taskTree.map((step) => ({ ...step, status: "blocked" })),
@@ -140,6 +141,7 @@ export function runAutonomyCycle(state: PersonaDeskState, taskId: string): Perso
     const blockedRun: TaskRun = {
       id: createId("task-run"),
       taskId: task.id,
+      revisionOfRunId: null,
       status: "blocked",
       assignedCharacters,
       taskTree: taskTree.map((step) => ({ ...step, status: "blocked" })),
@@ -173,6 +175,7 @@ export function runAutonomyCycle(state: PersonaDeskState, taskId: string): Perso
   const deliveredRun: TaskRun = {
     id: createId("task-run"),
     taskId: task.id,
+    revisionOfRunId: null,
     status: passed ? "delivered" : "blocked",
     assignedCharacters,
     taskTree: taskTree.map((step) => ({ ...step, status: passed ? "completed" : "blocked" })),
@@ -345,7 +348,145 @@ export function recordTaskAcceptance(
   };
 }
 
-export function buildDeterministicArtifact(task: Task): Artifact {
+export function runTaskRevision(state: PersonaDeskState, taskId: string, previousRunId: string): PersonaDeskState {
+  const task = state.tasks.find((item) => item.id === taskId);
+  const previousRun = state.taskRuns.find((item) => item.id === previousRunId && item.taskId === taskId);
+
+  if (!task || !previousRun || task.status !== "revision-requested" || previousRun.acceptance?.status !== "revision-requested") {
+    return state;
+  }
+
+  const approvals = requiresApproval(task.goal, task.constraints, task.authorizationScope);
+  const assignedCharacters = ["orion", "vale", "nova"];
+  const taskTree = buildTaskTree(assignedCharacters);
+  const revisionFeedback = previousRun.acceptance.note;
+
+  if (approvals.length > 0) {
+    const blockedRun: TaskRun = {
+      id: createId("task-run"),
+      taskId: task.id,
+      revisionOfRunId: previousRun.id,
+      status: "blocked",
+      assignedCharacters,
+      taskTree: taskTree.map((step) => ({ ...step, status: "blocked" })),
+      executorCalls: [],
+      decisions: [
+        "Paused before revision because the task exceeded the authorization scope.",
+        `Revision feedback preserved: ${revisionFeedback}`
+      ],
+      logs: ["PersonaDesk did not revise, publish, or delete anything."],
+      validationResults: [],
+      artifacts: [],
+      approvalRequests: approvals,
+      acceptance: null,
+      finalSummary: "Task revision is blocked until the user grants additional permission."
+    };
+
+    return appendRun(state, task.id, blockedRun, "blocked");
+  }
+
+  const executor = routeExecutorForTask(state, {
+    taskCharacterId: "orion",
+    taskKind: "revision",
+    requiresLocalAgent: false,
+    allowedExecutorIds: task.allowedExecutorIds
+  });
+
+  if (executor.status !== "available") {
+    const blockedRun: TaskRun = {
+      id: createId("task-run"),
+      taskId: task.id,
+      revisionOfRunId: previousRun.id,
+      status: "blocked",
+      assignedCharacters,
+      taskTree: taskTree.map((step) => ({ ...step, status: "blocked" })),
+      executorCalls: [
+        {
+          executorId: executor.id,
+          characterId: "orion",
+          purpose: "Revise the delivered artifact with an allowed executor.",
+          status: "skipped",
+          disclosure: executorDisclosure(executor)
+        }
+      ],
+      decisions: [
+        "Paused because the task allowed-executor list does not include an available revision executor.",
+        `Revision feedback preserved: ${revisionFeedback}`
+      ],
+      logs: ["No revised artifact was produced because no allowed executor was available."],
+      validationResults: [],
+      artifacts: [],
+      approvalRequests: [],
+      acceptance: null,
+      finalSummary: "Task revision is blocked because no allowed executor is available."
+    };
+
+    return appendRun(state, task.id, blockedRun, "blocked");
+  }
+
+  const artifact = buildDeterministicArtifact(task, revisionFeedback);
+  const validationResults = validateArtifact(task, artifact);
+  const passed = validationResults.every((result) => result.passed);
+  const revisedRun: TaskRun = {
+    id: createId("task-run"),
+    taskId: task.id,
+    revisionOfRunId: previousRun.id,
+    status: passed ? "delivered" : "blocked",
+    assignedCharacters,
+    taskTree: taskTree.map((step) => ({ ...step, status: passed ? "completed" : "blocked" })),
+    executorCalls: [
+      {
+        executorId: executor.id,
+        characterId: "orion",
+        purpose: "Revise the deterministic task artifact from user feedback.",
+        status: "succeeded",
+        disclosure: executorDisclosure(executor)
+      }
+    ],
+    decisions: [
+      "Used the local deterministic planner to revise the delivered artifact.",
+      `Applied user revision feedback: ${revisionFeedback}`,
+      "Validated revised output against the task goal, desired output, and privacy constraint."
+    ],
+    logs: [
+      "Revision feedback reviewed by Orion.",
+      "Revised artifact drafted by local deterministic planner.",
+      "Vale validated the revised artifact against acceptance checks."
+    ],
+    validationResults,
+    artifacts: [artifact],
+    approvalRequests: [],
+    acceptance: passed
+      ? {
+          status: "pending",
+          note: "Awaiting final user acceptance for the revised delivery.",
+          decidedAt: null
+        }
+      : null,
+    finalSummary: passed
+      ? "Delivered a revised local planning artifact."
+      : "Revised artifact needs user review before delivery."
+  };
+
+  return {
+    ...appendRun(state, task.id, revisedRun, passed ? "delivered" : "blocked"),
+    memoryCandidates: [
+      ...state.memoryCandidates,
+      {
+        id: createId("memory-candidate"),
+        proposedLayer: "task",
+        proposedOwnerCharacterId: null,
+        proposedText: `PersonaDesk revised task: ${task.title}`,
+        sourceEvent: revisedRun.id,
+        sensitivity: "low",
+        reason: "Revision outcome can help future task delivery.",
+        status: "pending"
+      }
+    ]
+  };
+}
+
+export function buildDeterministicArtifact(task: Task, revisionFeedback = ""): Artifact {
   const checklist = [
     `Goal: ${task.goal}`,
     `Desired output: ${task.desiredOutput}`,
@@ -355,6 +496,11 @@ export function buildDeterministicArtifact(task: Task): Artifact {
     "Show unconfigured providers as unavailable instead of pretending execution succeeded.",
     "Ask for user approval before destructive, publishing, payment, sensitive-data, or cloud-upload actions."
   ];
+  const feedback = revisionFeedback.trim();
+
+  if (feedback) {
+    checklist.push(`Revision feedback addressed: ${feedback}`);
+  }
 
   return {
     id: createId("artifact"),
