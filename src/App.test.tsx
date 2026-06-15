@@ -408,4 +408,34 @@ describe("PersonaDesk app", () => {
     expect(screen.getAllByText("confirmed-character-definitions").length).toBeGreaterThan(0);
     expect(screen.getAllByText("confirmed-memory-summaries").length).toBeGreaterThan(0);
   });
+
+  it("exports and preflights a local sync package without applying imports", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.type(screen.getByLabelText("Message"), "Please remember that I prefer portable sync summaries.");
+    await user.click(screen.getByRole("button", { name: "Send local companion message" }));
+
+    await user.click(screen.getByRole("button", { name: /Memory/i }));
+    await user.click(screen.getByRole("button", { name: "Confirm reviewed memory" }));
+
+    await user.click(screen.getByRole("button", { name: /Privacy/i }));
+    await user.click(screen.getByLabelText("Enable optional sync for confirmed summaries"));
+    await user.click(screen.getByRole("button", { name: "Export local sync package" }));
+
+    const packageText = screen.getByLabelText("Local sync package JSON") as HTMLTextAreaElement;
+    expect(packageText.value).toContain("personadesk-local-sync-package");
+    expect(packageText.value).toContain("confirmed-character-definitions");
+    expect(packageText.value).toContain("confirmed-memory-summaries");
+    expect(packageText.value).not.toContain("secretRef");
+    expect(packageText.value).not.toContain('"configuration"');
+
+    await user.click(screen.getByRole("button", { name: "Preview sync package import" }));
+
+    const preflight = screen.getByLabelText("Sync package import preflight");
+    expect(within(preflight).getByText("Import preflight ready")).toBeInTheDocument();
+    expect(within(preflight).getByText("Conflicts")).toBeInTheDocument();
+    expect(within(preflight).getAllByText(/would require user review/i).length).toBeGreaterThan(0);
+    expect(within(preflight).getByText(/does not merge imported data automatically/i)).toBeInTheDocument();
+  });
 });

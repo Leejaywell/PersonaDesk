@@ -42,6 +42,8 @@ export interface AppActions {
   approveCloudVisionUpload: (sessionId: string, summaryId: string) => void;
   setSyncEnabled: (enabled: boolean) => void;
   prepareSyncPreview: () => void;
+  exportLocalSyncPackage: () => void;
+  previewSyncPackageImport: () => void;
   scanLocalAgents: () => Promise<void>;
   configureExecutor: (executorId: string, configuration: ExecutorConfigurationInput) => void;
   recordExecutorHealthCheck: (executorId: string) => void;

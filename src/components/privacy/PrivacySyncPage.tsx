@@ -1,6 +1,6 @@
 import { AlertTriangle, Check, Eye, Shield, X } from "lucide-react";
 import type { AppActions, ObservationFormState } from "../../app/actions";
-import type { SyncPreview } from "../../domain/sync";
+import type { SyncPackageImportPreview, SyncPreview } from "../../domain/sync";
 import type { ObservationSession, SyncProfile } from "../../domain/types";
 import { Panel } from "../ui/Panel";
 import { StatusPill } from "../ui/StatusPill";
@@ -10,16 +10,22 @@ export function PrivacySyncPage({
   activeObservation,
   syncProfile,
   syncPreview,
+  syncPackageText,
+  syncImportPreview,
   observationForm,
   setObservationForm,
+  setSyncPackageText,
   actions
 }: {
   observationSessions: ObservationSession[];
   activeObservation: ObservationSession | undefined;
   syncProfile: SyncProfile;
   syncPreview: SyncPreview | null;
+  syncPackageText: string;
+  syncImportPreview: SyncPackageImportPreview | null;
   observationForm: ObservationFormState;
   setObservationForm: (next: ObservationFormState) => void;
+  setSyncPackageText: (next: string) => void;
   actions: AppActions;
 }) {
   return (
@@ -157,8 +163,78 @@ export function PrivacySyncPage({
           <Shield aria-hidden="true" size={15} />
           Generate sync preview
         </button>
+        <div className="button-row">
+          <button disabled={!syncProfile.enabled} onClick={actions.exportLocalSyncPackage} type="button">
+            Export local sync package
+          </button>
+          <button disabled={!syncPackageText.trim()} onClick={actions.previewSyncPackageImport} type="button">
+            Preview sync package import
+          </button>
+        </div>
+        <label>
+          Local sync package JSON
+          <textarea
+            className="sync-package-textarea"
+            onChange={(event) => setSyncPackageText(event.target.value)}
+            placeholder="Export a local sync package or paste one here for preflight."
+            value={syncPackageText}
+          />
+        </label>
         <p className="local-only">Local-only: {syncProfile.localOnlyClasses.join(", ")}</p>
         <p className="local-only">Sync-allowed: {syncProfile.allowedDataClasses.join(", ")}</p>
+        {syncImportPreview && (
+          <div className="sync-import-preview" aria-label="Sync package import preflight">
+            <div className="task-card-header">
+              <strong>Import preflight {syncImportPreview.status}</strong>
+              <StatusPill status={syncImportPreview.status === "ready" ? "ready" : "blocked"} />
+            </div>
+            <p>{syncImportPreview.disclosure}</p>
+            <div className="settings-grid">
+              <section className="sync-preview-list" aria-label="Sync import accepted">
+                <h3>Accepted</h3>
+                {syncImportPreview.accepted.length === 0 ? (
+                  <p className="empty-state">No new package items ready for import.</p>
+                ) : (
+                  syncImportPreview.accepted.map((item) => (
+                    <article className="review-card" key={item.id}>
+                      <strong>{item.label}</strong>
+                      <p>{item.dataClass}</p>
+                      <p>{item.reason}</p>
+                    </article>
+                  ))
+                )}
+              </section>
+              <section className="sync-preview-list" aria-label="Sync import conflicts">
+                <h3>Conflicts</h3>
+                {syncImportPreview.conflicts.length === 0 ? (
+                  <p className="empty-state">No conflicts found.</p>
+                ) : (
+                  syncImportPreview.conflicts.map((item) => (
+                    <article className="review-card" key={item.id}>
+                      <strong>{item.label}</strong>
+                      <p>{item.dataClass}</p>
+                      <p>{item.reason}</p>
+                    </article>
+                  ))
+                )}
+              </section>
+              <section className="sync-preview-list" aria-label="Sync import rejected">
+                <h3>Rejected</h3>
+                {syncImportPreview.rejected.length === 0 ? (
+                  <p className="empty-state">No rejected package items.</p>
+                ) : (
+                  syncImportPreview.rejected.map((item) => (
+                    <article className="review-card" key={item.id}>
+                      <strong>{item.label}</strong>
+                      <p>{item.dataClass}</p>
+                      <p>{item.reason}</p>
+                    </article>
+                  ))
+                )}
+              </section>
+            </div>
+          </div>
+        )}
         {syncPreview && (
           <div className="sync-preview" aria-label="Local sync preview">
             <p>{syncPreview.disclosure}</p>

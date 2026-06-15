@@ -3,7 +3,7 @@ import { sendCompanionMessage } from "./conversation";
 import { createInitialState } from "./defaultState";
 import { configureExecutor, recordExecutorHealthCheck } from "./executors";
 import { confirmMemoryCandidate, proposeMemoryCandidate } from "./memory";
-import { buildSyncPreview } from "./sync";
+import { buildLocalSyncPackage, buildSyncPreview, previewLocalSyncPackageImport, serializeLocalSyncPackage } from "./sync";
 import { createVoiceRequest } from "./voice";
 
 describe("sync preview", () => {
@@ -152,5 +152,96 @@ describe("sync preview", () => {
     expect(preview.excluded.some((item) => item.dataClass === "executor-health-checks")).toBe(true);
     expect(JSON.stringify(preview)).not.toContain("https://api.example.test/v1");
     expect(JSON.stringify(preview)).not.toContain("OPENAI_COMPATIBLE_API_KEY");
+  });
+
+  it("exports a local sync package without raw data, endpoints, or secret references", () => {
+    let state = createInitialState();
+    state = {
+      ...state,
+      syncProfile: {
+        ...state.syncProfile,
+        enabled: true
+      }
+    };
+    state = configureExecutor(state, "openai-compatible", {
+      endpoint: "https://api.example.test/v1",
+      model: "gpt-compatible",
+      secretRef: "OPENAI_COMPATIBLE_API_KEY",
+      notes: "Use external secret storage."
+    });
+    state = proposeMemoryCandidate(state, {
+      layer: "shared-world",
+      ownerCharacterId: null,
+      text: "The user likes concise task summaries.",
+      source: "conversation",
+      sensitivity: "low",
+      reason: "Stable preference"
+    });
+    state = confirmMemoryCandidate(state, state.memoryCandidates[0].id, {
+      syncPolicy: "sync-allowed"
+    });
+    state = proposeMemoryCandidate(state, {
+      layer: "character-private",
+      ownerCharacterId: "mira",
+      text: "Sensitive private preference.",
+      source: "conversation",
+      sensitivity: "high",
+      reason: "Private preference"
+    });
+    state = confirmMemoryCandidate(state, state.memoryCandidates[0].id);
+    state = sendCompanionMessage(state, {
+      characterId: "mira",
+      text: "Private raw companion transcript"
+    });
+
+    const syncPackage = buildLocalSyncPackage(state);
+    const serialized = serializeLocalSyncPackage(syncPackage);
+
+    expect(syncPackage.origin).toBe("personadesk-local-sync-package");
+    expect(syncPackage.included.some((item) => item.dataClass === "confirmed-character-definitions")).toBe(true);
+    expect(serialized).toContain("The user likes concise task summaries.");
+    expect(serialized).not.toContain("Sensitive private preference.");
+    expect(serialized).not.toContain("Private raw companion transcript");
+    expect(serialized).not.toContain("https://api.example.test/v1");
+    expect(serialized).not.toContain("OPENAI_COMPATIBLE_API_KEY");
+    expect(syncPackage.disclosure).toContain("Local sync packages include confirmed role settings");
+  });
+
+  it("previews local sync package imports without merging data automatically", () => {
+    let state = createInitialState();
+    state = {
+      ...state,
+      syncProfile: {
+        ...state.syncProfile,
+        enabled: true
+      }
+    };
+    state = proposeMemoryCandidate(state, {
+      layer: "shared-world",
+      ownerCharacterId: null,
+      text: "The user likes concise task summaries.",
+      source: "conversation",
+      sensitivity: "low",
+      reason: "Stable preference"
+    });
+    state = confirmMemoryCandidate(state, state.memoryCandidates[0].id, {
+      syncPolicy: "sync-allowed"
+    });
+
+    const packageText = serializeLocalSyncPackage(buildLocalSyncPackage(state));
+    const preview = previewLocalSyncPackageImport(state, packageText);
+
+    expect(preview.status).toBe("ready");
+    expect(preview.conflicts.some((item) => item.reason.includes("would require user review"))).toBe(true);
+    expect(preview.rejected).toHaveLength(0);
+    expect(state.memories).toHaveLength(1);
+    expect(preview.disclosure).toContain("does not merge imported data automatically");
+  });
+
+  it("rejects invalid local sync package text during import preflight", () => {
+    const preview = previewLocalSyncPackageImport(createInitialState(), "not json");
+
+    expect(preview.status).toBe("invalid");
+    expect(preview.rejected[0].reason).toBe("Package text is not valid JSON.");
   });
 });
