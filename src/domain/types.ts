@@ -240,6 +240,14 @@ export interface ObservationSummary {
   createdAt: string;
 }
 
+export interface ObservationBoundaryViolation {
+  id: string;
+  appName: string;
+  reason: string;
+  discardedSummaryCharacters: number;
+  createdAt: string;
+}
+
 export interface CloudUploadApproval {
   id: string;
   summaryId: string;
@@ -256,6 +264,7 @@ export interface ObservationSession {
   allowedApps: string[];
   active: boolean;
   localSummaryStream: ObservationSummary[];
+  boundaryViolations: ObservationBoundaryViolation[];
   cloudUploadApprovals: CloudUploadApproval[];
   retentionPolicy: "summaries-only" | "discard-on-stop";
   startedAt: string;

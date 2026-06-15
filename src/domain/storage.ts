@@ -7,6 +7,7 @@ import type {
   ExecutorConfiguration,
   MemoryCandidate,
   MemoryItem,
+  ObservationBoundaryViolation,
   ObservationSession,
   PersonaDeskState,
   RoleBoundary,
@@ -69,9 +70,39 @@ function isCloudUploadApproval(value: unknown): value is CloudUploadApproval {
   );
 }
 
+function isObservationBoundaryViolation(value: unknown): value is ObservationBoundaryViolation {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "appName" in value &&
+    "reason" in value &&
+    "createdAt" in value
+  );
+}
+
+function normalizeObservationBoundaryViolation(value: ObservationBoundaryViolation): ObservationBoundaryViolation {
+  const legacyPreview = (value as ObservationBoundaryViolation & { ignoredSummaryPreview?: unknown }).ignoredSummaryPreview;
+
+  return {
+    id: value.id,
+    appName: value.appName,
+    reason: value.reason,
+    discardedSummaryCharacters:
+      typeof value.discardedSummaryCharacters === "number"
+        ? value.discardedSummaryCharacters
+        : typeof legacyPreview === "string"
+          ? legacyPreview.length
+          : 0,
+    createdAt: value.createdAt
+  };
+}
+
 function normalizeObservationSession(session: ObservationSession): ObservationSession {
   return {
     ...session,
+    boundaryViolations: Array.isArray(session.boundaryViolations)
+      ? session.boundaryViolations.filter(isObservationBoundaryViolation).map(normalizeObservationBoundaryViolation)
+      : [],
     cloudUploadApprovals: Array.isArray(session.cloudUploadApprovals)
       ? session.cloudUploadApprovals.filter(isCloudUploadApproval)
       : []

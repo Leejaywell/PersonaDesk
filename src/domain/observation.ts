@@ -1,4 +1,11 @@
-import type { CloudUploadApproval, ExecutorStatus, ObservationSession, ObservationSummary, PersonaDeskState } from "./types";
+import type {
+  CloudUploadApproval,
+  ExecutorStatus,
+  ObservationBoundaryViolation,
+  ObservationSession,
+  ObservationSummary,
+  PersonaDeskState
+} from "./types";
 
 export interface ObservationEventInput {
   appName: string;
@@ -22,6 +29,7 @@ export function startObservationSession(
     allowedApps: allowedApps.map((app) => app.trim()).filter(Boolean),
     active: true,
     localSummaryStream: [],
+    boundaryViolations: [],
     cloudUploadApprovals: [],
     retentionPolicy: "summaries-only",
     startedAt: nowIso(),
@@ -46,19 +54,30 @@ export function summarizeObservationEvent(
         return session;
       }
 
-      if (!session.allowedApps.includes(input.appName)) {
-        return session;
-      }
-
       const summary: ObservationSummary = {
         id: createId("observation-summary"),
-        appName: input.appName,
+        appName: input.appName.trim(),
         summary: input.summary.trim(),
         createdAt: nowIso()
       };
 
       if (!summary.summary) {
         return session;
+      }
+
+      if (!session.allowedApps.includes(summary.appName)) {
+        const violation: ObservationBoundaryViolation = {
+          id: createId("observation-boundary"),
+          appName: summary.appName || "Unknown app",
+          reason: "Ignored observation event because the source app is outside the active allowlist.",
+          discardedSummaryCharacters: summary.summary.length,
+          createdAt: nowIso()
+        };
+
+        return {
+          ...session,
+          boundaryViolations: [...session.boundaryViolations, violation]
+        };
       }
 
       return {

@@ -17,6 +17,11 @@ describe("observation privacy", () => {
     });
 
     expect(state.observationSessions[0].localSummaryStream).toHaveLength(0);
+    expect(state.observationSessions[0].boundaryViolations).toHaveLength(1);
+    expect(state.observationSessions[0].boundaryViolations[0].appName).toBe("Terminal");
+    expect(state.observationSessions[0].boundaryViolations[0].reason).toContain("outside the active allowlist");
+    expect(state.observationSessions[0].boundaryViolations[0].discardedSummaryCharacters).toBe("User ran a command".length);
+    expect(JSON.stringify(state.observationSessions[0].boundaryViolations[0])).not.toContain("User ran a command");
   });
 
   it("stores local summaries for allowlisted apps only", () => {
@@ -29,6 +34,7 @@ describe("observation privacy", () => {
     state = stopObservationSession(state, state.observationSessions[0].id);
 
     expect(state.observationSessions[0].localSummaryStream).toHaveLength(1);
+    expect(state.observationSessions[0].boundaryViolations).toHaveLength(0);
     expect(state.observationSessions[0].active).toBe(false);
   });
 

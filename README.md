@@ -54,6 +54,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
 - Observation session workflow:
   - sessions are manually started,
   - app allowlists are enforced,
+  - non-allowlisted observation events are ignored and recorded in a boundary audit,
   - only local text summaries are stored,
   - cloud vision review requires an explicit approval audit record,
   - approval records do not upload raw screen frames in this Phase 1 implementation,

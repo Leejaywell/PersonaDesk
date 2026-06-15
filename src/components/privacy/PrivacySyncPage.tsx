@@ -1,4 +1,4 @@
-import { Check, Eye, Shield, X } from "lucide-react";
+import { AlertTriangle, Check, Eye, Shield, X } from "lucide-react";
 import type { AppActions, ObservationFormState } from "../../app/actions";
 import type { SyncPreview } from "../../domain/sync";
 import type { ObservationSession, SyncProfile } from "../../domain/types";
@@ -35,6 +35,14 @@ export function PrivacySyncPage({
           <input
             value={observationForm.allowedApps}
             onChange={(event) => setObservationForm({ ...observationForm, allowedApps: event.target.value })}
+          />
+        </label>
+        <label>
+          Event source app
+          <input
+            disabled={!activeObservation}
+            value={observationForm.sourceApp}
+            onChange={(event) => setObservationForm({ ...observationForm, sourceApp: event.target.value })}
           />
         </label>
         <div className="button-row">
@@ -90,6 +98,22 @@ export function PrivacySyncPage({
                 </article>
               );
             })
+          )}
+        </div>
+        <div className="approval-list" aria-label="Observation boundary audit">
+          {observationSessions.flatMap((session) =>
+            session.boundaryViolations.map((violation) => (
+              <article className="review-card" key={violation.id}>
+                <div className="task-card-header">
+                  <div>
+                    <h3>{violation.appName}</h3>
+                    <p>{violation.reason}</p>
+                  </div>
+                  <AlertTriangle aria-hidden="true" size={18} />
+                </div>
+                <p>Discarded summary characters: {violation.discardedSummaryCharacters}</p>
+              </article>
+            ))
           )}
         </div>
         <div className="approval-list" aria-label="Cloud vision approval audit">

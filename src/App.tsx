@@ -49,6 +49,7 @@ export default function App() {
   });
   const [observationForm, setObservationForm] = useState<ObservationFormState>({
     allowedApps: "Safari, Notes",
+    sourceApp: "Safari",
     summary: "",
     cloudVisionReason: "User requested additional visual interpretation for this local summary."
   });
@@ -137,7 +138,7 @@ export default function App() {
       return;
     }
 
-    const appName = activeObservation.allowedApps[0];
+    const appName = observationForm.sourceApp.trim();
     updateState(
       summarizeObservationEvent(state, activeObservation.id, {
         appName,

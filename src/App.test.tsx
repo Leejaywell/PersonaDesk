@@ -253,6 +253,25 @@ describe("PersonaDesk app", () => {
     expect(screen.getByText("Cloud vision approved")).toBeInTheDocument();
   });
 
+  it("records observation boundary violations for non-allowlisted apps", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /Privacy/i }));
+    await user.click(screen.getByRole("button", { name: "Start observation" }));
+    await user.clear(screen.getByLabelText("Event source app"));
+    await user.type(screen.getByLabelText("Event source app"), "Terminal");
+    await user.type(screen.getByLabelText("Local summary"), "User ran a shell command");
+    await user.click(screen.getByRole("button", { name: "Add local summary" }));
+
+    const boundaryAudit = screen.getByLabelText("Observation boundary audit");
+    expect(within(boundaryAudit).getByText("Terminal")).toBeInTheDocument();
+    expect(within(boundaryAudit).getByText(/outside the active allowlist/i)).toBeInTheDocument();
+    expect(within(boundaryAudit).getByText("Discarded summary characters: 24")).toBeInTheDocument();
+    expect(screen.queryByText("User ran a shell command")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Approve cloud vision review" })).not.toBeInTheDocument();
+  });
+
   it("generates a local sync preview without uploading data", async () => {
     const user = userEvent.setup();
     render(<App />);

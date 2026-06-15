@@ -46,6 +46,67 @@ describe("state storage", () => {
     const restored = deserializeState(JSON.stringify(legacy));
 
     expect(restored.observationSessions[0].cloudUploadApprovals).toEqual([]);
+    expect(restored.observationSessions[0].boundaryViolations).toEqual([]);
+  });
+
+  it("migrates old observation sessions without boundary audit records", () => {
+    const state = createInitialState();
+    const legacyState = {
+      ...state,
+      observationSessions: [
+        {
+          id: "observation-legacy",
+          allowedApps: ["Safari"],
+          active: true,
+          localSummaryStream: [],
+          cloudUploadApprovals: [],
+          retentionPolicy: "summaries-only",
+          startedAt: "2026-06-15T00:00:00.000Z",
+          endedAt: null
+        }
+      ]
+    };
+
+    const restored = deserializeState(JSON.stringify({ version: 2, state: legacyState }));
+
+    expect(restored.observationSessions[0].boundaryViolations).toEqual([]);
+  });
+
+  it("drops legacy forbidden observation preview text during migration", () => {
+    const state = createInitialState();
+    const legacyState = {
+      ...state,
+      observationSessions: [
+        {
+          id: "observation-legacy",
+          allowedApps: ["Safari"],
+          active: false,
+          localSummaryStream: [],
+          boundaryViolations: [
+            {
+              id: "observation-boundary-legacy",
+              appName: "Terminal",
+              reason: "Outside allowlist",
+              ignoredSummaryPreview: "Sensitive terminal text",
+              createdAt: "2026-06-15T00:00:00.000Z"
+            }
+          ],
+          cloudUploadApprovals: [],
+          retentionPolicy: "summaries-only",
+          startedAt: "2026-06-15T00:00:00.000Z",
+          endedAt: "2026-06-15T00:01:00.000Z"
+        }
+      ]
+    };
+
+    const restored = deserializeState(JSON.stringify({ version: 2, state: legacyState }));
+
+    expect(restored.observationSessions[0].boundaryViolations[0]).toMatchObject({
+      id: "observation-boundary-legacy",
+      appName: "Terminal",
+      discardedSummaryCharacters: "Sensitive terminal text".length
+    });
+    expect(JSON.stringify(restored.observationSessions[0].boundaryViolations[0])).not.toContain("Sensitive terminal text");
   });
 
   it("adds new default executors to older persisted states without overwriting user state", () => {

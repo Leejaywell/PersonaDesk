@@ -21,6 +21,7 @@ export interface DraftFormState {
 
 export interface ObservationFormState {
   allowedApps: string;
+  sourceApp: string;
   summary: string;
   cloudVisionReason: string;
 }
