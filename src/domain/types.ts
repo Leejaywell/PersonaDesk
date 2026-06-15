@@ -27,6 +27,7 @@ export type VoiceRequestKind = "asr-transcript" | "tts-preview";
 export type VoiceRequestStatus = "ready" | "configured-not-verified" | "skipped";
 export type VoicePlaybackStatus = "not-requested" | "played" | "unavailable" | "failed";
 export type VoiceRouteTarget = "audit-only" | "companion" | "task-goal";
+export type VoiceInputSource = "manual-text" | "runtime-speech-recognition";
 export type ExecutorHealthCheckStatus = "ready" | "configured-not-verified" | "skipped" | "missing";
 export type DesktopPresenceAuditKind = "notification-preview";
 export type DesktopPresenceAuditStatus = "sent" | "permission-required" | "unavailable" | "failed";
@@ -150,11 +151,13 @@ export interface VoiceRequest {
   executorId: string;
   characterId: string | null;
   routeTarget: VoiceRouteTarget;
+  inputSource: VoiceInputSource;
   text: string;
   status: VoiceRequestStatus;
   playbackStatus: VoicePlaybackStatus;
   playbackDisclosure: string;
   playedAt: string | null;
+  captureDisclosure: string;
   disclosure: string;
   createdAt: string;
 }

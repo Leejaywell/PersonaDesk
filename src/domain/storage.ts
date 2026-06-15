@@ -161,20 +161,31 @@ function normalizeConversationMessages(persisted: unknown): ConversationMessage[
 }
 
 function normalizeVoiceRequests(persisted: unknown): VoiceRequest[] {
-  return arrayOrEmpty<VoiceRequest>(persisted).map((request) => ({
-    ...request,
-    routeTarget:
-      request.routeTarget === "companion" || request.routeTarget === "task-goal"
-        ? request.routeTarget
-        : "audit-only",
-    playbackStatus: request.playbackStatus ?? "not-requested",
-    playbackDisclosure:
-      request.playbackDisclosure ??
-      (request.kind === "tts-preview"
-        ? "Speech playback has not been requested yet."
-        : "Playback does not apply to ASR transcript requests."),
-    playedAt: request.playedAt ?? null
-  }));
+  return arrayOrEmpty<VoiceRequest>(persisted).map((request) => {
+    const inputSource = request.inputSource === "runtime-speech-recognition" ? request.inputSource : "manual-text";
+    const kind = request.kind === "tts-preview" ? request.kind : "asr-transcript";
+
+    return {
+      ...request,
+      inputSource,
+      routeTarget:
+        request.routeTarget === "companion" || request.routeTarget === "task-goal"
+          ? request.routeTarget
+          : "audit-only",
+      playbackStatus: request.playbackStatus ?? "not-requested",
+      playbackDisclosure:
+        request.playbackDisclosure ??
+        (request.kind === "tts-preview"
+          ? "Speech playback has not been requested yet."
+          : "Playback does not apply to ASR transcript requests."),
+      playedAt: request.playedAt ?? null,
+      captureDisclosure:
+        request.captureDisclosure ??
+        (kind === "tts-preview"
+          ? "Capture disclosure does not apply to TTS preview requests."
+          : "Transcript text was entered manually. No microphone audio was captured.")
+    };
+  });
 }
 
 function normalizeTasks(persisted: unknown): Task[] {

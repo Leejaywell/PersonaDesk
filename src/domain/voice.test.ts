@@ -47,6 +47,30 @@ describe("voice requests", () => {
     expect(state.conversationMessages[1].text).toContain("local transcript text");
   });
 
+  it("records runtime speech recognition as the ASR input source", () => {
+    const captureDisclosure =
+      "Runtime speech recognition returned a transcript after a user-initiated capture. PersonaDesk stores transcript text only and does not store raw audio.";
+    const state = createVoiceRequest(createInitialState(), {
+      kind: "asr-transcript",
+      executorId: "browser-asr",
+      routeTarget: "task-goal",
+      inputSource: "runtime-speech-recognition",
+      captureDisclosure,
+      text: "Create a spoken task checklist"
+    });
+
+    expect(state.voiceRequests[0]).toMatchObject({
+      kind: "asr-transcript",
+      executorId: "browser-asr",
+      routeTarget: "task-goal",
+      inputSource: "runtime-speech-recognition",
+      status: "ready",
+      captureDisclosure
+    });
+    expect(state.voiceRequests[0].disclosure).toContain("Runtime speech recognition returned a transcript");
+    expect(state.voiceRequests[0].disclosure).toContain("task goal draft");
+  });
+
   it("marks configured TTS requests as configured but not verified", () => {
     const configured = configureExecutor(createInitialState(), "tts-provider", {
       endpoint: "https://voice.example.test",

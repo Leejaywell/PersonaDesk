@@ -4,6 +4,7 @@ import type { ExecutorConfigurationInput } from "../domain/executors";
 import type { MemoryCandidateReview } from "../domain/memory";
 import type { SupervisionMode, TaskAcceptanceStatus } from "../domain/types";
 import type { VoiceRequestInput } from "../domain/voice";
+import type { RuntimeSpeechRecognitionResult } from "./voiceRecognition";
 
 export interface TaskFormState {
   goal: string;
@@ -48,6 +49,7 @@ export interface AppActions {
   configureExecutor: (executorId: string, configuration: ExecutorConfigurationInput) => void;
   recordExecutorHealthCheck: (executorId: string) => void;
   createVoiceRequest: (input: VoiceRequestInput) => void;
+  captureSpeechTranscript: () => Promise<RuntimeSpeechRecognitionResult>;
   playVoicePreview: (requestId: string) => Promise<void>;
   previewDesktopNotification: () => Promise<void>;
   recordTaskAcceptance: (

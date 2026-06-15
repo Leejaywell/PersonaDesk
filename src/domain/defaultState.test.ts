@@ -20,4 +20,17 @@ describe("createInitialState", () => {
     expect(cloudExecutors.length).toBeGreaterThan(0);
     expect(cloudExecutors.every((executor) => executor.status === "unconfigured")).toBe(true);
   });
+
+  it("exposes runtime speech recognition separately from external ASR providers", () => {
+    const state = createInitialState();
+    const runtimeAsr = state.executors.find((executor) => executor.id === "browser-asr");
+    const externalAsr = state.executors.find((executor) => executor.id === "asr-provider");
+
+    expect(runtimeAsr).toMatchObject({
+      type: "asr",
+      status: "available",
+      detectionSource: "runtime-capability"
+    });
+    expect(externalAsr?.status).toBe("unconfigured");
+  });
 });

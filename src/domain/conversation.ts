@@ -20,7 +20,7 @@ function deterministicReply(characterName: string, text: string, source: Convers
   const trimmed = text.trim();
 
   if (source === "voice-transcript") {
-    return `${characterName}: I received this as local transcript text. I can respond here without any model provider or microphone capture.`;
+    return `${characterName}: I received this as local transcript text. I can respond here without any model provider call.`;
   }
 
   if (trimmed.endsWith("?")) {

@@ -175,6 +175,8 @@ describe("state storage", () => {
     const restored = deserializeState(JSON.stringify({ version: 1, state: legacyState }));
 
     expect(restored.voiceRequests[0].routeTarget).toBe("audit-only");
+    expect(restored.voiceRequests[0].inputSource).toBe("manual-text");
+    expect(restored.voiceRequests[0].captureDisclosure).toBe("Transcript text was entered manually. No microphone audio was captured.");
     expect(restored.voiceRequests[0].playbackStatus).toBe("not-requested");
     expect(restored.voiceRequests[0].playbackDisclosure).toBe("Playback does not apply to ASR transcript requests.");
     expect(restored.voiceRequests[0].playedAt).toBeNull();
@@ -204,6 +206,7 @@ describe("state storage", () => {
     expect(restored.voiceRequests[0].playbackStatus).toBe("not-requested");
     expect(restored.voiceRequests[0].playbackDisclosure).toBe("Speech playback has not been requested yet.");
     expect(restored.voiceRequests[0].playedAt).toBeNull();
+    expect(restored.voiceRequests[0].captureDisclosure).toBe("Capture disclosure does not apply to TTS preview requests.");
   });
 
   it("adds missing executor health check state for older persisted states", () => {

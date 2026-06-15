@@ -17,6 +17,8 @@ describe("PersonaDesk app", () => {
     window.localStorage.clear();
     Object.defineProperty(window, "speechSynthesis", { value: undefined, configurable: true });
     Object.defineProperty(window, "SpeechSynthesisUtterance", { value: undefined, configurable: true });
+    Object.defineProperty(window, "SpeechRecognition", { value: undefined, configurable: true });
+    Object.defineProperty(window, "webkitSpeechRecognition", { value: undefined, configurable: true });
     scanLocalAgentsMock.mockReset();
     scanLocalAgentsMock.mockResolvedValue({
       agents: [],
@@ -159,8 +161,46 @@ describe("PersonaDesk app", () => {
 
     expect(screen.getAllByText("ASR transcript request").length).toBeGreaterThan(0);
     expect(screen.getByText("Please transcribe this local note.")).toBeInTheDocument();
-    expect(screen.getByText(/no audio was captured, uploaded, generated, or played/i)).toBeInTheDocument();
+    expect(screen.getByText(/no microphone audio was captured automatically/i)).toBeInTheDocument();
     expect(screen.getByText("Route: audit-only")).toBeInTheDocument();
+    expect(screen.getByText("Source: manual-text")).toBeInTheDocument();
+  });
+
+  it("captures a runtime speech transcript into the ASR audit flow", async () => {
+    const user = userEvent.setup();
+    class FakeSpeechRecognition {
+      continuous = false;
+      interimResults = false;
+      lang = "";
+      maxAlternatives = 0;
+      onresult: ((event: { results: Array<Array<{ transcript: string }>> }) => void) | null = null;
+      onerror: ((event: { error: string }) => void) | null = null;
+      onend: (() => void) | null = null;
+
+      start() {
+        this.onresult?.({ results: [[{ transcript: "Create a spoken runtime checklist" }]] });
+      }
+
+      stop() {}
+    }
+    Object.defineProperty(window, "SpeechRecognition", {
+      value: FakeSpeechRecognition,
+      configurable: true
+    });
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /Executors/i }));
+    expect(screen.getByLabelText("Voice provider")).toHaveValue("browser-asr");
+    await user.click(screen.getByRole("button", { name: "Capture runtime speech transcript" }));
+
+    expect(screen.getByLabelText("Voice request text")).toHaveValue("Create a spoken runtime checklist");
+    expect(screen.getByText(/Runtime speech recognition returned a transcript/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Record voice request" }));
+
+    expect(screen.getAllByText("ASR transcript request").length).toBeGreaterThan(0);
+    expect(screen.getByText("Create a spoken runtime checklist")).toBeInTheDocument();
+    expect(screen.getByText("Source: runtime-speech-recognition")).toBeInTheDocument();
+    expect(screen.getAllByText(/does not store raw audio/i).length).toBeGreaterThan(0);
   });
 
   it("plays TTS preview text through local browser speech synthesis when available", async () => {

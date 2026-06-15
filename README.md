@@ -98,11 +98,13 @@ This repository currently implements the Phase 1 thin slice from the design spec
   - records local executor health-check audits without contacting external providers.
 - Voice request audit for ASR/TTS slots:
   - records transcript and speech-preview requests locally,
+  - exposes a runtime speech-recognition ASR slot that can capture a transcript after a user action when the browser/WebView supports it,
   - routes manually entered ASR transcript text to companion chat or the task goal draft when selected,
+  - routes runtime speech-recognition transcripts through the same local ASR audit and routing flow,
   - plays TTS preview text through local browser/WebView speech synthesis when available,
   - records local speech playback status and disclosure on the voice audit entry,
   - reports skipped/configured-not-verified status from the selected provider,
-  - does not capture microphone audio, call external TTS providers, or upload raw audio in this Phase 1 implementation.
+  - does not store raw audio, call external TTS providers, or upload raw audio in this Phase 1 implementation.
 
 ## What Is Not Pretended
 
@@ -111,7 +113,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
 - Codex/Claude/Cursor/Gemini local agents are not treated as available unless safe detection finds them.
 - Tasks only run through executors allowed for that task; unavailable or not-yet-adapted allowed executors create a visible blocked run.
 - Detected local agents are not launched by the task loop yet; the task card records that no local agent process was started.
-- ASR and TTS are exposed as provider slots, local request audit records, manual transcript routing, and local browser speech playback for TTS previews. Microphone capture, transcription adapters, and external/cloud audio generation are not implemented yet.
+- ASR and TTS are exposed as provider slots, local request audit records, manual transcript routing, runtime speech-recognition capture when the browser/WebView supports it, and local browser speech playback for TTS previews. External/cloud transcription adapters and external/cloud audio generation are not implemented yet.
 - Screen observation stores local summaries only. It does not capture or upload raw frames.
 - Cloud vision approvals are recorded as audit entries only until a real vision provider and upload path are configured.
 - Optional sync is represented by local settings, a local preview, and local sync package export/import preflight. A cloud sync backend and automatic import merge are not implemented yet.

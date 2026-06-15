@@ -2,6 +2,7 @@ import { sendCompanionMessage } from "./conversation";
 import type {
   Executor,
   PersonaDeskState,
+  VoiceInputSource,
   VoicePlaybackStatus,
   VoiceRequest,
   VoiceRequestKind,
@@ -14,6 +15,8 @@ export interface VoiceRequestInput {
   executorId: string;
   characterId?: string | null;
   routeTarget?: VoiceRouteTarget;
+  inputSource?: VoiceInputSource;
+  captureDisclosure?: string;
   text: string;
 }
 
@@ -73,9 +76,15 @@ function voiceDisclosure(
   executor: Executor,
   status: VoiceRequestStatus,
   routeTarget: VoiceRouteTarget,
-  characterName: string | undefined
+  characterName: string | undefined,
+  inputSource: VoiceInputSource,
+  captureDisclosure: string
 ): string {
   const routeDetail = kind === "asr-transcript" ? routeDisclosure(routeTarget, characterName) : "";
+
+  if (kind === "asr-transcript" && inputSource === "runtime-speech-recognition") {
+    return `${captureDisclosure}${routeDetail}`;
+  }
 
   if (status === "ready") {
     const base = kind === "asr-transcript"
@@ -102,6 +111,18 @@ function initialPlaybackDisclosure(kind: VoiceRequestKind): string {
     : "Playback does not apply to ASR transcript requests.";
 }
 
+function defaultCaptureDisclosure(kind: VoiceRequestKind, inputSource: VoiceInputSource): string {
+  if (kind !== "asr-transcript") {
+    return "Capture disclosure does not apply to TTS preview requests.";
+  }
+
+  if (inputSource === "runtime-speech-recognition") {
+    return "Runtime speech recognition supplied this transcript after a user-initiated capture. PersonaDesk stores transcript text only and does not store raw audio.";
+  }
+
+  return "Transcript text was entered manually. No microphone audio was captured.";
+}
+
 export function createVoiceRequest(state: PersonaDeskState, input: VoiceRequestInput): PersonaDeskState {
   const text = input.text.trim();
   const executor = state.executors.find((item) => item.id === input.executorId);
@@ -112,6 +133,8 @@ export function createVoiceRequest(state: PersonaDeskState, input: VoiceRequestI
 
   const status = voiceStatus(executor);
   const routeTarget = normalizeRouteTarget(input.kind, input.routeTarget);
+  const inputSource = input.inputSource ?? "manual-text";
+  const captureDisclosure = input.captureDisclosure?.trim() || defaultCaptureDisclosure(input.kind, inputSource);
   const routeCharacter =
     routeTarget === "companion"
       ? state.characters.find((character) => character.id === input.characterId && character.kind === "emotional")
@@ -122,12 +145,14 @@ export function createVoiceRequest(state: PersonaDeskState, input: VoiceRequestI
     executorId: executor.id,
     characterId: input.characterId ?? null,
     routeTarget,
+    inputSource,
     text,
     status,
     playbackStatus: "not-requested",
     playbackDisclosure: initialPlaybackDisclosure(input.kind),
     playedAt: null,
-    disclosure: voiceDisclosure(input.kind, executor, status, routeTarget, routeCharacter?.name),
+    captureDisclosure,
+    disclosure: voiceDisclosure(input.kind, executor, status, routeTarget, routeCharacter?.name, inputSource, captureDisclosure),
     createdAt: nowIso()
   };
   const nextState = {

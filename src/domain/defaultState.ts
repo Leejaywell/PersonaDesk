@@ -286,6 +286,23 @@ const executors: Executor[] = [
     configuration: emptyExecutorConfiguration
   },
   {
+    id: "browser-asr",
+    displayName: "Runtime speech recognition",
+    type: "asr",
+    capabilities: ["speech-input", "runtime-speech-recognition"],
+    modalities: ["audio", "text"],
+    contextLimit: null,
+    costProfile: "runtime-dependent",
+    latencyProfile: "device-dependent",
+    permissionRiskLevel: "medium",
+    requiredSecret: null,
+    status: "available",
+    statusReason:
+      "Uses the browser or desktop WebView speech recognition runtime when available; capture starts only from a user action.",
+    detectionSource: "runtime-capability",
+    configuration: emptyExecutorConfiguration
+  },
+  {
     id: "asr-provider",
     displayName: "Speech-to-text provider",
     type: "asr",

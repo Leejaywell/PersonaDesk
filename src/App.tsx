@@ -16,6 +16,7 @@ import {
 } from "./app/desktopWindows";
 import { scanLocalAgents as scanKnownLocalAgents } from "./app/localAgents";
 import { playLocalSpeechPreview } from "./app/voicePlayback";
+import { captureRuntimeSpeechTranscript } from "./app/voiceRecognition";
 import { AppShell } from "./components/layout/AppShell";
 import { CharacterStudioPage } from "./components/characters/CharacterStudioPage";
 import { CompanionWindow } from "./components/desktop/CompanionWindow";
@@ -299,6 +300,7 @@ export default function App() {
         setTaskForm((current) => ({ ...current, goal: input.text.trim() }));
       }
     },
+    captureSpeechTranscript: captureRuntimeSpeechTranscript,
     playVoicePreview: async (requestId: string) => {
       const request = state.voiceRequests.find((item) => item.id === requestId && item.kind === "tts-preview");
 
