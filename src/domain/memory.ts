@@ -9,6 +9,14 @@ export interface MemoryCandidateInput {
   reason: string;
 }
 
+export interface MemoryCandidateReview {
+  layer?: MemoryLayer;
+  ownerCharacterId?: string | null;
+  text?: string;
+  sensitivity?: Sensitivity;
+  syncPolicy?: MemoryItem["syncPolicy"];
+}
+
 function createId(prefix: string): string {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -42,24 +50,54 @@ export function proposeMemoryCandidate(
   };
 }
 
-export function confirmMemoryCandidate(state: PersonaDeskState, candidateId: string): PersonaDeskState {
+function validOwnerCharacterId(state: PersonaDeskState, ownerCharacterId: string | null | undefined): string | null {
+  if (!ownerCharacterId) {
+    return null;
+  }
+
+  return state.characters.some((character) => character.id === ownerCharacterId) ? ownerCharacterId : null;
+}
+
+function syncPolicyForSensitivity(
+  sensitivity: Sensitivity,
+  requestedSyncPolicy: MemoryItem["syncPolicy"] | undefined
+): MemoryItem["syncPolicy"] {
+  if (sensitivity === "high") {
+    return "local-only";
+  }
+
+  return requestedSyncPolicy ?? "sync-allowed";
+}
+
+export function confirmMemoryCandidate(
+  state: PersonaDeskState,
+  candidateId: string,
+  review: MemoryCandidateReview = {}
+): PersonaDeskState {
   const candidate = state.memoryCandidates.find((item) => item.id === candidateId);
 
   if (!candidate) {
     return state;
   }
 
+  const text = (review.text ?? candidate.proposedText).trim();
+
+  if (!text) {
+    return state;
+  }
+
+  const sensitivity = review.sensitivity ?? candidate.sensitivity;
   const timestamp = nowIso();
   const memory: MemoryItem = {
     id: createId("memory"),
-    layer: candidate.proposedLayer,
-    ownerCharacterId: candidate.proposedOwnerCharacterId,
-    text: candidate.proposedText,
+    layer: review.layer ?? candidate.proposedLayer,
+    ownerCharacterId: validOwnerCharacterId(state, review.ownerCharacterId ?? candidate.proposedOwnerCharacterId),
+    text,
     source: candidate.sourceEvent,
-    sensitivity: candidate.sensitivity,
+    sensitivity,
     createdAt: timestamp,
     updatedAt: timestamp,
-    syncPolicy: candidate.sensitivity === "high" ? "local-only" : "sync-allowed"
+    syncPolicy: syncPolicyForSensitivity(sensitivity, review.syncPolicy)
   };
 
   return {

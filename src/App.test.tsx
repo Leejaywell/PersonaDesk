@@ -65,6 +65,28 @@ describe("PersonaDesk app", () => {
     expect(screen.getAllByText(/privacy checklist/i).length).toBeGreaterThan(0);
   });
 
+  it("can review memory layer, owner, sensitivity, and sync policy before confirmation", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /Tasks/i }));
+    await user.type(screen.getByLabelText("Task goal"), "Create memory preference checklist");
+    await user.click(screen.getByRole("button", { name: "Run autonomous task" }));
+    expect(await screen.findByText("Delivered")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Memory/i }));
+    await user.selectOptions(screen.getByLabelText("Layer"), "character-private");
+    await user.selectOptions(screen.getByLabelText("Owner"), "mira");
+    await user.selectOptions(screen.getByLabelText("Sensitivity"), "high");
+    await user.click(screen.getByRole("button", { name: "Confirm reviewed memory" }));
+
+    expect(screen.getByText("Confirmed memories: 1")).toBeInTheDocument();
+    expect(screen.getAllByText("character-private").length).toBeGreaterThan(0);
+    expect(screen.getByText("Mira")).toBeInTheDocument();
+    expect(screen.getByText("high")).toBeInTheDocument();
+    expect(screen.getByText("local-only")).toBeInTheDocument();
+  });
+
   it("blocks risky tasks until requested scopes are granted on the same task", async () => {
     const user = userEvent.setup();
     render(<App />);

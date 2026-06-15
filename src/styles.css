@@ -311,7 +311,8 @@ label {
 .card-list,
 .executor-list,
 .task-card-list,
-.character-settings-editor {
+.character-settings-editor,
+.memory-review-form {
   display: grid;
   gap: 10px;
 }
@@ -516,6 +517,10 @@ label {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  margin-top: 12px;
+}
+
+.memory-item-list {
   margin-top: 12px;
 }
 

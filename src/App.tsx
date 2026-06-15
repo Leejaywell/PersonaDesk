@@ -158,7 +158,8 @@ export default function App() {
     rejectCharacterDraft: (draftId: string) => updateState(rejectDraft(state, draftId)),
     updateCharacterSettings: (characterId: string, update: Parameters<typeof updateCharacterSettings>[2]) =>
       setState((current) => updateCharacterSettings(current, characterId, update)),
-    confirmMemoryCandidate: (candidateId: string) => updateState(confirmMemory(state, candidateId)),
+    confirmMemoryCandidate: (candidateId: string, review?: Parameters<typeof confirmMemory>[2]) =>
+      updateState(confirmMemory(state, candidateId, review)),
     rejectMemoryCandidate: (candidateId: string) => updateState(rejectMemory(state, candidateId)),
     startObservation,
     stopObservation,
@@ -203,7 +204,14 @@ export default function App() {
           />
         );
       case "memory":
-        return <MemoryCenterPage actions={actions} memories={state.memories} memoryCandidates={state.memoryCandidates} />;
+        return (
+          <MemoryCenterPage
+            actions={actions}
+            characters={state.characters}
+            memories={state.memories}
+            memoryCandidates={state.memoryCandidates}
+          />
+        );
       case "executors":
         return <ExecutorSettingsPage actions={actions} executors={state.executors} scanStatus={localAgentScanStatus} />;
       case "privacy":

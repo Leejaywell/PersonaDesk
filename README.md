@@ -33,7 +33,9 @@ This repository currently implements the Phase 1 thin slice from the design spec
   - lets the user grant requested scopes and resume the same blocked task while preserving the blocked run as history.
 - Memory candidate workflow:
   - candidates are proposed,
+  - users can edit memory text, layer, owner, sensitivity, and sync policy before confirmation,
   - long-term memory is written only after confirmation,
+  - high-sensitivity memories are forced to local-only,
   - rejected candidates are discarded.
 - Observation session workflow:
   - sessions are manually started,

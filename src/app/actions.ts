@@ -1,5 +1,6 @@
 import type { FormEvent } from "react";
 import type { CharacterSettingsUpdate } from "../domain/characters";
+import type { MemoryCandidateReview } from "../domain/memory";
 import type { SupervisionMode } from "../domain/types";
 
 export interface TaskFormState {
@@ -28,7 +29,7 @@ export interface AppActions {
   confirmCharacterDraft: (draftId: string) => void;
   rejectCharacterDraft: (draftId: string) => void;
   updateCharacterSettings: (characterId: string, update: CharacterSettingsUpdate) => void;
-  confirmMemoryCandidate: (candidateId: string) => void;
+  confirmMemoryCandidate: (candidateId: string, review?: MemoryCandidateReview) => void;
   rejectMemoryCandidate: (candidateId: string) => void;
   startObservation: () => void;
   stopObservation: () => void;
