@@ -4,6 +4,7 @@ export interface ExecutorRouteRequest {
   taskCharacterId: string;
   taskKind: string;
   requiresLocalAgent: boolean;
+  allowedExecutorIds?: string[];
 }
 
 export interface DetectedLocalAgent {
@@ -53,10 +54,13 @@ export function routeExecutorForTask(
   request: ExecutorRouteRequest
 ): Executor {
   const character = state.characters.find((item) => item.id === request.taskCharacterId);
-  const defaultExecutor = state.executors.find((item) => item.id === character?.defaultExecutorId);
+  const allowedIds = new Set(request.allowedExecutorIds?.filter(Boolean) ?? []);
+  const candidateExecutors =
+    allowedIds.size > 0 ? state.executors.filter((executor) => allowedIds.has(executor.id)) : state.executors;
+  const defaultExecutor = candidateExecutors.find((item) => item.id === character?.defaultExecutorId);
 
   if (request.requiresLocalAgent) {
-    const localAgent = state.executors.find(
+    const localAgent = candidateExecutors.find(
       (item) => item.type === "local-agent" && item.status === "available"
     );
 
@@ -69,11 +73,11 @@ export function routeExecutorForTask(
     return defaultExecutor;
   }
 
-  const localPlanner = state.executors.find(
+  const localPlanner = candidateExecutors.find(
     (item) => item.id === "local-planner" && item.status === "available"
   );
 
-  return localPlanner ?? defaultExecutor ?? state.executors[0];
+  return localPlanner ?? defaultExecutor ?? candidateExecutors[0] ?? state.executors[0];
 }
 
 export function mergeDetectedLocalAgents(

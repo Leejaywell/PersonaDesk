@@ -109,6 +109,21 @@ describe("PersonaDesk app", () => {
     expect(screen.getByText(/No model provider was called/)).toBeInTheDocument();
   });
 
+  it("blocks task execution when the allowed executor list has no available provider", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /Tasks/i }));
+    await user.click(screen.getByLabelText(/Allow Local deterministic planner/i));
+    await user.click(screen.getByLabelText(/Allow OpenAI-compatible chat API/i));
+    await user.type(screen.getByLabelText("Task goal"), "Create an external model only checklist");
+    await user.click(screen.getByRole("button", { name: "Run autonomous task" }));
+
+    expect(await screen.findByText("Task is blocked because no allowed executor is available.")).toBeInTheDocument();
+    expect(screen.getByText("Allowed executors: openai-compatible")).toBeInTheDocument();
+    expect(screen.getByText(/OpenAI-compatible chat API is unconfigured/)).toBeInTheDocument();
+  });
+
   it("can review memory layer, owner, sensitivity, and sync policy before confirmation", async () => {
     const user = userEvent.setup();
     render(<App />);

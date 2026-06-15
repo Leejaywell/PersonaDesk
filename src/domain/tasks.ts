@@ -16,6 +16,13 @@ export interface CreateTaskInput {
   desiredOutput: string;
   supervisionMode: SupervisionMode;
   authorizationScope: string;
+  allowedExecutorIds?: string[];
+}
+
+function normalizeAllowedExecutorIds(allowedExecutorIds: string[] | undefined): string[] {
+  const ids = Array.from(new Set((allowedExecutorIds ?? []).map((id) => id.trim()).filter(Boolean)));
+
+  return ids.length > 0 ? ids : ["local-planner"];
 }
 
 function createId(prefix: string): string {
@@ -36,6 +43,7 @@ export function createTask(state: PersonaDeskState, input: CreateTaskInput): Per
     desiredOutput: input.desiredOutput.trim(),
     supervisionMode: input.supervisionMode,
     authorizationScope: input.authorizationScope.trim(),
+    allowedExecutorIds: normalizeAllowedExecutorIds(input.allowedExecutorIds),
     status: "draft",
     createdBy: "user",
     createdAt: nowIso()
@@ -122,8 +130,40 @@ export function runAutonomyCycle(state: PersonaDeskState, taskId: string): Perso
   const executor = routeExecutorForTask(state, {
     taskCharacterId: "orion",
     taskKind: "planning",
-    requiresLocalAgent: false
+    requiresLocalAgent: false,
+    allowedExecutorIds: task.allowedExecutorIds
   });
+
+  if (executor.status !== "available") {
+    const blockedRun: TaskRun = {
+      id: createId("task-run"),
+      taskId: task.id,
+      status: "blocked",
+      assignedCharacters,
+      taskTree: taskTree.map((step) => ({ ...step, status: "blocked" })),
+      executorCalls: [
+        {
+          executorId: executor.id,
+          characterId: "orion",
+          purpose: "Create a task plan and delivery artifact with an allowed executor.",
+          status: "skipped",
+          disclosure: executorDisclosure(executor)
+        }
+      ],
+      decisions: [
+        "Paused because the task allowed-executor list does not include an available planning executor.",
+        `Allowed executors: ${task.allowedExecutorIds.join(", ")}.`
+      ],
+      logs: ["No task artifact was produced because no allowed executor was available."],
+      validationResults: [],
+      artifacts: [],
+      approvalRequests: [],
+      finalSummary: "Task is blocked because no allowed executor is available."
+    };
+
+    return appendRun(state, task.id, blockedRun, "blocked");
+  }
+
   const artifact = buildDeterministicArtifact(task);
   const validationResults = validateArtifact(task, artifact);
   const passed = validationResults.every((result) => result.passed);

@@ -10,7 +10,8 @@ describe("task autonomy", () => {
       constraints: "Keep it local-first and privacy aware",
       desiredOutput: "Checklist",
       supervisionMode: "unsupervised",
-      authorizationScope: "text-planning-only"
+      authorizationScope: "text-planning-only",
+      allowedExecutorIds: ["local-planner"]
     });
 
     state = runAutonomyCycle(state, state.tasks[0].id);
@@ -20,6 +21,31 @@ describe("task autonomy", () => {
     expect(run.taskTree.length).toBeGreaterThan(0);
     expect(run.validationResults.every((result) => result.passed)).toBe(true);
     expect(run.artifacts[0].content).toContain("PersonaDesk");
+    expect(state.tasks[0].allowedExecutorIds).toEqual(["local-planner"]);
+  });
+
+  it("blocks instead of falling back when only unconfigured executors are allowed", () => {
+    let state = createInitialState();
+    state = createTask(state, {
+      goal: "Draft an API integration checklist",
+      constraints: "Use only the configured external model if available",
+      desiredOutput: "Checklist",
+      supervisionMode: "unsupervised",
+      authorizationScope: "text-planning-only",
+      allowedExecutorIds: ["openai-compatible"]
+    });
+
+    state = runAutonomyCycle(state, state.tasks[0].id);
+
+    const run = state.taskRuns[0];
+    expect(run.status).toBe("blocked");
+    expect(run.artifacts).toEqual([]);
+    expect(run.executorCalls).toHaveLength(1);
+    expect(run.executorCalls[0]).toMatchObject({
+      executorId: "openai-compatible",
+      status: "skipped"
+    });
+    expect(run.finalSummary).toContain("no allowed executor is available");
   });
 
   it("pauses when a task asks for access outside authorization scope", () => {

@@ -38,7 +38,8 @@ export default function App() {
     constraints: "Keep it local-first and privacy aware",
     desiredOutput: "Checklist",
     supervisionMode: "unsupervised",
-    authorizationScope: "text-planning-only"
+    authorizationScope: "text-planning-only",
+    allowedExecutorIds: ["local-planner"]
   });
   const [observationForm, setObservationForm] = useState<ObservationFormState>({
     allowedApps: "Safari, Notes",
@@ -83,7 +84,8 @@ export default function App() {
       constraints: taskForm.constraints,
       desiredOutput: taskForm.desiredOutput,
       supervisionMode: taskForm.supervisionMode,
-      authorizationScope: taskForm.authorizationScope
+      authorizationScope: taskForm.authorizationScope,
+      allowedExecutorIds: taskForm.allowedExecutorIds
     });
     const taskId = next.tasks[next.tasks.length - 1].id;
     next = runAutonomyCycle(next, taskId);
@@ -200,6 +202,7 @@ export default function App() {
         return (
           <TaskRoomPage
             actions={actions}
+            executors={state.executors}
             roleBoundaries={state.roleBoundaries}
             setTaskForm={setTaskForm}
             taskCharacters={taskCharacters}

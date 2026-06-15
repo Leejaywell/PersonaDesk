@@ -46,6 +46,19 @@ describe("executor routing", () => {
     expect(routed.id).toBe("local-planner");
   });
 
+  it("respects task-level allowed executor constraints", () => {
+    const state = createInitialState();
+    const routed = routeExecutorForTask(state, {
+      taskCharacterId: "orion",
+      taskKind: "planning",
+      requiresLocalAgent: false,
+      allowedExecutorIds: ["openai-compatible"]
+    });
+
+    expect(routed.id).toBe("openai-compatible");
+    expect(routed.status).toBe("unconfigured");
+  });
+
   it("returns provider slots to unconfigured when metadata is cleared", () => {
     let state = createInitialState();
     state = configureExecutor(state, "vision-provider", {

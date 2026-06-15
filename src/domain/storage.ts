@@ -123,6 +123,15 @@ function normalizeConversationMessages(persisted: unknown): ConversationMessage[
   }));
 }
 
+function normalizeTasks(persisted: unknown): Task[] {
+  return arrayOrEmpty<Task>(persisted).map((task) => ({
+    ...task,
+    allowedExecutorIds: Array.isArray(task.allowedExecutorIds) && task.allowedExecutorIds.length > 0
+      ? task.allowedExecutorIds
+      : ["local-planner"]
+  }));
+}
+
 function mergeRoleBoundaries(persisted: unknown, defaults: Record<string, RoleBoundary>): Record<string, RoleBoundary> {
   return {
     ...defaults,
@@ -159,7 +168,7 @@ function normalizeState(state: PersonaDeskState): PersonaDeskState {
     characterDrafts: arrayOrEmpty(state.characterDrafts),
     roleBoundaries: mergeRoleBoundaries(state.roleBoundaries, defaults.roleBoundaries),
     executors: normalizeExecutors(state.executors, defaults.executors),
-    tasks: arrayOrEmpty<Task>(state.tasks),
+    tasks: normalizeTasks(state.tasks),
     taskRuns: arrayOrEmpty<TaskRun>(state.taskRuns),
     memories: arrayOrEmpty<MemoryItem>(state.memories),
     memoryCandidates: arrayOrEmpty<MemoryCandidate>(state.memoryCandidates),

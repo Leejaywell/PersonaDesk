@@ -92,6 +92,31 @@ describe("state storage", () => {
     expect(restored.voiceRequests).toEqual([]);
   });
 
+  it("adds default allowed executors to older persisted tasks", () => {
+    const state = createInitialState();
+    const legacyState = {
+      ...state,
+      tasks: [
+        {
+          id: "task-legacy",
+          title: "Legacy task",
+          goal: "Create checklist",
+          constraints: "",
+          desiredOutput: "Checklist",
+          supervisionMode: "unsupervised",
+          authorizationScope: "text-planning-only",
+          status: "draft",
+          createdBy: "user",
+          createdAt: "2026-06-15T00:00:00.000Z"
+        }
+      ]
+    };
+
+    const restored = deserializeState(JSON.stringify({ version: 1, state: legacyState }));
+
+    expect(restored.tasks[0].allowedExecutorIds).toEqual(["local-planner"]);
+  });
+
   it("normalizes old conversation messages with missing source event ids", () => {
     const state = createInitialState();
     const restored = deserializeState(

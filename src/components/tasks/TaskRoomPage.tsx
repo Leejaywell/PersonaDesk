@@ -1,8 +1,9 @@
 import { Bot, Check, Play } from "lucide-react";
 import type { AppActions, TaskFormState } from "../../app/actions";
-import type { Character, RoleBoundary, Task, TaskRun } from "../../domain/types";
+import type { Character, Executor, RoleBoundary, Task, TaskRun } from "../../domain/types";
 import { CharacterCard } from "../characters/CharacterCard";
 import { Panel } from "../ui/Panel";
+import { StatusPill } from "../ui/StatusPill";
 import { TaskCard } from "./TaskCard";
 
 export function TaskRoomPage({
@@ -10,6 +11,7 @@ export function TaskRoomPage({
   roleBoundaries,
   tasks,
   taskRuns,
+  executors,
   taskForm,
   setTaskForm,
   actions
@@ -18,10 +20,27 @@ export function TaskRoomPage({
   roleBoundaries: Record<string, RoleBoundary>;
   tasks: Task[];
   taskRuns: TaskRun[];
+  executors: Executor[];
   taskForm: TaskFormState;
   setTaskForm: (next: TaskFormState) => void;
   actions: AppActions;
 }) {
+  const taskExecutors = executors.filter((executor) =>
+    ["deterministic", "model-api", "local-model", "local-agent"].includes(executor.type)
+  );
+
+  function setAllowedExecutor(executorId: string, allowed: boolean) {
+    const allowedIds = new Set(taskForm.allowedExecutorIds);
+
+    if (allowed) {
+      allowedIds.add(executorId);
+    } else {
+      allowedIds.delete(executorId);
+    }
+
+    setTaskForm({ ...taskForm, allowedExecutorIds: Array.from(allowedIds) });
+  }
+
   return (
     <div className="page-grid task-room-page">
       <Panel
@@ -87,7 +106,24 @@ export function TaskRoomPage({
               </select>
             </label>
           </div>
-          <button className="primary-button" type="submit">
+          <fieldset className="executor-choice-grid">
+            <legend>Allowed task executors</legend>
+            {taskExecutors.map((executor) => (
+              <label className="executor-choice" key={executor.id}>
+                <input
+                  checked={taskForm.allowedExecutorIds.includes(executor.id)}
+                  onChange={(event) => setAllowedExecutor(executor.id, event.target.checked)}
+                  type="checkbox"
+                />
+                <span>
+                  <strong>Allow {executor.displayName}</strong>
+                  <small>{executor.statusReason}</small>
+                </span>
+                <StatusPill status={executor.status} />
+              </label>
+            ))}
+          </fieldset>
+          <button className="primary-button" disabled={taskForm.allowedExecutorIds.length === 0} type="submit">
             <Play aria-hidden="true" size={16} />
             Run autonomous task
           </button>

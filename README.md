@@ -31,11 +31,13 @@ This repository currently implements the Phase 1 thin slice from the design spec
   - creates a task,
   - lets the user choose supervised or unsupervised mode,
   - lets the user choose the current authorization scope,
+  - lets the user choose which task executors are allowed for that run,
   - assigns task characters,
   - generates a deterministic artifact,
   - validates the artifact,
   - delivers a task card,
   - blocks when the request exceeds the authorization scope,
+  - blocks when the allowed executor list has no available executor instead of silently falling back,
   - lets the user grant requested scopes and resume the same blocked task while preserving the blocked run as history.
 - Memory candidate workflow:
   - candidates are proposed,
@@ -78,6 +80,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
 - Cloud model APIs are not treated as available until configured.
 - Local model servers are not treated as available until configured.
 - Codex/Claude/Cursor/Gemini local agents are not treated as available unless safe detection finds them.
+- Tasks only run through executors allowed for that task; unavailable allowed executors create a visible blocked run.
 - ASR and TTS are exposed as provider slots and local request audit records, but no microphone capture, transcription adapter, audio generation, or playback adapter is implemented yet.
 - Screen observation stores local summaries only. It does not capture or upload raw frames.
 - Cloud vision approvals are recorded as audit entries only until a real vision provider and upload path are configured.

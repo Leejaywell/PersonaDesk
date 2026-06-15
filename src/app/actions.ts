@@ -11,6 +11,7 @@ export interface TaskFormState {
   desiredOutput: string;
   supervisionMode: SupervisionMode;
   authorizationScope: string;
+  allowedExecutorIds: string[];
 }
 
 export interface DraftFormState {

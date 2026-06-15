@@ -22,6 +22,7 @@ export function TaskCard({
             <div className="task-meta-row">
               <span className="meta-chip">Mode: {task.supervisionMode}</span>
               <span className="meta-chip">Scope: {task.authorizationScope}</span>
+              <span className="meta-chip">Allowed executors: {task.allowedExecutorIds.join(", ")}</span>
             </div>
           )}
         </div>
@@ -39,6 +40,20 @@ export function TaskCard({
               Grant requested scopes and continue
             </button>
           )}
+        </div>
+      )}
+      {run.executorCalls.length > 0 && (
+        <div className="executor-call-list" aria-label="Executor calls">
+          {run.executorCalls.map((call) => (
+            <article className="summary-card" key={`${run.id}-${call.executorId}-${call.purpose}`}>
+              <div className="task-card-header">
+                <strong>{call.executorId}</strong>
+                <StatusPill>{call.status}</StatusPill>
+              </div>
+              <p>{call.purpose}</p>
+              <p>{call.disclosure}</p>
+            </article>
+          ))}
         </div>
       )}
       {run.artifacts.map((artifact) => (

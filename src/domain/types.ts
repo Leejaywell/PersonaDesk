@@ -145,6 +145,7 @@ export interface Task {
   desiredOutput: string;
   supervisionMode: SupervisionMode;
   authorizationScope: string;
+  allowedExecutorIds: string[];
   status: TaskStatus;
   createdBy: "user";
   createdAt: string;
