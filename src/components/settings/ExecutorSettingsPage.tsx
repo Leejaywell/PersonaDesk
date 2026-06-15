@@ -1,8 +1,8 @@
-import { Bot, Mic, Search } from "lucide-react";
+import { Activity, Bot, Mic, Search } from "lucide-react";
 import type { FormEvent } from "react";
 import type { AppActions } from "../../app/actions";
 import { executorDisclosure } from "../../domain/executors";
-import type { Executor, VoiceRequest } from "../../domain/types";
+import type { Executor, ExecutorHealthCheck, VoiceRequest } from "../../domain/types";
 import { Panel } from "../ui/Panel";
 import { StatusPill } from "../ui/StatusPill";
 import { VoiceSettingsPanel } from "./VoiceSettingsPanel";
@@ -10,11 +10,13 @@ import { VoiceSettingsPanel } from "./VoiceSettingsPanel";
 export function ExecutorSettingsPage({
   actions,
   executors,
+  executorHealthChecks,
   scanStatus,
   voiceRequests
 }: {
   actions: AppActions;
   executors: Executor[];
+  executorHealthChecks: ExecutorHealthCheck[];
   scanStatus: string;
   voiceRequests: VoiceRequest[];
 }) {
@@ -22,6 +24,7 @@ export function ExecutorSettingsPage({
   const configurableExecutors = executors.filter(
     (executor) => executor.type !== "deterministic" && executor.type !== "local-agent"
   );
+  const recentHealthChecks = executorHealthChecks.slice(-6).reverse();
 
   function saveExecutorConfiguration(event: FormEvent<HTMLFormElement>, executorId: string) {
     event.preventDefault();
@@ -60,7 +63,13 @@ export function ExecutorSettingsPage({
                 <strong>{executor.displayName}</strong>
                 <p>{executorDisclosure(executor)}</p>
               </div>
-              <StatusPill status={executor.status} />
+              <div className="executor-status-row">
+                <button onClick={() => actions.recordExecutorHealthCheck(executor.id)} type="button">
+                  <Activity aria-hidden="true" size={15} />
+                  Check {executor.displayName}
+                </button>
+                <StatusPill status={executor.status} />
+              </div>
             </article>
           ))}
         </div>
@@ -115,6 +124,24 @@ export function ExecutorSettingsPage({
         title="Voice Providers"
       >
         <VoiceSettingsPanel actions={actions} voiceExecutors={voiceExecutors} voiceRequests={voiceRequests} />
+      </Panel>
+
+      <Panel description="Local audit records for executor readiness checks; no external provider is contacted." title="Executor Health Audit">
+        <div className="voice-request-list" aria-label="Executor health audit">
+          {recentHealthChecks.length === 0 ? <p className="empty-state">No executor health checks recorded yet.</p> : null}
+          {recentHealthChecks.map((check) => (
+            <article className="voice-request-card" key={check.id}>
+              <div className="task-card-header">
+                <div>
+                  <h3>{check.displayName}</h3>
+                  <p>{check.executorType}</p>
+                </div>
+                <StatusPill status={check.status} />
+              </div>
+              <p>{check.disclosure}</p>
+            </article>
+          ))}
+        </div>
       </Panel>
     </div>
   );

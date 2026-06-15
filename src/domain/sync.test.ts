@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { sendCompanionMessage } from "./conversation";
 import { createInitialState } from "./defaultState";
-import { configureExecutor } from "./executors";
+import { configureExecutor, recordExecutorHealthCheck } from "./executors";
 import { confirmMemoryCandidate, proposeMemoryCandidate } from "./memory";
 import { buildSyncPreview } from "./sync";
 import { createVoiceRequest } from "./voice";
@@ -128,5 +128,29 @@ describe("sync preview", () => {
 
     expect(preview.included.some((item) => item.detail.includes("Read this private note"))).toBe(false);
     expect(preview.excluded.some((item) => item.dataClass === "raw-audio")).toBe(true);
+  });
+
+  it("excludes executor health check audits from sync previews", () => {
+    let state = createInitialState();
+    state = {
+      ...state,
+      syncProfile: {
+        ...state.syncProfile,
+        enabled: true
+      }
+    };
+    state = configureExecutor(state, "openai-compatible", {
+      endpoint: "https://api.example.test/v1",
+      model: "gpt-compatible",
+      secretRef: "OPENAI_COMPATIBLE_API_KEY",
+      notes: "Use external secret storage."
+    });
+    state = recordExecutorHealthCheck(state, "openai-compatible");
+
+    const preview = buildSyncPreview(state);
+
+    expect(preview.excluded.some((item) => item.dataClass === "executor-health-checks")).toBe(true);
+    expect(JSON.stringify(preview)).not.toContain("https://api.example.test/v1");
+    expect(JSON.stringify(preview)).not.toContain("OPENAI_COMPATIBLE_API_KEY");
   });
 });

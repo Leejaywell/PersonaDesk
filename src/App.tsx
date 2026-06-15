@@ -16,7 +16,7 @@ import {
 } from "./domain/characterDrafts";
 import { updateCharacterSettings } from "./domain/characters";
 import { addTaskRunCompanionReactions, sendCompanionMessage } from "./domain/conversation";
-import { configureExecutor, mergeDetectedLocalAgents } from "./domain/executors";
+import { configureExecutor, mergeDetectedLocalAgents, recordExecutorHealthCheck } from "./domain/executors";
 import { confirmMemoryCandidate as confirmMemory, rejectMemoryCandidate as rejectMemory } from "./domain/memory";
 import {
   approveCloudVisionUpload,
@@ -190,6 +190,8 @@ export default function App() {
     scanLocalAgents,
     configureExecutor: (executorId: string, configuration: Parameters<typeof configureExecutor>[2]) =>
       setState((current) => configureExecutor(current, executorId, configuration)),
+    recordExecutorHealthCheck: (executorId: string) =>
+      setState((current) => recordExecutorHealthCheck(current, executorId)),
     createVoiceRequest: (input: Parameters<typeof createVoiceRequest>[1]) =>
       setState((current) => createVoiceRequest(current, input)),
     recordTaskAcceptance: (
@@ -258,6 +260,7 @@ export default function App() {
         return (
           <ExecutorSettingsPage
             actions={actions}
+            executorHealthChecks={state.executorHealthChecks}
             executors={state.executors}
             scanStatus={localAgentScanStatus}
             voiceRequests={state.voiceRequests}

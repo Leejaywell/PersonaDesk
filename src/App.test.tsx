@@ -78,6 +78,12 @@ describe("PersonaDesk app", () => {
 
     expect(screen.getAllByText("Configured").length).toBeGreaterThan(0);
     expect(screen.getAllByText(/does not store raw secrets/).length).toBeGreaterThan(0);
+    await user.click(screen.getByRole("button", { name: "Check OpenAI-compatible chat API" }));
+
+    const healthAudit = screen.getByLabelText("Executor health audit");
+    expect(within(healthAudit).getByText("OpenAI-compatible chat API")).toBeInTheDocument();
+    expect(within(healthAudit).getByText("Configured Not Verified")).toBeInTheDocument();
+    expect(within(healthAudit).getByText(/do not contact external services/i)).toBeInTheDocument();
   });
 
   it("records voice requests as local audit entries without capturing audio", async () => {

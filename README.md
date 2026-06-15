@@ -76,7 +76,8 @@ This repository currently implements the Phase 1 thin slice from the design spec
 - Provider configuration metadata for model API, local model, ASR, TTS, and vision slots:
   - stores endpoint/model/secret-reference notes,
   - does not store raw secrets,
-  - marks providers as configured but not verified or callable.
+  - marks providers as configured but not verified or callable,
+  - records local executor health-check audits without contacting external providers.
 - Voice request audit for ASR/TTS slots:
   - records transcript and speech-preview requests locally,
   - reports skipped/configured-not-verified status from the selected provider,

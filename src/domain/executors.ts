@@ -1,4 +1,11 @@
-import type { Executor, ExecutorConfiguration, ExecutorStatus, PersonaDeskState } from "./types";
+import type {
+  Executor,
+  ExecutorConfiguration,
+  ExecutorHealthCheck,
+  ExecutorStatus,
+  ExecutorType,
+  PersonaDeskState
+} from "./types";
 
 export interface ExecutorRouteRequest {
   taskCharacterId: string;
@@ -35,6 +42,10 @@ function emptyConfiguration(): ExecutorConfiguration {
   };
 }
 
+function createId(prefix: string): string {
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 function normalizeConfiguration(input: ExecutorConfigurationInput): ExecutorConfiguration {
   return {
     endpoint: input.endpoint.trim(),
@@ -47,6 +58,71 @@ function normalizeConfiguration(input: ExecutorConfigurationInput): ExecutorConf
 
 function hasConfiguration(configuration: ExecutorConfiguration): boolean {
   return Boolean(configuration.endpoint || configuration.model || configuration.secretRef || configuration.notes);
+}
+
+function requiredConfigurationLabels(executorType: ExecutorType): Array<keyof ExecutorConfiguration> {
+  if (executorType === "model-api") {
+    return ["endpoint", "model", "secretRef"];
+  }
+
+  if (executorType === "local-model" || executorType === "asr" || executorType === "tts" || executorType === "vision") {
+    return ["endpoint", "model"];
+  }
+
+  return [];
+}
+
+function missingConfigurationLabels(executor: Executor): string[] {
+  return requiredConfigurationLabels(executor.type).filter((key) => !executor.configuration[key]).map((key) => {
+    if (key === "secretRef") {
+      return "secret reference";
+    }
+
+    return key;
+  });
+}
+
+function healthCheckResult(executor: Executor): Pick<ExecutorHealthCheck, "status" | "disclosure"> {
+  if (executor.type === "deterministic") {
+    return {
+      status: "ready",
+      disclosure: "Built-in deterministic executor is available locally. No network call or external tool launch was needed."
+    };
+  }
+
+  if (executor.type === "local-agent") {
+    return executor.status === "available"
+      ? {
+          status: "ready",
+          disclosure: "Safe local detection found this agent. Real task use still requires task authorization."
+        }
+      : {
+          status: "missing",
+          disclosure: "Safe local detection has not found this agent. No process was launched by this health check."
+        };
+  }
+
+  if (!hasConfiguration(executor.configuration)) {
+    return {
+      status: "skipped",
+      disclosure: "No provider metadata is saved, so no health check was attempted."
+    };
+  }
+
+  const missingLabels = missingConfigurationLabels(executor);
+
+  if (missingLabels.length > 0) {
+    return {
+      status: "skipped",
+      disclosure: `Provider metadata is incomplete; missing ${missingLabels.join(", ")}. No network call was attempted.`
+    };
+  }
+
+  return {
+    status: "configured-not-verified",
+    disclosure:
+      "Provider metadata is present, but Phase 1 health checks do not contact external services or read raw secrets."
+  };
 }
 
 export function routeExecutorForTask(
@@ -159,6 +235,30 @@ export function configureExecutor(
         detectionSource: "user-config"
       };
     })
+  };
+}
+
+export function recordExecutorHealthCheck(state: PersonaDeskState, executorId: string): PersonaDeskState {
+  const executor = state.executors.find((item) => item.id === executorId);
+
+  if (!executor) {
+    return state;
+  }
+
+  const result = healthCheckResult(executor);
+  const healthCheck: ExecutorHealthCheck = {
+    id: createId("executor-health"),
+    executorId: executor.id,
+    displayName: executor.displayName,
+    executorType: executor.type,
+    status: result.status,
+    disclosure: result.disclosure,
+    checkedAt: nowIso()
+  };
+
+  return {
+    ...state,
+    executorHealthChecks: [...state.executorHealthChecks, healthCheck]
   };
 }
 

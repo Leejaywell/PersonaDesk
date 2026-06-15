@@ -1,5 +1,12 @@
 import type { ReactNode } from "react";
-import type { ExecutorStatus, TaskAcceptanceStatus, TaskRunStatus, TaskStatus, VoiceRequestStatus } from "../../domain/types";
+import type {
+  ExecutorHealthCheckStatus,
+  ExecutorStatus,
+  TaskAcceptanceStatus,
+  TaskRunStatus,
+  TaskStatus,
+  VoiceRequestStatus
+} from "../../domain/types";
 
 export type DisplayStatus =
   | ExecutorStatus
@@ -7,6 +14,7 @@ export type DisplayStatus =
   | TaskRunStatus
   | TaskStatus
   | VoiceRequestStatus
+  | ExecutorHealthCheckStatus
   | "active"
   | "inactive";
 

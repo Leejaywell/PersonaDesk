@@ -5,6 +5,7 @@ import type {
   ConversationMessage,
   Executor,
   ExecutorConfiguration,
+  ExecutorHealthCheck,
   MemoryCandidate,
   MemoryItem,
   ObservationBoundaryViolation,
@@ -229,6 +230,7 @@ function normalizeState(state: PersonaDeskState): PersonaDeskState {
     memoryCandidates: arrayOrEmpty<MemoryCandidate>(state.memoryCandidates),
     conversationMessages: normalizeConversationMessages(state.conversationMessages),
     voiceRequests: arrayOrEmpty<VoiceRequest>(state.voiceRequests),
+    executorHealthChecks: arrayOrEmpty<ExecutorHealthCheck>(state.executorHealthChecks),
     observationSessions: arrayOrEmpty<ObservationSession>(state.observationSessions).map(normalizeObservationSession),
     syncProfile: mergeSyncProfile(state.syncProfile, defaults.syncProfile)
   };

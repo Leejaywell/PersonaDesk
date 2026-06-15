@@ -351,6 +351,7 @@ export function createInitialState(): PersonaDeskState {
     memoryCandidates: [],
     conversationMessages: [],
     voiceRequests: [],
+    executorHealthChecks: [],
     observationSessions: [],
     syncProfile: {
       enabled: false,
@@ -361,6 +362,7 @@ export function createInitialState(): PersonaDeskState {
         "raw-audio",
         "raw-screen-frames",
         "local-agent-logs",
+        "executor-health-checks",
         "raw-companion-conversations",
         "sensitive-memory"
       ],

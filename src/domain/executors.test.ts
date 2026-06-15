@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createInitialState } from "./defaultState";
-import { configureExecutor, mergeDetectedLocalAgents, routeExecutorForTask } from "./executors";
+import { configureExecutor, mergeDetectedLocalAgents, recordExecutorHealthCheck, routeExecutorForTask } from "./executors";
 
 describe("executor routing", () => {
   it("uses a task character default executor when available", () => {
@@ -78,5 +78,47 @@ describe("executor routing", () => {
 
     expect(executor?.status).toBe("unconfigured");
     expect(executor?.configuration.configuredAt).toBeNull();
+  });
+
+  it("records configured provider health checks without marking providers available or leaking metadata", () => {
+    let state = createInitialState();
+    state = configureExecutor(state, "openai-compatible", {
+      endpoint: "https://api.example.test/v1",
+      model: "gpt-compatible",
+      secretRef: "OPENAI_COMPATIBLE_API_KEY",
+      notes: "Use external secret storage."
+    });
+    state = recordExecutorHealthCheck(state, "openai-compatible");
+
+    const executor = state.executors.find((item) => item.id === "openai-compatible");
+    const check = state.executorHealthChecks[0];
+
+    expect(executor?.status).toBe("configured");
+    expect(check.status).toBe("configured-not-verified");
+    expect(check.disclosure).toContain("do not contact external services");
+    expect(JSON.stringify(check)).not.toContain("https://api.example.test/v1");
+    expect(JSON.stringify(check)).not.toContain("OPENAI_COMPATIBLE_API_KEY");
+  });
+
+  it("skips provider health checks when required metadata is missing", () => {
+    let state = createInitialState();
+    state = configureExecutor(state, "openai-compatible", {
+      endpoint: "https://api.example.test/v1",
+      model: "",
+      secretRef: "",
+      notes: ""
+    });
+    state = recordExecutorHealthCheck(state, "openai-compatible");
+
+    expect(state.executorHealthChecks[0].status).toBe("skipped");
+    expect(state.executorHealthChecks[0].disclosure).toContain("missing model, secret reference");
+  });
+
+  it("records built-in deterministic executor health as ready without external calls", () => {
+    let state = createInitialState();
+    state = recordExecutorHealthCheck(state, "local-planner");
+
+    expect(state.executorHealthChecks[0].status).toBe("ready");
+    expect(state.executorHealthChecks[0].disclosure).toContain("No network call");
   });
 });

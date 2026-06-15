@@ -121,6 +121,15 @@ export function buildSyncPreview(state: PersonaDeskState): SyncPreview {
     });
   }
 
+  for (const check of state.executorHealthChecks) {
+    excluded.push({
+      id: `executor-health:${check.id}`,
+      dataClass: "executor-health-checks",
+      label: check.displayName,
+      reason: "Executor health check audit records remain local-only by default."
+    });
+  }
+
   return {
     generatedAt: nowIso(),
     included: state.syncProfile.enabled ? included : [],

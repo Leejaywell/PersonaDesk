@@ -23,6 +23,7 @@ export type RiskLevel = "low" | "medium" | "high";
 export type TaskAcceptanceStatus = "pending" | "accepted" | "revision-requested";
 export type VoiceRequestKind = "asr-transcript" | "tts-preview";
 export type VoiceRequestStatus = "ready" | "configured-not-verified" | "skipped";
+export type ExecutorHealthCheckStatus = "ready" | "configured-not-verified" | "skipped" | "missing";
 
 export interface RoleBoundary {
   id: string;
@@ -115,6 +116,16 @@ export interface Executor {
   statusReason: string;
   detectionSource: string;
   configuration: ExecutorConfiguration;
+}
+
+export interface ExecutorHealthCheck {
+  id: string;
+  executorId: string;
+  displayName: string;
+  executorType: ExecutorType;
+  status: ExecutorHealthCheckStatus;
+  disclosure: string;
+  checkedAt: string;
 }
 
 export interface ConversationMessage {
@@ -291,6 +302,7 @@ export interface PersonaDeskState {
   memoryCandidates: MemoryCandidate[];
   conversationMessages: ConversationMessage[];
   voiceRequests: VoiceRequest[];
+  executorHealthChecks: ExecutorHealthCheck[];
   observationSessions: ObservationSession[];
   syncProfile: SyncProfile;
 }

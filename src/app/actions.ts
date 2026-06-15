@@ -44,6 +44,7 @@ export interface AppActions {
   prepareSyncPreview: () => void;
   scanLocalAgents: () => Promise<void>;
   configureExecutor: (executorId: string, configuration: ExecutorConfigurationInput) => void;
+  recordExecutorHealthCheck: (executorId: string) => void;
   createVoiceRequest: (input: VoiceRequestInput) => void;
   recordTaskAcceptance: (
     taskId: string,

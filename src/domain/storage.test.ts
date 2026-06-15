@@ -154,6 +154,16 @@ describe("state storage", () => {
     expect(restored.voiceRequests).toEqual([]);
   });
 
+  it("adds missing executor health check state for older persisted states", () => {
+    const state = createInitialState();
+    const legacyState = { ...state } as Partial<typeof state>;
+    delete legacyState.executorHealthChecks;
+
+    const restored = deserializeState(JSON.stringify({ version: 1, state: legacyState }));
+
+    expect(restored.executorHealthChecks).toEqual([]);
+  });
+
   it("adds default allowed executors to older persisted tasks", () => {
     const state = createInitialState();
     const legacyState = {
@@ -258,6 +268,7 @@ describe("state storage", () => {
     expect(restored.syncProfile.allowedDataClasses).toContain("confirmed-memory-summaries");
     expect(restored.syncProfile.allowedDataClasses).toContain("custom-safe-summary");
     expect(restored.syncProfile.localOnlyClasses).toContain("raw-screen-frames");
+    expect(restored.syncProfile.localOnlyClasses).toContain("executor-health-checks");
     expect(restored.syncProfile.localOnlyClasses).toContain("custom-local-secret");
   });
 });
