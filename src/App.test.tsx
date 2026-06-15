@@ -239,10 +239,12 @@ describe("PersonaDesk app", () => {
     await user.clear(screen.getByLabelText("Custom relationship"));
     await user.type(screen.getByLabelText("Custom relationship"), "A CEO spouse companion who remembers private context.");
     await user.selectOptions(screen.getByLabelText("Role boundary"), "boundary-quiet-observer");
+    await user.selectOptions(screen.getByLabelText("Voice provider"), "tts-provider");
     await user.click(screen.getByRole("button", { name: "Save character settings" }));
 
     expect(screen.getAllByText("A CEO spouse companion who remembers private context.").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Quiet observer").length).toBeGreaterThan(0);
+    expect((screen.getByLabelText("Voice provider") as HTMLSelectElement).value).toBe("tts-provider");
   });
 
   it("records cloud vision approval from a local observation summary without uploading frames", async () => {

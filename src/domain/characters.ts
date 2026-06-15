@@ -15,7 +15,7 @@ export interface CharacterSettingsUpdate {
   memoryPermissionProfile?: string[];
   roleBoundaryId?: string;
   appearance?: Partial<Pick<AppearanceProfile, "backend" | "avatarLabel" | "accent">>;
-  voice?: Partial<Pick<VoiceProfile, "voiceName" | "speed" | "emotionalIntensity">>;
+  voice?: Partial<Pick<VoiceProfile, "providerId" | "voiceName" | "speed" | "emotionalIntensity">>;
   proactiveBehavior?: Partial<Pick<ProactiveBehaviorProfile, "frequency" | "triggers" | "doNotDisturb">>;
 }
 
@@ -45,10 +45,34 @@ function canUseBoundary(character: Character, boundary: RoleBoundary): boolean {
   return character.kind === "task" ? boundary.canCallExecutors : !boundary.canCallExecutors;
 }
 
+function hasOwn<T extends object>(value: T | undefined, key: keyof T): boolean {
+  return Boolean(value && Object.prototype.hasOwnProperty.call(value, key));
+}
+
+function resolveVoiceProviderId(character: Character, state: PersonaDeskState, update: CharacterSettingsUpdate): string | null {
+  if (!hasOwn(update.voice, "providerId")) {
+    return character.voice.providerId;
+  }
+
+  const providerId = update.voice?.providerId?.trim() || null;
+
+  if (!providerId) {
+    return null;
+  }
+
+  const provider = state.executors.find((executor) => executor.id === providerId);
+
+  return provider?.type === "tts" ? provider.id : character.voice.providerId;
+}
+
 function updateCharacter(character: Character, state: PersonaDeskState, update: CharacterSettingsUpdate): Character {
   const requestedBoundary = update.roleBoundaryId ? state.roleBoundaries[update.roleBoundaryId] : undefined;
   const nextBoundaryId =
     requestedBoundary && canUseBoundary(character, requestedBoundary) ? requestedBoundary.id : character.roleBoundaryId;
+  const nextVoiceProviderId = resolveVoiceProviderId(character, state, update);
+  const nextVoiceProvider = nextVoiceProviderId
+    ? state.executors.find((executor) => executor.id === nextVoiceProviderId)
+    : undefined;
 
   return {
     ...character,
@@ -69,12 +93,14 @@ function updateCharacter(character: Character, state: PersonaDeskState, update: 
     },
     voice: {
       ...character.voice,
+      providerId: nextVoiceProviderId,
       voiceName: sanitizeText(update.voice?.voiceName, character.voice.voiceName),
       speed: update.voice?.speed === undefined ? character.voice.speed : clamp(update.voice.speed, 0.5, 2),
       emotionalIntensity:
         update.voice?.emotionalIntensity === undefined
           ? character.voice.emotionalIntensity
-          : clamp(update.voice.emotionalIntensity, 0, 1)
+          : clamp(update.voice.emotionalIntensity, 0, 1),
+      status: nextVoiceProvider?.status ?? "unconfigured"
     },
     proactiveBehavior: {
       ...character.proactiveBehavior,

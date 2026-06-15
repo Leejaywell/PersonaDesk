@@ -240,6 +240,7 @@ export default function App() {
             characterDrafts={state.characterDrafts}
             draftForm={draftForm}
             emotionalCharacters={emotionalCharacters}
+            executors={state.executors}
             roleBoundaries={state.roleBoundaries}
             setDraftForm={setDraftForm}
             taskCharacters={taskCharacters}

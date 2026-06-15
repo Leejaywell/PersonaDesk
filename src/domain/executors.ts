@@ -214,27 +214,44 @@ export function configureExecutor(
   executorId: string,
   input: ExecutorConfigurationInput
 ): PersonaDeskState {
+  const nextExecutors: Executor[] = state.executors.map((executor) => {
+    if (executor.id !== executorId || executor.type === "deterministic" || executor.type === "local-agent") {
+      return executor;
+    }
+
+    const configuration = normalizeConfiguration(input);
+    const configured = hasConfiguration(configuration);
+    const nextConfiguration = configured ? configuration : { ...configuration, configuredAt: null };
+    const nextStatus: ExecutorStatus = configured ? "configured" : "unconfigured";
+
+    return {
+      ...executor,
+      configuration: nextConfiguration,
+      status: nextStatus,
+      statusReason: configured
+        ? "Configuration metadata saved. PersonaDesk does not store raw secrets and this provider is not verified as callable yet."
+        : "No provider configuration saved.",
+      detectionSource: "user-config"
+    };
+  });
+  const nextExecutor = nextExecutors.find((executor) => executor.id === executorId);
+
   return {
     ...state,
-    executors: state.executors.map((executor) => {
-      if (executor.id !== executorId || executor.type === "deterministic" || executor.type === "local-agent") {
-        return executor;
-      }
-
-      const configuration = normalizeConfiguration(input);
-      const configured = hasConfiguration(configuration);
-      const nextConfiguration = configured ? configuration : { ...configuration, configuredAt: null };
-
-      return {
-        ...executor,
-        configuration: nextConfiguration,
-        status: configured ? "configured" : "unconfigured",
-        statusReason: configured
-          ? "Configuration metadata saved. PersonaDesk does not store raw secrets and this provider is not verified as callable yet."
-          : "No provider configuration saved.",
-        detectionSource: "user-config"
-      };
-    })
+    executors: nextExecutors,
+    characters: nextExecutor
+      ? state.characters.map((character) =>
+          character.voice.providerId === nextExecutor.id
+            ? {
+                ...character,
+                voice: {
+                  ...character.voice,
+                  status: nextExecutor.status
+                }
+              }
+            : character
+        )
+      : state.characters
   };
 }
 

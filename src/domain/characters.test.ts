@@ -14,6 +14,7 @@ describe("character settings", () => {
         accent: "#336699"
       },
       voice: {
+        providerId: "tts-provider",
         voiceName: "Soft mezzo",
         speed: 3,
         emotionalIntensity: -1
@@ -32,6 +33,8 @@ describe("character settings", () => {
     expect(mira?.memoryPermissionProfile).toEqual(["relationship", "preferences"]);
     expect(mira?.appearance.avatarLabel).toBe("MX");
     expect(mira?.appearance.accent).toBe("#336699");
+    expect(mira?.voice.providerId).toBe("tts-provider");
+    expect(mira?.voice.status).toBe("unconfigured");
     expect(mira?.voice.voiceName).toBe("Soft mezzo");
     expect(mira?.voice.speed).toBe(2);
     expect(mira?.voice.emotionalIntensity).toBe(0);
@@ -49,5 +52,19 @@ describe("character settings", () => {
     const mira = next.characters.find((character) => character.id === "mira");
 
     expect(mira?.roleBoundaryId).toBe("boundary-emotional-companion");
+  });
+
+  it("does not let character voice settings bind non-TTS providers", () => {
+    const state = createInitialState();
+    const next = updateCharacterSettings(state, "mira", {
+      voice: {
+        providerId: "asr-provider"
+      }
+    });
+
+    const mira = next.characters.find((character) => character.id === "mira");
+
+    expect(mira?.voice.providerId).toBeNull();
+    expect(mira?.voice.status).toBe("unconfigured");
   });
 });

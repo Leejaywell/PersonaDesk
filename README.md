@@ -19,7 +19,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
   - role boundary selection constrained by emotional/task role type,
   - proactive frequency, triggers, and do-not-disturb,
   - memory permission scopes,
-  - appearance backend, avatar label, accent color, and voice profile fields.
+  - appearance backend, avatar label, accent color, TTS provider binding, and voice profile fields.
 - Desktop companion chat:
   - emotional characters can exchange local deterministic messages with the user,
   - emotional characters with task-comment permission can leave local reactions after task delivery or approval blocks,

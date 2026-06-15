@@ -1,7 +1,7 @@
 import { Brain, Check, Sparkles, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { AppActions, DraftFormState } from "../../app/actions";
-import type { Character, CharacterDraft, RoleBoundary } from "../../domain/types";
+import type { Character, CharacterDraft, Executor, RoleBoundary } from "../../domain/types";
 import { Panel } from "../ui/Panel";
 import { StatusPill } from "../ui/StatusPill";
 import { CharacterCard } from "./CharacterCard";
@@ -18,6 +18,7 @@ interface CharacterEditorForm {
   appearanceBackend: Character["appearance"]["backend"];
   avatarLabel: string;
   accent: string;
+  voiceProviderId: string;
   voiceName: string;
   voiceSpeed: number;
   emotionalIntensity: number;
@@ -37,6 +38,7 @@ function characterToEditorForm(character: Character): CharacterEditorForm {
     appearanceBackend: character.appearance.backend,
     avatarLabel: character.appearance.avatarLabel,
     accent: character.appearance.accent,
+    voiceProviderId: character.voice.providerId ?? "",
     voiceName: character.voice.voiceName,
     voiceSpeed: character.voice.speed,
     emotionalIntensity: character.voice.emotionalIntensity,
@@ -48,6 +50,7 @@ export function CharacterStudioPage({
   emotionalCharacters,
   taskCharacters,
   characterDrafts,
+  executors,
   roleBoundaries,
   draftForm,
   setDraftForm,
@@ -56,12 +59,14 @@ export function CharacterStudioPage({
   emotionalCharacters: Character[];
   taskCharacters: Character[];
   characterDrafts: CharacterDraft[];
+  executors: Executor[];
   roleBoundaries: Record<string, RoleBoundary>;
   draftForm: DraftFormState;
   setDraftForm: (next: DraftFormState) => void;
   actions: AppActions;
 }) {
   const allCharacters = [...emotionalCharacters, ...taskCharacters];
+  const ttsProviders = executors.filter((executor) => executor.type === "tts");
   const [selectedCharacterId, setSelectedCharacterId] = useState(allCharacters[0]?.id ?? "");
   const selectedCharacter = allCharacters.find((character) => character.id === selectedCharacterId) ?? allCharacters[0];
   const [editForm, setEditForm] = useState<CharacterEditorForm | null>(
@@ -100,6 +105,7 @@ export function CharacterStudioPage({
         accent: editForm.accent
       },
       voice: {
+        providerId: editForm.voiceProviderId || null,
         voiceName: editForm.voiceName,
         speed: editForm.voiceSpeed,
         emotionalIntensity: editForm.emotionalIntensity
@@ -271,6 +277,20 @@ export function CharacterStudioPage({
                   value={editForm.accent}
                   onChange={(event) => updateEditForm({ accent: event.target.value })}
                 />
+              </label>
+              <label>
+                Voice provider
+                <select
+                  value={editForm.voiceProviderId}
+                  onChange={(event) => updateEditForm({ voiceProviderId: event.target.value })}
+                >
+                  <option value="">No TTS provider</option>
+                  {ttsProviders.map((provider) => (
+                    <option key={provider.id} value={provider.id}>
+                      {provider.displayName} ({provider.status})
+                    </option>
+                  ))}
+                </select>
               </label>
               <label>
                 Voice name

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { updateCharacterSettings } from "./characters";
 import { createInitialState } from "./defaultState";
 import { configureExecutor, mergeDetectedLocalAgents, recordExecutorHealthCheck, routeExecutorForTask } from "./executors";
 
@@ -120,5 +121,25 @@ describe("executor routing", () => {
 
     expect(state.executorHealthChecks[0].status).toBe("ready");
     expect(state.executorHealthChecks[0].disclosure).toContain("No network call");
+  });
+
+  it("updates character voice status when a bound TTS provider is configured", () => {
+    let state = createInitialState();
+    state = updateCharacterSettings(state, "mira", {
+      voice: {
+        providerId: "tts-provider"
+      }
+    });
+    state = configureExecutor(state, "tts-provider", {
+      endpoint: "https://voice.example.test",
+      model: "warm-voice",
+      secretRef: "VOICE_API_KEY",
+      notes: ""
+    });
+
+    const mira = state.characters.find((character) => character.id === "mira");
+
+    expect(mira?.voice.providerId).toBe("tts-provider");
+    expect(mira?.voice.status).toBe("configured");
   });
 });
