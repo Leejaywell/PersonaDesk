@@ -1,6 +1,7 @@
 import { Check, Shield, X } from "lucide-react";
-import type { FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import type { AppActions } from "../../app/actions";
+import { canCharacterOwnMemoryLayer, canUseSharedMemoryOwner } from "../../domain/memory";
 import type { Character, MemoryCandidate, MemoryItem, MemoryLayer, Sensitivity } from "../../domain/types";
 import { Panel } from "../ui/Panel";
 
@@ -23,6 +24,131 @@ function ownerName(characters: Character[], ownerCharacterId: string | null): st
   return characters.find((character) => character.id === ownerCharacterId)?.name ?? ownerCharacterId;
 }
 
+function ownerOptionsForLayer(characters: Character[], layer: MemoryLayer) {
+  const sharedOption = canUseSharedMemoryOwner(layer) ? [{ label: "Shared", value: "" }] : [];
+  const characterOptions = characters
+    .filter((character) => canCharacterOwnMemoryLayer(character, layer))
+    .map((character) => ({ label: character.name, value: character.id }));
+
+  return [...sharedOption, ...characterOptions];
+}
+
+function defaultOwnerForLayer(characters: Character[], layer: MemoryLayer, proposedOwnerCharacterId: string | null): string {
+  const options = ownerOptionsForLayer(characters, layer);
+
+  return options.some((option) => option.value === (proposedOwnerCharacterId ?? ""))
+    ? (proposedOwnerCharacterId ?? "")
+    : (options[0]?.value ?? "");
+}
+
+function MemoryCandidateReviewCard({
+  actions,
+  candidate,
+  characters
+}: {
+  actions: AppActions;
+  candidate: MemoryCandidate;
+  characters: Character[];
+}) {
+  const [layer, setLayer] = useState<MemoryLayer>(candidate.proposedLayer);
+  const [ownerCharacterId, setOwnerCharacterId] = useState(() =>
+    defaultOwnerForLayer(characters, candidate.proposedLayer, candidate.proposedOwnerCharacterId)
+  );
+  const ownerOptions = useMemo(() => ownerOptionsForLayer(characters, layer), [characters, layer]);
+  const canConfirm = ownerOptions.length > 0;
+
+  function changeLayer(nextLayer: MemoryLayer) {
+    const nextOwnerOptions = ownerOptionsForLayer(characters, nextLayer);
+
+    setLayer(nextLayer);
+    setOwnerCharacterId(
+      nextOwnerOptions.some((option) => option.value === ownerCharacterId)
+        ? ownerCharacterId
+        : (nextOwnerOptions[0]?.value ?? "")
+    );
+  }
+
+  function confirmReviewedMemory(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+
+    actions.confirmMemoryCandidate(candidate.id, {
+      layer,
+      ownerCharacterId: ownerCharacterId || null,
+      text: String(form.get("text") ?? ""),
+      sensitivity: String(form.get("sensitivity")) as Sensitivity,
+      syncPolicy: String(form.get("syncPolicy")) as MemoryItem["syncPolicy"]
+    });
+  }
+
+  return (
+    <article className="review-card">
+      <form className="memory-review-form" onSubmit={confirmReviewedMemory}>
+        <label>
+          Memory text
+          <textarea defaultValue={candidate.proposedText} name="text" />
+        </label>
+        <div className="settings-grid">
+          <label>
+            Layer
+            <select value={layer} onChange={(event) => changeLayer(event.target.value as MemoryLayer)} name="layer">
+              {memoryLayers.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Owner
+            <select
+              disabled={!canConfirm}
+              value={ownerCharacterId}
+              onChange={(event) => setOwnerCharacterId(event.target.value)}
+              name="ownerCharacterId"
+            >
+              {ownerOptions.map((option) => (
+                <option key={option.value || "shared"} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Sensitivity
+            <select defaultValue={candidate.sensitivity} name="sensitivity">
+              {sensitivityOptions.map((sensitivity) => (
+                <option key={sensitivity} value={sensitivity}>
+                  {sensitivity}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Sync policy
+            <select defaultValue={candidate.sensitivity === "high" ? "local-only" : "sync-allowed"} name="syncPolicy">
+              <option value="sync-allowed">sync-allowed</option>
+              <option value="local-only">local-only</option>
+            </select>
+          </label>
+        </div>
+        <small>{candidate.reason}</small>
+        {!canConfirm ? <p className="empty-state">No role has permission to own this memory layer.</p> : null}
+        <div className="button-row">
+          <button disabled={!canConfirm} type="submit">
+            <Check aria-hidden="true" size={15} />
+            Confirm reviewed memory
+          </button>
+          <button onClick={() => actions.rejectMemoryCandidate(candidate.id)} type="button">
+            <X aria-hidden="true" size={15} />
+            Reject
+          </button>
+        </div>
+      </form>
+    </article>
+  );
+}
+
 export function MemoryCenterPage({
   memoryCandidates,
   memories,
@@ -34,20 +160,6 @@ export function MemoryCenterPage({
   characters: Character[];
   actions: AppActions;
 }) {
-  function confirmReviewedMemory(event: FormEvent<HTMLFormElement>, candidateId: string) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const ownerCharacterId = String(form.get("ownerCharacterId") ?? "");
-
-    actions.confirmMemoryCandidate(candidateId, {
-      layer: String(form.get("layer")) as MemoryLayer,
-      ownerCharacterId: ownerCharacterId || null,
-      text: String(form.get("text") ?? ""),
-      sensitivity: String(form.get("sensitivity")) as Sensitivity,
-      syncPolicy: String(form.get("syncPolicy")) as MemoryItem["syncPolicy"]
-    });
-  }
-
   return (
     <div className="page-grid memory-page">
       <Panel
@@ -61,65 +173,7 @@ export function MemoryCenterPage({
         ) : (
           <div className="card-list">
             {memoryCandidates.map((candidate) => (
-              <article className="review-card" key={candidate.id}>
-                <form className="memory-review-form" onSubmit={(event) => confirmReviewedMemory(event, candidate.id)}>
-                  <label>
-                    Memory text
-                    <textarea defaultValue={candidate.proposedText} name="text" />
-                  </label>
-                  <div className="settings-grid">
-                    <label>
-                      Layer
-                      <select defaultValue={candidate.proposedLayer} name="layer">
-                        {memoryLayers.map((layer) => (
-                          <option key={layer} value={layer}>
-                            {layer}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      Owner
-                      <select defaultValue={candidate.proposedOwnerCharacterId ?? ""} name="ownerCharacterId">
-                        <option value="">Shared</option>
-                        {characters.map((character) => (
-                          <option key={character.id} value={character.id}>
-                            {character.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      Sensitivity
-                      <select defaultValue={candidate.sensitivity} name="sensitivity">
-                        {sensitivityOptions.map((sensitivity) => (
-                          <option key={sensitivity} value={sensitivity}>
-                            {sensitivity}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      Sync policy
-                      <select defaultValue={candidate.sensitivity === "high" ? "local-only" : "sync-allowed"} name="syncPolicy">
-                        <option value="sync-allowed">sync-allowed</option>
-                        <option value="local-only">local-only</option>
-                      </select>
-                    </label>
-                  </div>
-                  <small>{candidate.reason}</small>
-                  <div className="button-row">
-                    <button type="submit">
-                      <Check aria-hidden="true" size={15} />
-                      Confirm reviewed memory
-                    </button>
-                    <button onClick={() => actions.rejectMemoryCandidate(candidate.id)} type="button">
-                      <X aria-hidden="true" size={15} />
-                      Reject
-                    </button>
-                  </div>
-                </form>
-              </article>
+              <MemoryCandidateReviewCard actions={actions} candidate={candidate} characters={characters} key={candidate.id} />
             ))}
           </div>
         )}

@@ -1,4 +1,4 @@
-import type { MemoryCandidate, MemoryItem, MemoryLayer, PersonaDeskState, Sensitivity } from "./types";
+import type { Character, MemoryCandidate, MemoryItem, MemoryLayer, PersonaDeskState, Sensitivity } from "./types";
 
 export interface MemoryCandidateInput {
   layer: MemoryLayer;
@@ -58,6 +58,42 @@ function validOwnerCharacterId(state: PersonaDeskState, ownerCharacterId: string
   return state.characters.some((character) => character.id === ownerCharacterId) ? ownerCharacterId : null;
 }
 
+export function canUseSharedMemoryOwner(layer: MemoryLayer): boolean {
+  return layer !== "character-private";
+}
+
+export function canCharacterOwnMemoryLayer(character: Character, layer: MemoryLayer): boolean {
+  if (layer === "character-private") {
+    return character.memoryPermissionProfile.some((permission) =>
+      ["relationship", "preferences", "observation-summaries", "character-private"].includes(permission)
+    );
+  }
+
+  if (layer === "task") {
+    return character.memoryPermissionProfile.includes("task");
+  }
+
+  if (layer === "shared-world") {
+    return character.memoryPermissionProfile.includes("shared-world");
+  }
+
+  return false;
+}
+
+export function canWriteMemoryLayer(
+  state: PersonaDeskState,
+  layer: MemoryLayer,
+  ownerCharacterId: string | null
+): boolean {
+  if (!ownerCharacterId) {
+    return canUseSharedMemoryOwner(layer);
+  }
+
+  const owner = state.characters.find((character) => character.id === ownerCharacterId);
+
+  return Boolean(owner && canCharacterOwnMemoryLayer(owner, layer));
+}
+
 function syncPolicyForSensitivity(
   sensitivity: Sensitivity,
   requestedSyncPolicy: MemoryItem["syncPolicy"] | undefined
@@ -87,11 +123,18 @@ export function confirmMemoryCandidate(
   }
 
   const sensitivity = review.sensitivity ?? candidate.sensitivity;
+  const layer = review.layer ?? candidate.proposedLayer;
+  const ownerCharacterId = validOwnerCharacterId(state, review.ownerCharacterId ?? candidate.proposedOwnerCharacterId);
+
+  if (!canWriteMemoryLayer(state, layer, ownerCharacterId)) {
+    return state;
+  }
+
   const timestamp = nowIso();
   const memory: MemoryItem = {
     id: createId("memory"),
-    layer: review.layer ?? candidate.proposedLayer,
-    ownerCharacterId: validOwnerCharacterId(state, review.ownerCharacterId ?? candidate.proposedOwnerCharacterId),
+    layer,
+    ownerCharacterId,
     text,
     source: candidate.sourceEvent,
     sensitivity,

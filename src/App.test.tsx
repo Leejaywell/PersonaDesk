@@ -171,7 +171,10 @@ describe("PersonaDesk app", () => {
     expect(await screen.findByText("Delivered")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /Memory/i }));
+    expect(screen.queryByRole("option", { name: "Mira" })).not.toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Orion" })).toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText("Layer"), "character-private");
+    expect(screen.getByRole("option", { name: "Mira" })).toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText("Owner"), "mira");
     await user.selectOptions(screen.getByLabelText("Sensitivity"), "high");
     await user.click(screen.getByRole("button", { name: "Confirm reviewed memory" }));
