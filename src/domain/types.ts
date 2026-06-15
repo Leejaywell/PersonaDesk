@@ -114,6 +114,15 @@ export interface Executor {
   configuration: ExecutorConfiguration;
 }
 
+export interface ConversationMessage {
+  id: string;
+  characterId: string;
+  speaker: "user" | "character";
+  text: string;
+  source: "desktop-companion";
+  createdAt: string;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -247,6 +256,7 @@ export interface PersonaDeskState {
   taskRuns: TaskRun[];
   memories: MemoryItem[];
   memoryCandidates: MemoryCandidate[];
+  conversationMessages: ConversationMessage[];
   observationSessions: ObservationSession[];
   syncProfile: SyncProfile;
 }

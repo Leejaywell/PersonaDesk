@@ -1,5 +1,7 @@
 import { Sparkles } from "lucide-react";
-import type { Character, RoleBoundary, TaskRun } from "../../domain/types";
+import { useState, type FormEvent } from "react";
+import type { AppActions } from "../../app/actions";
+import type { Character, ConversationMessage, RoleBoundary, TaskRun } from "../../domain/types";
 import { CharacterCard } from "../characters/CharacterCard";
 import { Panel } from "../ui/Panel";
 import { StatusPill } from "../ui/StatusPill";
@@ -7,12 +9,32 @@ import { StatusPill } from "../ui/StatusPill";
 export function DesktopStagePage({
   emotionalCharacters,
   roleBoundaries,
-  latestRun
+  latestRun,
+  conversationMessages,
+  actions
 }: {
   emotionalCharacters: Character[];
   roleBoundaries: Record<string, RoleBoundary>;
   latestRun: TaskRun | undefined;
+  conversationMessages: ConversationMessage[];
+  actions: AppActions;
 }) {
+  const [selectedCharacterId, setSelectedCharacterId] = useState(emotionalCharacters[0]?.id ?? "");
+  const [messageText, setMessageText] = useState("");
+  const selectedCharacter = emotionalCharacters.find((character) => character.id === selectedCharacterId) ?? emotionalCharacters[0];
+  const visibleMessages = conversationMessages.filter((message) => message.characterId === selectedCharacter?.id).slice(-8);
+
+  function sendMessage(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!selectedCharacter || !messageText.trim()) {
+      return;
+    }
+
+    actions.sendCompanionMessage(selectedCharacter.id, messageText);
+    setMessageText("");
+  }
+
   return (
     <div className="page-grid desktop-page">
       <Panel
@@ -54,6 +76,48 @@ export function DesktopStagePage({
         <div className="desktop-latest-task">
           <strong>Latest task</strong>
           {latestRun ? <StatusPill status={latestRun.status} /> : <span className="empty-state">No task run yet.</span>}
+        </div>
+      </Panel>
+
+      <Panel
+        className="wide-panel"
+        description="Local deterministic chat for emotional characters; no model provider is called."
+        title="Companion Chat"
+      >
+        <form className="companion-chat-form" onSubmit={sendMessage}>
+          <div className="settings-grid">
+            <label>
+              Companion
+              <select value={selectedCharacter?.id ?? ""} onChange={(event) => setSelectedCharacterId(event.target.value)}>
+                {emotionalCharacters.map((character) => (
+                  <option key={character.id} value={character.id}>
+                    {character.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Message
+              <input
+                value={messageText}
+                onChange={(event) => setMessageText(event.target.value)}
+                placeholder="Stay with me while I work through this."
+              />
+            </label>
+          </div>
+          <button type="submit">Send local companion message</button>
+        </form>
+        <div className="conversation-list" aria-label="Companion conversation">
+          {visibleMessages.length === 0 ? (
+            <p className="empty-state">No companion messages yet.</p>
+          ) : (
+            visibleMessages.map((message) => (
+              <article className={`conversation-message ${message.speaker}`} key={message.id}>
+                <strong>{message.speaker === "user" ? "You" : selectedCharacter?.name ?? "Companion"}</strong>
+                <p>{message.text}</p>
+              </article>
+            ))
+          )}
         </div>
       </Panel>
     </div>

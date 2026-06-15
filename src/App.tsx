@@ -15,6 +15,7 @@ import {
   rejectCharacterDraft as rejectDraft
 } from "./domain/characterDrafts";
 import { updateCharacterSettings } from "./domain/characters";
+import { sendCompanionMessage } from "./domain/conversation";
 import { configureExecutor, mergeDetectedLocalAgents } from "./domain/executors";
 import { confirmMemoryCandidate as confirmMemory, rejectMemoryCandidate as rejectMemory } from "./domain/memory";
 import {
@@ -155,6 +156,8 @@ export default function App() {
     runTask,
     grantTaskApproval: (taskId: string, runId: string) =>
       setState((current) => grantApprovalScopesAndResumeTask(current, taskId, runId)),
+    sendCompanionMessage: (characterId: string, text: string) =>
+      setState((current) => sendCompanionMessage(current, { characterId, text })),
     generateCharacterDraft: generateDraft,
     confirmCharacterDraft: (draftId: string) => updateState(confirmDraft(state, draftId)),
     rejectCharacterDraft: (draftId: string) => updateState(rejectDraft(state, draftId)),
@@ -235,6 +238,8 @@ export default function App() {
       default:
         return (
           <DesktopStagePage
+            actions={actions}
+            conversationMessages={state.conversationMessages}
             emotionalCharacters={emotionalCharacters}
             latestRun={latestRun}
             roleBoundaries={state.roleBoundaries}

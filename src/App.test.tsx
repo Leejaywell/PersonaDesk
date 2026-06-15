@@ -37,6 +37,17 @@ describe("PersonaDesk app", () => {
     expect(screen.getByText("Voice Providers")).toBeInTheDocument();
   });
 
+  it("can exchange local deterministic companion messages on the desktop stage", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.type(screen.getByLabelText("Message"), "Can you stay with me while I review this?");
+    await user.click(screen.getByRole("button", { name: "Send local companion message" }));
+
+    expect(screen.getByText("Can you stay with me while I review this?")).toBeInTheDocument();
+    expect(screen.getByText(/No model provider was called/)).toBeInTheDocument();
+  });
+
   it("can scan and merge detected local agents from the executor page", async () => {
     const user = userEvent.setup();
     scanLocalAgentsMock.mockResolvedValue({

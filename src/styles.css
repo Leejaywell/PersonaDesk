@@ -313,9 +313,34 @@ label {
 .task-card-list,
 .executor-config-list,
 .character-settings-editor,
-.memory-review-form {
+.memory-review-form,
+.companion-chat-form,
+.conversation-list {
   display: grid;
   gap: 10px;
+}
+
+.conversation-message {
+  border: 1px solid #e4ebf3;
+  border-radius: 8px;
+  padding: 10px;
+  background: #fbfdff;
+}
+
+.conversation-message.user {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+}
+
+.conversation-message.character {
+  border-color: #d9e2ec;
+  background: #ffffff;
+}
+
+.conversation-message p {
+  margin: 4px 0 0;
+  color: #334e68;
+  font-size: 13px;
 }
 
 .executor-config-card {

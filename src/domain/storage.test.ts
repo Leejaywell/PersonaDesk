@@ -72,6 +72,16 @@ describe("state storage", () => {
     expect(restored.executors.find((executor) => executor.id === "codex-cli")?.configuration.endpoint).toBe("");
   });
 
+  it("adds missing conversation state for older persisted states", () => {
+    const state = createInitialState();
+    const legacyState = { ...state } as Partial<typeof state>;
+    delete legacyState.conversationMessages;
+
+    const restored = deserializeState(JSON.stringify({ version: 1, state: legacyState }));
+
+    expect(restored.conversationMessages).toEqual([]);
+  });
+
   it("merges default sync classes while preserving persisted sync settings", () => {
     const state = createInitialState();
     const restored = deserializeState(

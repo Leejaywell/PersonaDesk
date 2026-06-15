@@ -2,6 +2,7 @@ import { createInitialState } from "./defaultState";
 import type {
   Character,
   CloudUploadApproval,
+  ConversationMessage,
   Executor,
   ExecutorConfiguration,
   MemoryCandidate,
@@ -154,6 +155,7 @@ function normalizeState(state: PersonaDeskState): PersonaDeskState {
     taskRuns: arrayOrEmpty<TaskRun>(state.taskRuns),
     memories: arrayOrEmpty<MemoryItem>(state.memories),
     memoryCandidates: arrayOrEmpty<MemoryCandidate>(state.memoryCandidates),
+    conversationMessages: arrayOrEmpty<ConversationMessage>(state.conversationMessages),
     observationSessions: arrayOrEmpty<ObservationSession>(state.observationSessions).map(normalizeObservationSession),
     syncProfile: mergeSyncProfile(state.syncProfile, defaults.syncProfile)
   };
