@@ -651,7 +651,7 @@ git commit -m "feat: add observation and storage boundaries"
 - Modify: `src/styles.css`
 - Test: `src/App.test.tsx`
 
-- [ ] **Step 1: Write failing UI tests**
+- [x] **Step 1: Write failing UI tests**
 
 Create `src/App.test.tsx`:
 
@@ -684,7 +684,7 @@ describe("PersonaDesk app", () => {
 });
 ```
 
-- [ ] **Step 2: Run the UI test and verify it fails**
+- [x] **Step 2: Run the UI test and verify it fails**
 
 Run:
 
@@ -694,7 +694,7 @@ npm test -- src/App.test.tsx
 
 Expected: FAIL because UI does not yet expose the required labels and interactions.
 
-- [ ] **Step 3: Implement UI panels**
+- [x] **Step 3: Implement UI panels**
 
 `src/App.tsx` must include:
 
@@ -708,11 +708,11 @@ Expected: FAIL because UI does not yet expose the required labels and interactio
 - Voice settings panel showing provider slots and configured/unconfigured state.
 - Sync panel showing local-first default and optional sync toggle.
 
-- [ ] **Step 4: Style the UI**
+- [x] **Step 4: Style the UI**
 
 `src/styles.css` must use a restrained cross-platform desktop app style. Avoid marketing hero layout. Use dense panels, compact controls, tabs or segmented controls where useful, clear status chips, and no decorative gradient-orb backgrounds.
 
-- [ ] **Step 5: Run UI tests and build**
+- [x] **Step 5: Run UI tests and build**
 
 Run:
 
@@ -723,7 +723,7 @@ npm run build
 
 Expected: PASS and build succeeds.
 
-- [ ] **Step 6: Commit UI**
+- [x] **Step 6: Commit UI**
 
 ```bash
 git add src/App.tsx src/App.test.tsx src/styles.css
