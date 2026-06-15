@@ -164,6 +164,29 @@ describe("PersonaDesk app", () => {
     expect(screen.getByText(/No model provider was called/)).toBeInTheDocument();
   });
 
+  it("expands and collapses the desktop task stage around the latest run", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    expect(screen.getByText("Mode: collapsed")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Expand task stage" })).toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: /Tasks/i }));
+    await user.type(screen.getByLabelText("Task goal"), "Create a stage visibility checklist");
+    await user.click(screen.getByRole("button", { name: "Run autonomous task" }));
+    expect(await screen.findByText("Delivered")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Desktop/i }));
+    expect(screen.getByText("Mode: expanded")).toBeInTheDocument();
+    expect(screen.getByText(/Delivered a validated local planning artifact/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Collapse task stage" }));
+    expect(screen.getByText("Mode: collapsed")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Expand task stage" }));
+    expect(screen.getByText("Mode: expanded")).toBeInTheDocument();
+  });
+
   it("can authorize task runs to use local observation summaries", async () => {
     const user = userEvent.setup();
     render(<App />);

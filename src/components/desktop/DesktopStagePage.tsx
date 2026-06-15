@@ -1,5 +1,5 @@
 import { Sparkles } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import type { AppActions } from "../../app/actions";
 import type { Character, ConversationMessage, RoleBoundary, TaskRun } from "../../domain/types";
 import { CharacterCard } from "../characters/CharacterCard";
@@ -21,8 +21,16 @@ export function DesktopStagePage({
 }) {
   const [selectedCharacterId, setSelectedCharacterId] = useState(emotionalCharacters[0]?.id ?? "");
   const [messageText, setMessageText] = useState("");
+  const [taskStageExpanded, setTaskStageExpanded] = useState(Boolean(latestRun));
   const selectedCharacter = emotionalCharacters.find((character) => character.id === selectedCharacterId) ?? emotionalCharacters[0];
   const visibleMessages = conversationMessages.filter((message) => message.characterId === selectedCharacter?.id).slice(-8);
+  const passedValidations = latestRun?.validationResults.filter((result) => result.passed).length ?? 0;
+
+  useEffect(() => {
+    if (latestRun) {
+      setTaskStageExpanded(true);
+    }
+  }, [latestRun?.id]);
 
   function sendMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -57,6 +65,39 @@ export function DesktopStagePage({
             Emotional characters can accompany the user, watch approved observation sessions, and comment within
             configured boundaries.
           </div>
+        </div>
+        <div className={`desktop-task-stage ${taskStageExpanded ? "expanded" : "collapsed"}`}>
+          <div className="task-card-header">
+            <div>
+              <strong>Task Stage</strong>
+              <p>{latestRun ? latestRun.finalSummary : "No task is staged yet."}</p>
+            </div>
+            <div className="button-row">
+              {latestRun ? <StatusPill status={latestRun.status} /> : <StatusPill>Idle</StatusPill>}
+              <button
+                disabled={!latestRun}
+                onClick={() => setTaskStageExpanded((expanded) => !expanded)}
+                type="button"
+              >
+                {taskStageExpanded ? "Collapse task stage" : "Expand task stage"}
+              </button>
+            </div>
+          </div>
+          {latestRun && taskStageExpanded ? (
+            <div className="desktop-task-stage-details">
+              <span className="meta-chip">Mode: expanded</span>
+              <span className="meta-chip">Assigned: {latestRun.assignedCharacters.join(", ")}</span>
+              <span className="meta-chip">
+                Validation: {passedValidations}/{latestRun.validationResults.length}
+              </span>
+              <p>{latestRun.decisions[0]}</p>
+            </div>
+          ) : (
+            <div className="desktop-task-stage-details">
+              <span className="meta-chip">Mode: collapsed</span>
+              <p>{latestRun ? "Latest task is available in the task room." : "Task stage is waiting for work."}</p>
+            </div>
+          )}
         </div>
       </Panel>
 

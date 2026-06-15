@@ -72,7 +72,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
   - lists excluded local-only data such as raw observation streams and detailed task logs,
   - does not upload data in Phase 1.
 - Product navigation for Phase 1 areas:
-  - Desktop: emotional presence and light task status.
+  - Desktop: emotional presence, companion chat, and an expandable/collapsible task stage for the latest run.
   - Tasks: task intake, task characters, task cards, validation, artifacts, and approval gates.
   - Characters: emotional characters, task characters, and inactive character drafts.
   - Memory: pending memory candidates and confirmed memory counts.

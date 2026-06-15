@@ -296,6 +296,40 @@ label {
   font-size: 13px;
 }
 
+.desktop-task-stage {
+  display: grid;
+  gap: 10px;
+  border: 1px solid #d9e2ec;
+  border-radius: 8px;
+  margin-top: 12px;
+  padding: 12px;
+  background: #ffffff;
+}
+
+.desktop-task-stage.collapsed {
+  background: #fbfdff;
+}
+
+.desktop-task-stage p {
+  margin: 4px 0 0;
+  color: #52606d;
+  font-size: 13px;
+}
+
+.desktop-task-stage-details {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-top: 1px solid #e4ebf3;
+  padding-top: 10px;
+}
+
+.desktop-task-stage-details p {
+  flex: 1 1 260px;
+  margin: 0;
+}
+
 .desktop-latest-task {
   display: flex;
   align-items: center;
