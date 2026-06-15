@@ -120,6 +120,7 @@ label {
 .topbar-actions,
 .button-row,
 .meta-row,
+.task-meta-row,
 .validation-grid,
 .presence-status,
 .privacy-status-list,
@@ -416,11 +417,13 @@ label {
 
 .meta-chip {
   display: inline-flex;
+  max-width: 100%;
   border-radius: 999px;
   padding: 5px 8px;
   background: #edf2f7;
   color: #334e68;
   font-size: 12px;
+  overflow-wrap: anywhere;
 }
 
 .task-card-header,

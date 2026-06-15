@@ -23,6 +23,8 @@ This repository currently implements the Phase 1 thin slice from the design spec
 - A real deterministic local planner executor for text planning and validation.
 - Autonomous task loop:
   - creates a task,
+  - lets the user choose supervised or unsupervised mode,
+  - lets the user choose the current authorization scope,
   - assigns task characters,
   - generates a deterministic artifact,
   - validates the artifact,

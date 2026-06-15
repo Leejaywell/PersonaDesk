@@ -8,6 +8,12 @@ export function TaskCard({ run, task }: { run: TaskRun; task: Task | undefined }
         <div>
           <h3>{task?.title ?? "Untitled task"}</h3>
           <p>{run.finalSummary}</p>
+          {task && (
+            <div className="task-meta-row">
+              <span className="meta-chip">Mode: {task.supervisionMode}</span>
+              <span className="meta-chip">Scope: {task.authorizationScope}</span>
+            </div>
+          )}
         </div>
         <StatusPill status={run.status} />
       </div>

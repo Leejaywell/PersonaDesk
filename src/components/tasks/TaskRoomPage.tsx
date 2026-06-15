@@ -53,6 +53,40 @@ export function TaskRoomPage({
               onChange={(event) => setTaskForm({ ...taskForm, desiredOutput: event.target.value })}
             />
           </label>
+          <div className="settings-grid">
+            <label>
+              Supervision mode
+              <select
+                value={taskForm.supervisionMode}
+                onChange={(event) =>
+                  setTaskForm({
+                    ...taskForm,
+                    supervisionMode: event.target.value as TaskFormState["supervisionMode"]
+                  })
+                }
+              >
+                <option value="unsupervised">unsupervised</option>
+                <option value="supervised">supervised</option>
+              </select>
+            </label>
+            <label>
+              Authorization scope
+              <select
+                value={taskForm.authorizationScope}
+                onChange={(event) => setTaskForm({ ...taskForm, authorizationScope: event.target.value })}
+              >
+                <option value="text-planning-only">Text planning only</option>
+                <option value="text-planning-only destructive-filesystem">Text planning + destructive filesystem</option>
+                <option value="text-planning-only external-publishing">Text planning + external publishing</option>
+                <option value="text-planning-only destructive-filesystem external-publishing">
+                  Text planning + destructive filesystem + external publishing
+                </option>
+                <option value="text-planning-only destructive-filesystem external-publishing payment sensitive-data-access">
+                  Expanded sensitive operation review
+                </option>
+              </select>
+            </label>
+          </div>
           <button className="primary-button" type="submit">
             <Play aria-hidden="true" size={16} />
             Run autonomous task

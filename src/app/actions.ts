@@ -1,10 +1,13 @@
 import type { FormEvent } from "react";
 import type { CharacterSettingsUpdate } from "../domain/characters";
+import type { SupervisionMode } from "../domain/types";
 
 export interface TaskFormState {
   goal: string;
   constraints: string;
   desiredOutput: string;
+  supervisionMode: SupervisionMode;
+  authorizationScope: string;
 }
 
 export interface DraftFormState {

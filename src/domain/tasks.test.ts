@@ -37,4 +37,21 @@ describe("task autonomy", () => {
     expect(state.taskRuns[0].status).toBe("blocked");
     expect(state.taskRuns[0].approvalRequests.length).toBeGreaterThan(0);
   });
+
+  it("continues when risky operations are explicitly inside authorization scope", () => {
+    let state = createInitialState();
+    state = createTask(state, {
+      goal: "Delete old files and publish the release",
+      constraints: "Needs filesystem and external publishing",
+      desiredOutput: "Release checklist",
+      supervisionMode: "supervised",
+      authorizationScope: "text-planning-only destructive-filesystem external-publishing"
+    });
+
+    state = runAutonomyCycle(state, state.tasks[0].id);
+
+    expect(state.tasks[0].supervisionMode).toBe("supervised");
+    expect(state.taskRuns[0].status).toBe("delivered");
+    expect(state.taskRuns[0].approvalRequests).toEqual([]);
+  });
 });
