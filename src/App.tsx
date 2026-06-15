@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { listen } from "@tauri-apps/api/event";
 import type { SectionId } from "./app/navigation";
 import type { DraftFormState, ObservationFormState, TaskFormState } from "./app/actions";
 import {
@@ -114,6 +115,27 @@ export default function App() {
   );
   const latestRun = state.taskRuns[state.taskRuns.length - 1];
   const activeObservation = state.observationSessions.find((session) => session.active);
+
+  useEffect(() => {
+    if (!isTauriRuntime()) {
+      return;
+    }
+
+    let removeListener: (() => void) | undefined;
+    void listen("personadesk-stop-observation", () => {
+      setState((current) => {
+        const activeSession = current.observationSessions.find((session) => session.active);
+
+        return activeSession ? stopObservationSession(current, activeSession.id) : current;
+      });
+    }).then((unlisten) => {
+      removeListener = unlisten;
+    });
+
+    return () => {
+      removeListener?.();
+    };
+  }, []);
 
   function updateState(next: PersonaDeskState) {
     setState(next);

@@ -3,7 +3,7 @@ mod desktop_presence;
 mod desktop_windows;
 
 use agent_detection::{detect_known_agents, DetectedAgent};
-use desktop_presence::{presence_plan, DesktopPresencePlan};
+use desktop_presence::{install_desktop_presence_tray, presence_plan, DesktopPresencePlan};
 use desktop_windows::{window_plan, DesktopWindowPlan};
 
 #[tauri::command]
@@ -28,6 +28,10 @@ fn desktop_presence_plan() -> DesktopPresencePlan {
 
 fn main() {
     tauri::Builder::default()
+        .setup(|app| {
+            install_desktop_presence_tray(app)?;
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             platform_name,
             detect_local_agents,

@@ -34,6 +34,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
   - the companion window is configured as always-on-top, undecorated, and hidden from the taskbar,
   - the web fallback still shows the native surface plan without pretending browser tabs are real desktop windows,
   - tray/menu actions and notification triggers are exposed as a Tauri native presence contract,
+  - the Tauri tray menu is wired to show the console, toggle the companion window, emit a stop-observation event, and quit the app,
   - local desktop notification previews use the runtime Notification API only when permission already exists and always record a local audit.
 - A real deterministic local planner executor for text planning and validation.
 - Autonomous task loop:
@@ -111,7 +112,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
 - Screen observation stores local summaries only. It does not capture or upload raw frames.
 - Cloud vision approvals are recorded as audit entries only until a real vision provider and upload path are configured.
 - Optional sync is represented by local settings, a local preview, and local sync package export/import preflight. A cloud sync backend and automatic import merge are not implemented yet.
-- Transparent companion windows, OS tray event wiring, startup behavior, and native notification plugin integration are not implemented yet.
+- Transparent companion windows, startup behavior, and native notification plugin integration are not implemented yet.
 
 ## Privacy Defaults
 

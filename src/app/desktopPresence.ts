@@ -83,7 +83,7 @@ export function fallbackDesktopPresencePlan(): DesktopPresencePlan {
       }
     ],
     disclosures: [
-      "Tray actions are declared before they are wired to OS menu events.",
+      "Tray actions are wired to local Tauri window and app events.",
       "Notification previews use a local runtime notification API when permission already exists.",
       "No notification preview uploads task text, observation summaries, or companion chat."
     ]
