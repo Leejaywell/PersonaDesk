@@ -1,5 +1,6 @@
 import { Check, Eye, Shield, X } from "lucide-react";
 import type { AppActions, ObservationFormState } from "../../app/actions";
+import type { SyncPreview } from "../../domain/sync";
 import type { ObservationSession, SyncProfile } from "../../domain/types";
 import { Panel } from "../ui/Panel";
 import { StatusPill } from "../ui/StatusPill";
@@ -8,6 +9,7 @@ export function PrivacySyncPage({
   observationSessions,
   activeObservation,
   syncProfile,
+  syncPreview,
   observationForm,
   setObservationForm,
   actions
@@ -15,6 +17,7 @@ export function PrivacySyncPage({
   observationSessions: ObservationSession[];
   activeObservation: ObservationSession | undefined;
   syncProfile: SyncProfile;
+  syncPreview: SyncPreview | null;
   observationForm: ObservationFormState;
   setObservationForm: (next: ObservationFormState) => void;
   actions: AppActions;
@@ -126,8 +129,43 @@ export function PrivacySyncPage({
           </StatusPill>
           <StatusPill>{syncProfile.lastSyncStatus}</StatusPill>
         </div>
+        <button onClick={actions.prepareSyncPreview} type="button">
+          <Shield aria-hidden="true" size={15} />
+          Generate sync preview
+        </button>
         <p className="local-only">Local-only: {syncProfile.localOnlyClasses.join(", ")}</p>
         <p className="local-only">Sync-allowed: {syncProfile.allowedDataClasses.join(", ")}</p>
+        {syncPreview && (
+          <div className="sync-preview" aria-label="Local sync preview">
+            <p>{syncPreview.disclosure}</p>
+            <div className="settings-grid">
+              <section className="sync-preview-list" aria-label="Sync preview included">
+                <h3>Included</h3>
+                {syncPreview.included.length === 0 ? (
+                  <p className="empty-state">No upload items prepared.</p>
+                ) : (
+                  syncPreview.included.map((item) => (
+                    <article className="review-card" key={item.id}>
+                      <strong>{item.label}</strong>
+                      <p>{item.dataClass}</p>
+                      <p>{item.detail}</p>
+                    </article>
+                  ))
+                )}
+              </section>
+              <section className="sync-preview-list" aria-label="Sync preview excluded">
+                <h3>Excluded</h3>
+                {syncPreview.excluded.map((item) => (
+                  <article className="review-card" key={item.id}>
+                    <strong>{item.label}</strong>
+                    <p>{item.dataClass}</p>
+                    <p>{item.reason}</p>
+                  </article>
+                ))}
+              </section>
+            </div>
+          </div>
+        )}
       </Panel>
     </div>
   );

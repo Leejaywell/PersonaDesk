@@ -37,6 +37,7 @@ export interface AppActions {
   addObservationSummary: () => void;
   approveCloudVisionUpload: (sessionId: string, summaryId: string) => void;
   setSyncEnabled: (enabled: boolean) => void;
+  prepareSyncPreview: () => void;
   scanLocalAgents: () => Promise<void>;
   configureExecutor: (executorId: string, configuration: ExecutorConfigurationInput) => void;
 }

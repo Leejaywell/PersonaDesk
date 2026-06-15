@@ -24,6 +24,7 @@ import {
   summarizeObservationEvent
 } from "./domain/observation";
 import { loadState, saveState } from "./domain/storage";
+import { buildSyncPreview, type SyncPreview } from "./domain/sync";
 import { createTask, grantApprovalScopesAndResumeTask, runAutonomyCycle } from "./domain/tasks";
 import type { PersonaDeskState } from "./domain/types";
 
@@ -47,6 +48,7 @@ export default function App() {
     image: null
   });
   const [localAgentScanStatus, setLocalAgentScanStatus] = useState("Not scanned in this session.");
+  const [syncPreview, setSyncPreview] = useState<SyncPreview | null>(null);
 
   useEffect(() => {
     saveState(state);
@@ -165,6 +167,7 @@ export default function App() {
     stopObservation,
     addObservationSummary,
     approveCloudVisionUpload: approveCloudVision,
+    prepareSyncPreview: () => setSyncPreview(buildSyncPreview(state)),
     scanLocalAgents,
     configureExecutor: (executorId: string, configuration: Parameters<typeof configureExecutor>[2]) =>
       setState((current) => configureExecutor(current, executorId, configuration)),
@@ -224,6 +227,7 @@ export default function App() {
             observationForm={observationForm}
             observationSessions={state.observationSessions}
             setObservationForm={setObservationForm}
+            syncPreview={syncPreview}
             syncProfile={state.syncProfile}
           />
         );

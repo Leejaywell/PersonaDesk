@@ -1,0 +1,89 @@
+import { describe, expect, it } from "vitest";
+import { createInitialState } from "./defaultState";
+import { configureExecutor } from "./executors";
+import { confirmMemoryCandidate, proposeMemoryCandidate } from "./memory";
+import { buildSyncPreview } from "./sync";
+
+describe("sync preview", () => {
+  it("includes eligible character definitions and memories when sync is enabled", () => {
+    let state = createInitialState();
+    state = {
+      ...state,
+      syncProfile: {
+        ...state.syncProfile,
+        enabled: true
+      }
+    };
+    state = proposeMemoryCandidate(state, {
+      layer: "shared-world",
+      ownerCharacterId: null,
+      text: "The user likes concise task summaries.",
+      source: "conversation",
+      sensitivity: "low",
+      reason: "Stable preference"
+    });
+    state = confirmMemoryCandidate(state, state.memoryCandidates[0].id, {
+      syncPolicy: "sync-allowed"
+    });
+
+    const preview = buildSyncPreview(state);
+
+    expect(preview.included.some((item) => item.dataClass === "confirmed-character-definitions")).toBe(true);
+    expect(preview.included.some((item) => item.detail.includes("concise task summaries"))).toBe(true);
+    expect(preview.disclosure).toContain("local preview only");
+  });
+
+  it("excludes high-sensitivity memories and local-only execution data", () => {
+    let state = createInitialState();
+    state = {
+      ...state,
+      syncProfile: {
+        ...state.syncProfile,
+        enabled: true
+      }
+    };
+    state = proposeMemoryCandidate(state, {
+      layer: "character-private",
+      ownerCharacterId: "mira",
+      text: "Sensitive private preference.",
+      source: "conversation",
+      sensitivity: "high",
+      reason: "Private preference"
+    });
+    state = confirmMemoryCandidate(state, state.memoryCandidates[0].id);
+
+    const preview = buildSyncPreview(state);
+
+    expect(preview.included.some((item) => item.detail.includes("Sensitive private preference"))).toBe(false);
+    expect(preview.excluded.some((item) => item.reason.includes("High-sensitivity memory"))).toBe(true);
+  });
+
+  it("omits raw secret references from executor configuration previews", () => {
+    let state = createInitialState();
+    state = {
+      ...state,
+      syncProfile: {
+        ...state.syncProfile,
+        enabled: true
+      }
+    };
+    state = configureExecutor(state, "openai-compatible", {
+      endpoint: "https://api.example.test/v1",
+      model: "gpt-compatible",
+      secretRef: "OPENAI_COMPATIBLE_API_KEY",
+      notes: "Use external secret storage."
+    });
+
+    const preview = buildSyncPreview(state);
+
+    expect(JSON.stringify(preview)).not.toContain("OPENAI_COMPATIBLE_API_KEY");
+    expect(preview.included.some((item) => item.id === "executor-config:openai-compatible")).toBe(true);
+  });
+
+  it("does not include upload items when sync is disabled", () => {
+    const preview = buildSyncPreview(createInitialState());
+
+    expect(preview.included).toHaveLength(0);
+    expect(preview.excluded.some((item) => item.id === "sync:disabled")).toBe(true);
+  });
+});

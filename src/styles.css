@@ -572,6 +572,32 @@ label {
   margin-top: 12px;
 }
 
+.sync-preview {
+  display: grid;
+  gap: 12px;
+  border-top: 1px solid #e4ebf3;
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.sync-preview > p,
+.sync-preview-list p {
+  margin: 0;
+  color: #52606d;
+  font-size: 13px;
+}
+
+.sync-preview-list {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.sync-preview-list h3 {
+  margin: 0;
+  font-size: 14px;
+}
+
 .disclosure-list {
   display: grid;
   gap: 6px;

@@ -46,6 +46,10 @@ This repository currently implements the Phase 1 thin slice from the design spec
   - raw screen frames are not stored by this implementation.
 - Versioned localStorage persistence.
 - LocalStorage migration that preserves user state while adding newly introduced default characters, role boundaries, executor slots, and sync data classes.
+- Local sync preview for optional sync:
+  - lists sync-eligible character definitions, memory summaries, and non-sensitive settings,
+  - lists excluded local-only data such as raw observation streams and detailed task logs,
+  - does not upload data in Phase 1.
 - Product navigation for Phase 1 areas:
   - Desktop: emotional presence and light task status.
   - Tasks: task intake, task characters, task cards, validation, artifacts, and approval gates.
@@ -67,7 +71,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
 - ASR and TTS are exposed as provider slots, but no provider is selected by default.
 - Screen observation stores local summaries only. It does not capture or upload raw frames.
 - Cloud vision approvals are recorded as audit entries only until a real vision provider and upload path are configured.
-- Optional sync is represented by local settings. A cloud sync backend is not implemented yet.
+- Optional sync is represented by local settings and a local preview. A cloud sync backend is not implemented yet.
 
 ## Privacy Defaults
 

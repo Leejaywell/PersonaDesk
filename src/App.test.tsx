@@ -166,4 +166,27 @@ describe("PersonaDesk app", () => {
     expect(await screen.findByText(/no raw screen frame was uploaded/i)).toBeInTheDocument();
     expect(screen.getByText("Cloud vision approved")).toBeInTheDocument();
   });
+
+  it("generates a local sync preview without uploading data", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /Tasks/i }));
+    await user.type(screen.getByLabelText("Task goal"), "Create sync preview checklist");
+    await user.click(screen.getByRole("button", { name: "Run autonomous task" }));
+    expect(await screen.findByText("Delivered")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Memory/i }));
+    await user.click(screen.getByRole("button", { name: "Confirm reviewed memory" }));
+
+    await user.click(screen.getByRole("button", { name: /Privacy/i }));
+    await user.click(screen.getByLabelText("Enable optional sync for confirmed summaries"));
+    await user.click(screen.getByRole("button", { name: "Generate sync preview" }));
+
+    expect(screen.getByText(/local preview only/i)).toBeInTheDocument();
+    expect(screen.getByText("Included")).toBeInTheDocument();
+    expect(screen.getByText("Excluded")).toBeInTheDocument();
+    expect(screen.getAllByText("confirmed-character-definitions").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("confirmed-memory-summaries").length).toBeGreaterThan(0);
+  });
 });
