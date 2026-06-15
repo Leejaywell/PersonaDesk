@@ -39,7 +39,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
   - Memory: pending memory candidates and confirmed memory counts.
   - Executors: model API, local model, local agent, deterministic, ASR, TTS, and vision provider status.
   - Privacy: observation allowlists, local summaries, and optional sync boundaries.
-- Rust/Tauri command for safe local agent detection helpers.
+- Manual local agent scan from the Executors section, backed by a Rust/Tauri safe detection command.
 
 ## What Is Not Pretended
 

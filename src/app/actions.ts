@@ -27,4 +27,5 @@ export interface AppActions {
   stopObservation: () => void;
   addObservationSummary: () => void;
   setSyncEnabled: (enabled: boolean) => void;
+  scanLocalAgents: () => Promise<void>;
 }

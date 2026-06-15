@@ -95,7 +95,7 @@ export function mergeDetectedLocalAgents(
 
 export function executorDisclosure(executor: Executor): string {
   if (executor.status === "available") {
-    return `${executor.displayName} is available. Permission risk: ${executor.permissionRiskLevel}.`;
+    return `${executor.displayName} is available. ${executor.statusReason} Permission risk: ${executor.permissionRiskLevel}.`;
   }
 
   return `${executor.displayName} is ${executor.status}: ${executor.statusReason}`;

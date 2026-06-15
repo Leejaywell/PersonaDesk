@@ -1,12 +1,24 @@
 import "@testing-library/jest-dom/vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const scanLocalAgentsMock = vi.hoisted(() => vi.fn());
+
+vi.mock("./app/localAgents", () => ({
+  scanLocalAgents: scanLocalAgentsMock
+}));
+
 import App from "./App";
 
 describe("PersonaDesk app", () => {
   beforeEach(() => {
     window.localStorage.clear();
+    scanLocalAgentsMock.mockReset();
+    scanLocalAgentsMock.mockResolvedValue({
+      agents: [],
+      message: "Local agent scan is available in the Tauri desktop runtime."
+    });
   });
 
   it("shows product navigation and keeps management controls out of the desktop stage", async () => {
@@ -23,6 +35,22 @@ describe("PersonaDesk app", () => {
 
     expect(screen.getByText("Executor Registry")).toBeInTheDocument();
     expect(screen.getByText("Voice Providers")).toBeInTheDocument();
+  });
+
+  it("can scan and merge detected local agents from the executor page", async () => {
+    const user = userEvent.setup();
+    scanLocalAgentsMock.mockResolvedValue({
+      agents: [{ id: "codex-cli", displayName: "Codex CLI", available: true, version: "codex 1.2.3" }],
+      message: "Scanned 1 known local agent slot."
+    });
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /Executors/i }));
+    await user.click(screen.getByRole("button", { name: "Scan local agents" }));
+
+    expect(await screen.findByText("Scanned 1 known local agent slot.")).toBeInTheDocument();
+    expect(screen.getByText(/Detected locally \(codex 1.2.3\)/)).toBeInTheDocument();
+    expect(scanLocalAgentsMock).toHaveBeenCalledTimes(1);
   });
 
   it("can run a local deterministic task from the UI", async () => {

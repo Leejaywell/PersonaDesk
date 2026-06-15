@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import type { SectionId } from "./app/navigation";
 import type { DraftFormState, ObservationFormState, TaskFormState } from "./app/actions";
+import { scanLocalAgents as scanKnownLocalAgents } from "./app/localAgents";
 import { AppShell } from "./components/layout/AppShell";
 import { CharacterStudioPage } from "./components/characters/CharacterStudioPage";
 import { DesktopStagePage } from "./components/desktop/DesktopStagePage";
@@ -13,6 +14,7 @@ import {
   createCharacterDraft,
   rejectCharacterDraft as rejectDraft
 } from "./domain/characterDrafts";
+import { mergeDetectedLocalAgents } from "./domain/executors";
 import { confirmMemoryCandidate as confirmMemory, rejectMemoryCandidate as rejectMemory } from "./domain/memory";
 import { startObservationSession, stopObservationSession, summarizeObservationEvent } from "./domain/observation";
 import { loadState, saveState } from "./domain/storage";
@@ -35,6 +37,7 @@ export default function App() {
     text: "A gentle companion who speaks softly and likes quiet encouragement.",
     image: null
   });
+  const [localAgentScanStatus, setLocalAgentScanStatus] = useState("Not scanned in this session.");
 
   useEffect(() => {
     saveState(state);
@@ -122,6 +125,17 @@ export default function App() {
     setObservationForm({ ...observationForm, summary: "" });
   }
 
+  async function scanLocalAgents() {
+    setLocalAgentScanStatus("Scanning known local agents...");
+    const result = await scanKnownLocalAgents();
+
+    if (result.agents.length > 0) {
+      setState((current) => mergeDetectedLocalAgents(current, result.agents));
+    }
+
+    setLocalAgentScanStatus(result.message);
+  }
+
   const actions = {
     runTask,
     generateCharacterDraft: generateDraft,
@@ -132,6 +146,7 @@ export default function App() {
     startObservation,
     stopObservation,
     addObservationSummary,
+    scanLocalAgents,
     setSyncEnabled: (enabled: boolean) =>
       updateState({
         ...state,
@@ -172,7 +187,7 @@ export default function App() {
       case "memory":
         return <MemoryCenterPage actions={actions} memories={state.memories} memoryCandidates={state.memoryCandidates} />;
       case "executors":
-        return <ExecutorSettingsPage executors={state.executors} />;
+        return <ExecutorSettingsPage actions={actions} executors={state.executors} scanStatus={localAgentScanStatus} />;
       case "privacy":
         return (
           <PrivacySyncPage

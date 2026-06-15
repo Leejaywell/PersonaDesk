@@ -304,6 +304,24 @@ label {
   gap: 10px;
 }
 
+.executor-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid #d9e2ec;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  padding: 10px;
+  background: #f8fafc;
+}
+
+.executor-toolbar p {
+  margin: 3px 0 0;
+  color: #52606d;
+  font-size: 13px;
+}
+
 .primary-button {
   border-color: #1d4ed8;
   background: #1d4ed8;
@@ -525,6 +543,7 @@ label {
 
   .topbar,
   .presence-strip,
+  .executor-toolbar,
   .task-card-header,
   .executor-row {
     align-items: stretch;
