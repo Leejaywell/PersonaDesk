@@ -44,6 +44,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
   - lets the user choose which task executors are allowed for that run,
   - assigns task characters,
   - records structured executor dispatch attempts with executor type, dispatch mode, status, timestamps, output summary, and disclosure,
+  - records unavailable or unsupported allowed executor candidates before falling back to another executor only when that fallback is explicitly allowed,
   - generates a deterministic artifact,
   - validates the artifact,
   - delivers a task card,
@@ -55,6 +56,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
   - blocks when the allowed executor list has no available executor instead of silently falling back,
   - blocks detected local agents and configured provider slots that do not yet have a Phase 1 task execution adapter instead of pretending they ran,
   - lets the user grant requested scopes and resume the same blocked task while preserving the blocked run as history.
+  - shows task run decisions, execution logs, fallback choices, and executor-call disclosures on task cards.
 - Memory candidate workflow:
   - candidates are proposed from task outcomes, memory-shaped companion messages, and allowlisted observation summaries,
   - users can edit memory text, layer, owner, sensitivity, and sync policy before confirmation,
@@ -114,7 +116,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
 - Local model servers are not treated as available until configured.
 - Codex/Claude/Cursor/Gemini local agents are not treated as available unless safe detection finds them.
 - Tasks only run through executors allowed for that task; unavailable or not-yet-adapted allowed executors create a visible blocked run.
-- Detected local agents are not launched by the task loop yet; the task card records that no local agent process was started.
+- Detected local agents are not launched by the task loop yet; the task card records that no local agent process was started, and fallback happens only to another explicitly allowed executor.
 - ASR and TTS are exposed as provider slots, local request audit records, manual transcript routing, runtime speech-recognition capture when the browser/WebView supports it, and local browser speech playback for TTS previews. External/cloud transcription adapters and external/cloud audio generation are not implemented yet.
 - Screen observation stores local summaries only. User-triggered runtime screen capture may request the OS/browser display picker, then immediately stops the stream and discards raw frames. It does not store or upload raw frames.
 - Cloud vision approvals are recorded as audit entries only until a real vision provider and upload path are configured.

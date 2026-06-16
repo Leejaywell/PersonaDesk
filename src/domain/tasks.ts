@@ -85,6 +85,13 @@ function canProduceTaskArtifact(executor: Executor): boolean {
   return executor.type === "deterministic" && executor.status === "available";
 }
 
+interface TaskExecutorResolution {
+  executor: Executor;
+  fallbackCalls: ExecutorCall[];
+  fallbackDecisions: string[];
+  fallbackLogs: string[];
+}
+
 function blockedExecutorCallStatus(executor: Executor): ExecutorCallStatus {
   return executor.status === "available" ? "blocked" : "skipped";
 }
@@ -119,6 +126,12 @@ function taskExecutorPurpose(kind: "plan" | "revision"): string {
     : "Revise the delivered artifact with an allowed executor.";
 }
 
+function allowedTaskExecutors(state: PersonaDeskState, task: Task): Executor[] {
+  const allowedIds = new Set(task.allowedExecutorIds);
+
+  return state.executors.filter((executor) => allowedIds.has(executor.id));
+}
+
 function blockedExecutorOutput(executor: Executor): string {
   if (executor.status !== "available") {
     return "No executor dispatch was sent because the selected provider is not available. No network request, model call, process launch, or secret read was attempted.";
@@ -147,6 +160,48 @@ function blockedExecutorFinalSummary(executor: Executor): string {
   return executor.status === "available"
     ? "Task is blocked because the selected executor has no Phase 1 execution adapter."
     : "Task is blocked because no allowed executor is available.";
+}
+
+function resolveTaskExecutor(
+  state: PersonaDeskState,
+  task: Task,
+  kind: "plan" | "revision"
+): TaskExecutorResolution {
+  const routed = routeExecutorForTask(state, {
+    taskCharacterId: "orion",
+    taskKind: kind === "plan" ? "planning" : "revision",
+    requiresLocalAgent: false,
+    allowedExecutorIds: task.allowedExecutorIds
+  });
+  const allowedExecutors = allowedTaskExecutors(state, task);
+  const fallback = allowedExecutors.find(canProduceTaskArtifact);
+  const nonProductiveAllowedExecutors = allowedExecutors.filter(
+    (executor) => executor.id !== fallback?.id && !canProduceTaskArtifact(executor)
+  );
+
+  if (!fallback || nonProductiveAllowedExecutors.length === 0) {
+    return {
+      executor: routed,
+      fallbackCalls: [],
+      fallbackDecisions: [],
+      fallbackLogs: []
+    };
+  }
+
+  const purpose = taskExecutorPurpose(kind);
+  const fallbackCalls = nonProductiveAllowedExecutors.map((executor) =>
+    createExecutorCall(executor, purpose, blockedExecutorCallStatus(executor), blockedExecutorOutput(executor))
+  );
+
+  return {
+    executor: fallback,
+    fallbackCalls,
+    fallbackDecisions: [
+      `Preflighted ${fallbackCalls.length} allowed executor candidate${fallbackCalls.length === 1 ? "" : "s"} before fallback without sending task data to unavailable providers or launching local agents.`,
+      `Fell back to ${fallback.displayName} because it is explicitly included in the task allowed-executor list. No executor outside the allowlist was used.`
+    ],
+    fallbackLogs: fallbackCalls.map((call) => call.outputSummary)
+  };
 }
 
 export function createTask(state: PersonaDeskState, input: CreateTaskInput): PersonaDeskState {
@@ -245,13 +300,8 @@ export function runAutonomyCycle(state: PersonaDeskState, taskId: string): Perso
     return appendRun(state, task.id, blockedRun, "blocked");
   }
 
-  const executor = routeExecutorForTask(state, {
-    taskCharacterId: "orion",
-    taskKind: "planning",
-    requiresLocalAgent: false,
-    allowedExecutorIds: task.allowedExecutorIds
-  });
-
+  const resolution = resolveTaskExecutor(state, task, "plan");
+  const executor = resolution.executor;
   const executorPurpose = taskExecutorPurpose("plan");
 
   if (!canProduceTaskArtifact(executor)) {
@@ -296,6 +346,7 @@ export function runAutonomyCycle(state: PersonaDeskState, taskId: string): Perso
     assignedCharacters,
     taskTree: taskTree.map((step) => ({ ...step, status: passed ? "completed" : "blocked" })),
     executorCalls: [
+      ...resolution.fallbackCalls,
       createExecutorCall(
         executor,
         "Create a deterministic task plan and delivery artifact.",
@@ -304,11 +355,13 @@ export function runAutonomyCycle(state: PersonaDeskState, taskId: string): Perso
       )
     ],
     decisions: [
+      ...resolution.fallbackDecisions,
       "Used the local deterministic planner because no configured model API is required for text planning.",
       observationDecision(task, observationSummaries),
       "Validated output against the user goal, desired output, and privacy constraint."
     ],
     logs: [
+      ...resolution.fallbackLogs,
       "Plan created by Orion.",
       "Artifact drafted by local deterministic planner.",
       observationLog(observationSummaries),
@@ -502,13 +555,8 @@ export function runTaskRevision(state: PersonaDeskState, taskId: string, previou
     return appendRun(state, task.id, blockedRun, "blocked");
   }
 
-  const executor = routeExecutorForTask(state, {
-    taskCharacterId: "orion",
-    taskKind: "revision",
-    requiresLocalAgent: false,
-    allowedExecutorIds: task.allowedExecutorIds
-  });
-
+  const resolution = resolveTaskExecutor(state, task, "revision");
+  const executor = resolution.executor;
   const executorPurpose = taskExecutorPurpose("revision");
 
   if (!canProduceTaskArtifact(executor)) {
@@ -554,6 +602,7 @@ export function runTaskRevision(state: PersonaDeskState, taskId: string, previou
     assignedCharacters,
     taskTree: taskTree.map((step) => ({ ...step, status: passed ? "completed" : "blocked" })),
     executorCalls: [
+      ...resolution.fallbackCalls,
       createExecutorCall(
         executor,
         "Revise the deterministic task artifact from user feedback.",
@@ -562,12 +611,14 @@ export function runTaskRevision(state: PersonaDeskState, taskId: string, previou
       )
     ],
     decisions: [
+      ...resolution.fallbackDecisions,
       "Used the local deterministic planner to revise the delivered artifact.",
       `Applied user revision feedback: ${revisionFeedback}`,
       observationDecision(task, observationSummaries),
       "Validated revised output against the task goal, desired output, and privacy constraint."
     ],
     logs: [
+      ...resolution.fallbackLogs,
       "Revision feedback reviewed by Orion.",
       "Revised artifact drafted by local deterministic planner.",
       observationLog(observationSummaries),

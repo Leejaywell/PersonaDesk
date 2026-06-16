@@ -79,6 +79,30 @@ export function TaskCard({
           ))}
         </div>
       )}
+      {(run.decisions.length > 0 || run.logs.length > 0) && (
+        <div className="task-run-audit" aria-label="Task run decisions and logs">
+          {run.decisions.length > 0 && (
+            <section>
+              <h4>Decisions</h4>
+              <ul>
+                {run.decisions.map((decision, index) => (
+                  <li key={`${index}-${decision}`}>{decision}</li>
+                ))}
+              </ul>
+            </section>
+          )}
+          {run.logs.length > 0 && (
+            <section>
+              <h4>Run Log</h4>
+              <ul>
+                {run.logs.map((log, index) => (
+                  <li key={`${index}-${log}`}>{log}</li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </div>
+      )}
       {run.acceptance && (
         <div className="acceptance-panel">
           <div className="task-card-header">

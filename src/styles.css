@@ -401,9 +401,32 @@ label {
 .conversation-list,
 .voice-settings,
 .voice-request-list,
-.executor-call-list {
+.executor-call-list,
+.task-run-audit {
   display: grid;
   gap: 10px;
+}
+
+.task-run-audit {
+  border-top: 1px solid #e4ebf3;
+  padding-top: 10px;
+}
+
+.task-run-audit h4 {
+  margin: 0 0 6px;
+  color: #1f2937;
+  font-size: 13px;
+}
+
+.task-run-audit ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.task-run-audit li {
+  margin: 4px 0;
+  color: #52606d;
+  font-size: 13px;
 }
 
 .voice-playback-row {

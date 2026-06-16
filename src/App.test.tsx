@@ -398,8 +398,24 @@ describe("PersonaDesk app", () => {
     expect(await screen.findByText("Task is blocked because no allowed executor is available.")).toBeInTheDocument();
     expect(screen.getByText("Allowed executors: openai-compatible")).toBeInTheDocument();
     expect(screen.getByText("Dispatch: model-api")).toBeInTheDocument();
-    expect(screen.getByText(/No executor dispatch was sent/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/No executor dispatch was sent/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/OpenAI-compatible chat API is unconfigured/)).toBeInTheDocument();
+  });
+
+  it("shows allowed executor fallback decisions on the task card", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /Tasks/i }));
+    await user.click(screen.getByLabelText(/Allow OpenAI-compatible chat API/i));
+    await user.type(screen.getByLabelText("Task goal"), "Create a fallback-aware checklist");
+    await user.click(screen.getByRole("button", { name: "Run autonomous task" }));
+
+    expect(await screen.findByText("Delivered a validated local planning artifact.")).toBeInTheDocument();
+    expect(screen.getByText("Dispatch: model-api")).toBeInTheDocument();
+    expect(screen.getByText("Dispatch: local-deterministic")).toBeInTheDocument();
+    expect(screen.getByText(/Fell back to Local deterministic planner/i)).toBeInTheDocument();
+    expect(screen.getByText(/No executor outside the allowlist was used/i)).toBeInTheDocument();
   });
 
   it("blocks a detected local agent task instead of pretending the agent ran", async () => {
@@ -422,7 +438,7 @@ describe("PersonaDesk app", () => {
 
     expect(await screen.findByText("Task is blocked because the selected executor has no Phase 1 execution adapter.")).toBeInTheDocument();
     expect(screen.getByText("Dispatch: local-agent")).toBeInTheDocument();
-    expect(screen.getByText(/No local agent process was started/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/No local agent process was started/i).length).toBeGreaterThan(0);
   });
 
   it("can review memory layer, owner, sensitivity, and sync policy before confirmation", async () => {

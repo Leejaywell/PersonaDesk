@@ -120,6 +120,30 @@ describe("task autonomy", () => {
     expect(state.taskRuns[1].decisions.some((decision) => decision.includes("Applied user revision feedback"))).toBe(true);
   });
 
+  it("records allowed executor fallback during revised delivery", () => {
+    let state = createInitialState();
+    state = createTask(state, {
+      goal: "Draft a launch checklist for PersonaDesk",
+      constraints: "Use external model only if it is available",
+      desiredOutput: "Checklist",
+      supervisionMode: "unsupervised",
+      authorizationScope: "text-planning-only",
+      allowedExecutorIds: ["openai-compatible", "local-planner"]
+    });
+    state = runAutonomyCycle(state, state.tasks[0].id);
+    const originalRunId = state.taskRuns[0].id;
+    state = recordTaskAcceptance(state, state.tasks[0].id, originalRunId, "revision-requested", "Needs fallback trace.");
+    state = runTaskRevision(state, state.tasks[0].id, originalRunId);
+
+    const revisedRun = state.taskRuns[1];
+    expect(revisedRun.status).toBe("delivered");
+    expect(revisedRun.executorCalls.map((call) => call.executorId)).toEqual(["openai-compatible", "local-planner"]);
+    expect(revisedRun.executorCalls[0].status).toBe("skipped");
+    expect(revisedRun.executorCalls[1].status).toBe("succeeded");
+    expect(revisedRun.decisions.some((decision) => decision.includes("Fell back to Local deterministic planner"))).toBe(true);
+    expect(revisedRun.artifacts[0].content).toContain("Revision feedback addressed: Needs fallback trace.");
+  });
+
   it("blocks instead of falling back when only unconfigured executors are allowed", () => {
     let state = createInitialState();
     state = createTask(state, {
@@ -145,6 +169,39 @@ describe("task autonomy", () => {
     });
     expect(run.executorCalls[0].outputSummary).toContain("No executor dispatch was sent");
     expect(run.finalSummary).toContain("no allowed executor is available");
+  });
+
+  it("falls back to an allowed deterministic executor after skipping an unavailable provider", () => {
+    let state = createInitialState();
+    state = createTask(state, {
+      goal: "Draft an API integration checklist",
+      constraints: "Prefer the external model if it is actually callable",
+      desiredOutput: "Checklist",
+      supervisionMode: "unsupervised",
+      authorizationScope: "text-planning-only",
+      allowedExecutorIds: ["openai-compatible", "local-planner"]
+    });
+
+    state = runAutonomyCycle(state, state.tasks[0].id);
+
+    const run = state.taskRuns[0];
+    expect(run.status).toBe("delivered");
+    expect(run.executorCalls).toHaveLength(2);
+    expect(run.executorCalls[0]).toMatchObject({
+      executorId: "openai-compatible",
+      executorType: "model-api",
+      status: "skipped",
+      dispatchKind: "model-api"
+    });
+    expect(run.executorCalls[0].outputSummary).toContain("No executor dispatch was sent");
+    expect(run.executorCalls[1]).toMatchObject({
+      executorId: "local-planner",
+      executorType: "deterministic",
+      status: "succeeded",
+      dispatchKind: "local-deterministic"
+    });
+    expect(run.decisions.some((decision) => decision.includes("Fell back to Local deterministic planner"))).toBe(true);
+    expect(run.decisions.some((decision) => decision.includes("No executor outside the allowlist was used"))).toBe(true);
   });
 
   it("does not pretend a detected local agent executed without a guarded adapter", () => {
@@ -174,6 +231,36 @@ describe("task autonomy", () => {
     });
     expect(run.executorCalls[0].outputSummary).toContain("No local agent process was started");
     expect(run.finalSummary).toContain("no Phase 1 execution adapter");
+  });
+
+  it("can fall back from an allowed detected local agent without launching the agent", () => {
+    let state = createInitialState();
+    state = mergeDetectedLocalAgents(state, [
+      { id: "codex-cli", displayName: "Codex CLI", available: true, version: "codex 1.2.3" }
+    ]);
+    state = createTask(state, {
+      goal: "Implement a small code change",
+      constraints: "Use Codex if a guarded adapter exists, otherwise stay local",
+      desiredOutput: "Patch summary",
+      supervisionMode: "unsupervised",
+      authorizationScope: "text-planning-only",
+      allowedExecutorIds: ["codex-cli", "local-planner"]
+    });
+
+    state = runAutonomyCycle(state, state.tasks[0].id);
+
+    const run = state.taskRuns[0];
+    expect(run.status).toBe("delivered");
+    expect(run.executorCalls).toHaveLength(2);
+    expect(run.executorCalls[0]).toMatchObject({
+      executorId: "codex-cli",
+      executorType: "local-agent",
+      status: "blocked",
+      dispatchKind: "local-agent"
+    });
+    expect(run.executorCalls[0].outputSummary).toContain("No local agent process was started");
+    expect(run.executorCalls[1].executorId).toBe("local-planner");
+    expect(run.logs.some((log) => log.includes("No local agent process was started"))).toBe(true);
   });
 
   it("pauses when a task asks for access outside authorization scope", () => {
