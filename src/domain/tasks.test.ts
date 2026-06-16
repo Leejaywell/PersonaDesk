@@ -46,6 +46,31 @@ describe("task autonomy", () => {
     });
   });
 
+  it("records priority and deadline in scheduling decisions and local artifacts", () => {
+    let state = createInitialState();
+    state = createTask(state, {
+      goal: "Draft an investor update checklist",
+      constraints: "Keep it concise",
+      desiredOutput: "Checklist",
+      priority: "high",
+      deadline: "2026-07-01",
+      supervisionMode: "unsupervised",
+      authorizationScope: "text-planning-only",
+      allowedExecutorIds: ["local-planner"]
+    });
+
+    expect(state.tasks[0]).toMatchObject({
+      priority: "high",
+      deadline: "2026-07-01"
+    });
+
+    state = runAutonomyCycle(state, state.tasks[0].id);
+
+    expect(state.taskRuns[0].decisions).toContain("Scheduled task as Priority high; target deadline 2026-07-01.");
+    expect(state.taskRuns[0].artifacts[0].content).toContain("- Priority: high");
+    expect(state.taskRuns[0].artifacts[0].content).toContain("- Deadline: 2026-07-01");
+  });
+
   it("records final user acceptance on delivered task runs", () => {
     let state = createInitialState();
     state = createTask(state, {

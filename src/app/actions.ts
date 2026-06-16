@@ -2,7 +2,7 @@ import type { FormEvent } from "react";
 import type { CharacterSettingsUpdate } from "../domain/characters";
 import type { ExecutorConfigurationInput } from "../domain/executors";
 import type { MemoryCandidateReview } from "../domain/memory";
-import type { SupervisionMode, TaskAcceptanceStatus } from "../domain/types";
+import type { SupervisionMode, TaskAcceptanceStatus, TaskPriority } from "../domain/types";
 import type { VoiceRequestInput } from "../domain/voice";
 import type { RuntimeSpeechRecognitionResult } from "./voiceRecognition";
 
@@ -10,6 +10,8 @@ export interface TaskFormState {
   goal: string;
   constraints: string;
   desiredOutput: string;
+  priority: TaskPriority;
+  deadline: string;
   supervisionMode: SupervisionMode;
   authorizationScope: string;
   allowedExecutorIds: string[];

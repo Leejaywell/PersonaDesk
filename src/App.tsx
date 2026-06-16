@@ -87,6 +87,8 @@ export default function App() {
     goal: "",
     constraints: "Keep it local-first and privacy aware",
     desiredOutput: "Checklist",
+    priority: "normal",
+    deadline: "",
     supervisionMode: "unsupervised",
     authorizationScope: "text-planning-only",
     allowedExecutorIds: ["local-planner"]
@@ -178,6 +180,8 @@ export default function App() {
       goal: taskForm.goal,
       constraints: taskForm.constraints,
       desiredOutput: taskForm.desiredOutput,
+      priority: taskForm.priority,
+      deadline: taskForm.deadline,
       supervisionMode: taskForm.supervisionMode,
       authorizationScope: taskForm.authorizationScope,
       allowedExecutorIds: taskForm.allowedExecutorIds

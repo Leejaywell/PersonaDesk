@@ -74,6 +74,31 @@ export function TaskRoomPage({
           </label>
           <div className="settings-grid">
             <label>
+              Priority
+              <select
+                value={taskForm.priority}
+                onChange={(event) =>
+                  setTaskForm({
+                    ...taskForm,
+                    priority: event.target.value as TaskFormState["priority"]
+                  })
+                }
+              >
+                <option value="low">low</option>
+                <option value="normal">normal</option>
+                <option value="high">high</option>
+                <option value="urgent">urgent</option>
+              </select>
+            </label>
+            <label>
+              Deadline
+              <input
+                placeholder="YYYY-MM-DD or milestone"
+                value={taskForm.deadline}
+                onChange={(event) => setTaskForm({ ...taskForm, deadline: event.target.value })}
+              />
+            </label>
+            <label>
               Supervision mode
               <select
                 value={taskForm.supervisionMode}

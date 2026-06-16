@@ -20,6 +20,7 @@ import type {
   RoleBoundary,
   SyncProfile,
   Task,
+  TaskPriority,
   TaskRun,
   VoiceRequest
 } from "./types";
@@ -210,10 +211,16 @@ function normalizeVoiceRequests(persisted: unknown): VoiceRequest[] {
 function normalizeTasks(persisted: unknown): Task[] {
   return arrayOrEmpty<Task>(persisted).map((task) => ({
     ...task,
+    priority: normalizeTaskPriority(task.priority),
+    deadline: typeof task.deadline === "string" && task.deadline.trim() ? task.deadline : null,
     allowedExecutorIds: Array.isArray(task.allowedExecutorIds) && task.allowedExecutorIds.length > 0
       ? task.allowedExecutorIds
       : ["local-planner"]
   }));
+}
+
+function normalizeTaskPriority(priority: unknown): TaskPriority {
+  return priority === "low" || priority === "high" || priority === "urgent" ? priority : "normal";
 }
 
 const executorCallStatuses: ExecutorCallStatus[] = ["succeeded", "failed", "skipped", "blocked"];

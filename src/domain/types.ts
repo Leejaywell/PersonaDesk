@@ -19,6 +19,7 @@ export type Sensitivity = "low" | "medium" | "high";
 export type TaskStatus = "draft" | "running" | "delivered" | "accepted" | "revision-requested" | "blocked" | "failed";
 export type TaskRunStatus = "planning" | "running" | "validating" | "delivered" | "blocked" | "failed";
 export type SupervisionMode = "supervised" | "unsupervised";
+export type TaskPriority = "low" | "normal" | "high" | "urgent";
 export type RiskLevel = "low" | "medium" | "high";
 export type TaskAcceptanceStatus = "pending" | "accepted" | "revision-requested";
 export type ExecutorCallStatus = "succeeded" | "failed" | "skipped" | "blocked";
@@ -178,6 +179,8 @@ export interface Task {
   goal: string;
   constraints: string;
   desiredOutput: string;
+  priority: TaskPriority;
+  deadline: string | null;
   supervisionMode: SupervisionMode;
   authorizationScope: string;
   allowedExecutorIds: string[];

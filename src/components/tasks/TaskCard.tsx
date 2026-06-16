@@ -33,6 +33,8 @@ export function TaskCard({
           {task && (
             <div className="task-meta-row">
               <span className="meta-chip">Mode: {task.supervisionMode}</span>
+              <span className="meta-chip">Priority: {task.priority}</span>
+              <span className="meta-chip">Deadline: {task.deadline ?? "none"}</span>
               <span className="meta-chip">Scope: {task.authorizationScope}</span>
               <span className="meta-chip">Allowed executors: {task.allowedExecutorIds.join(", ")}</span>
               <span className="meta-chip">Task status: {task.status}</span>

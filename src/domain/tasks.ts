@@ -20,6 +20,8 @@ export interface CreateTaskInput {
   goal: string;
   constraints: string;
   desiredOutput: string;
+  priority?: Task["priority"];
+  deadline?: string | null;
   supervisionMode: SupervisionMode;
   authorizationScope: string;
   allowedExecutorIds?: string[];
@@ -41,6 +43,22 @@ function nowIso(): string {
 
 function canUseObservationSummaries(task: Task): boolean {
   return task.authorizationScope.toLowerCase().split(/\s+/).includes("observation-summaries");
+}
+
+function normalizeTaskPriority(priority: CreateTaskInput["priority"]): Task["priority"] {
+  return priority ?? "normal";
+}
+
+function normalizeTaskDeadline(deadline: CreateTaskInput["deadline"]): string | null {
+  const normalized = deadline?.trim() ?? "";
+
+  return normalized.length > 0 ? normalized : null;
+}
+
+function taskScheduleSummary(task: Task): string {
+  return task.deadline
+    ? `Priority ${task.priority}; target deadline ${task.deadline}.`
+    : `Priority ${task.priority}; no deadline set.`;
 }
 
 function authorizedObservationSummaries(state: PersonaDeskState, task: Task): ObservationSummary[] {
@@ -212,6 +230,8 @@ export function createTask(state: PersonaDeskState, input: CreateTaskInput): Per
     goal,
     constraints: input.constraints.trim(),
     desiredOutput: input.desiredOutput.trim(),
+    priority: normalizeTaskPriority(input.priority),
+    deadline: normalizeTaskDeadline(input.deadline),
     supervisionMode: input.supervisionMode,
     authorizationScope: input.authorizationScope.trim(),
     allowedExecutorIds: normalizeAllowedExecutorIds(input.allowedExecutorIds),
@@ -289,7 +309,7 @@ export function runAutonomyCycle(state: PersonaDeskState, taskId: string): Perso
       taskTree: taskTree.map((step) => ({ ...step, status: "blocked" })),
       executorCalls: [],
       decisions: ["Paused before execution because the task exceeded the authorization scope."],
-      logs: ["PersonaDesk did not run tools or publish/delete anything."],
+      logs: [taskScheduleSummary(task), "PersonaDesk did not run tools or publish/delete anything."],
       validationResults: [],
       artifacts: [],
       approvalRequests: approvals,
@@ -321,6 +341,7 @@ export function runAutonomyCycle(state: PersonaDeskState, taskId: string): Perso
       executorCalls: [executorCall],
       decisions: [
         blockedExecutorDecision(executor, task, "plan"),
+        `Scheduled task as ${taskScheduleSummary(task)}`,
         ...(executor.status !== "available" ? [`Allowed executors: ${task.allowedExecutorIds.join(", ")}.`] : [])
       ],
       logs: [executorCall.outputSummary],
@@ -356,6 +377,7 @@ export function runAutonomyCycle(state: PersonaDeskState, taskId: string): Perso
     ],
     decisions: [
       ...resolution.fallbackDecisions,
+      `Scheduled task as ${taskScheduleSummary(task)}`,
       "Used the local deterministic planner because no configured model API is required for text planning.",
       observationDecision(task, observationSummaries),
       "Validated output against the user goal, desired output, and privacy constraint."
@@ -542,6 +564,7 @@ export function runTaskRevision(state: PersonaDeskState, taskId: string, previou
       executorCalls: [],
       decisions: [
         "Paused before revision because the task exceeded the authorization scope.",
+        `Scheduled revision as ${taskScheduleSummary(task)}`,
         `Revision feedback preserved: ${revisionFeedback}`
       ],
       logs: ["PersonaDesk did not revise, publish, or delete anything."],
@@ -576,6 +599,7 @@ export function runTaskRevision(state: PersonaDeskState, taskId: string, previou
       executorCalls: [executorCall],
       decisions: [
         blockedExecutorDecision(executor, task, "revision"),
+        `Scheduled revision as ${taskScheduleSummary(task)}`,
         ...(executor.status !== "available" ? [`Allowed executors: ${task.allowedExecutorIds.join(", ")}.`] : []),
         `Revision feedback preserved: ${revisionFeedback}`
       ],
@@ -612,6 +636,7 @@ export function runTaskRevision(state: PersonaDeskState, taskId: string, previou
     ],
     decisions: [
       ...resolution.fallbackDecisions,
+      `Scheduled revision as ${taskScheduleSummary(task)}`,
       "Used the local deterministic planner to revise the delivered artifact.",
       `Applied user revision feedback: ${revisionFeedback}`,
       observationDecision(task, observationSummaries),
@@ -665,6 +690,8 @@ export function buildDeterministicArtifact(
   const checklist = [
     `Goal: ${task.goal}`,
     `Desired output: ${task.desiredOutput}`,
+    `Priority: ${task.priority}`,
+    `Deadline: ${task.deadline ?? "No deadline set."}`,
     `Constraint check: ${task.constraints || "No extra constraints provided."}`,
     "Keep raw imports, raw screen frames, and detailed local agent logs local by default.",
     "Confirm memory candidates before writing long-term memory.",

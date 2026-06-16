@@ -43,6 +43,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
 - Autonomous task loop:
   - creates a task,
   - lets the user choose supervised or unsupervised mode,
+  - records task priority and optional deadline in the intake, scheduler decision, artifact, and task card,
   - lets the user choose the current authorization scope,
   - lets the user choose which task executors are allowed for that run,
   - assigns task characters,

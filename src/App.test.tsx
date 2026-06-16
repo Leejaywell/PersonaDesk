@@ -305,11 +305,18 @@ describe("PersonaDesk app", () => {
     render(<App />);
 
     await user.click(screen.getByRole("button", { name: /Tasks/i }));
+    await user.selectOptions(screen.getByLabelText("Priority"), "high");
+    fireEvent.change(screen.getByLabelText("Deadline"), {
+      target: { value: "2026-07-01" }
+    });
     await user.type(screen.getByLabelText("Task goal"), "Create a privacy checklist");
     await user.click(screen.getByRole("button", { name: "Run autonomous task" }));
 
     expect(await screen.findByText("Delivered")).toBeInTheDocument();
     expect(screen.getAllByText(/privacy checklist/i).length).toBeGreaterThan(0);
+    expect(screen.getByText("Priority: high")).toBeInTheDocument();
+    expect(screen.getByText("Deadline: 2026-07-01")).toBeInTheDocument();
+    expect(screen.getByText(/Scheduled task as Priority high; target deadline 2026-07-01/i)).toBeInTheDocument();
     expect(screen.getByText("Dispatch: local-deterministic")).toBeInTheDocument();
     expect(screen.getByText(/Produced one local deterministic planning artifact/i)).toBeInTheDocument();
 

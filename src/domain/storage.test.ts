@@ -193,6 +193,27 @@ describe("state storage", () => {
     expect(restored.voiceRequests).toEqual([]);
   });
 
+  it("defaults older task records to normal priority and no deadline", () => {
+    let state = createInitialState();
+    state = createTask(state, {
+      goal: "Draft a legacy task",
+      constraints: "Older state shape",
+      desiredOutput: "Checklist",
+      supervisionMode: "unsupervised",
+      authorizationScope: "text-planning-only",
+      allowedExecutorIds: ["local-planner"]
+    });
+    const legacyState = {
+      ...state,
+      tasks: state.tasks.map(({ priority, deadline, ...task }) => task)
+    };
+
+    const restored = deserializeState(JSON.stringify({ version: 2, state: legacyState }));
+
+    expect(restored.tasks[0].priority).toBe("normal");
+    expect(restored.tasks[0].deadline).toBeNull();
+  });
+
   it("defaults older voice request audits to audit-only routing", () => {
     const state = createInitialState();
     const legacyState = {
