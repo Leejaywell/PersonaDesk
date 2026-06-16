@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="PersonaDesk app icon">
+  <defs>
+    <linearGradient id="base" x1="128" x2="896" y1="136" y2="888" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1fb6c9"/>
+      <stop offset="0.45" stop-color="#093b4a"/>
+      <stop offset="1" stop-color="#ff7a63"/>
+    </linearGradient>
+    <linearGradient id="pane" x1="234" x2="820" y1="212" y2="812" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#215d6d" stop-opacity="0.86"/>
+      <stop offset="0.62" stop-color="#0b2c3b" stop-opacity="0.92"/>
+      <stop offset="1" stop-color="#263348" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="cyanPersona" x1="244" x2="474" y1="582" y2="784" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#74fff0"/>
+      <stop offset="1" stop-color="#1aa7a6"/>
+    </linearGradient>
+    <linearGradient id="coralPersona" x1="640" x2="814" y1="248" y2="540" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffd1a5"/>
+      <stop offset="0.44" stop-color="#ff805b"/>
+      <stop offset="1" stop-color="#e9485f"/>
+    </linearGradient>
+    <linearGradient id="orbit" x1="274" x2="758" y1="270" y2="760" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#87fff4"/>
+      <stop offset="0.52" stop-color="#d8fff6"/>
+      <stop offset="1" stop-color="#ff8a5f"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="512" cy="524" r="226" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff2b0" stop-opacity="0.85"/>
+      <stop offset="0.38" stop-color="#fff2b0" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#fff2b0" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="22" stdDeviation="24" flood-color="#031a24" flood-opacity="0.34"/>
+    </filter>
+    <filter id="innerGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="10" flood-color="#9ffff5" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <rect x="76" y="76" width="872" height="872" rx="196" fill="url(#base)" filter="url(#softShadow)"/>
+  <rect x="96" y="96" width="832" height="832" rx="178" fill="#092532" opacity="0.42"/>
+  <path
+    d="M178 140c-34 31-56 76-56 126v492c0 80 64 144 144 144h492c54 0 102-29 127-72"
+    fill="none"
+    stroke="#b6fff5"
+    stroke-linecap="round"
+    stroke-width="18"
+    opacity="0.42"
+  />
+  <path
+    d="M848 184c34 31 54 75 54 124v484"
+    fill="none"
+    stroke="#ffd0c3"
+    stroke-linecap="round"
+    stroke-width="16"
+    opacity="0.34"
+  />
+
+  <rect x="190" y="190" width="644" height="644" rx="82" fill="url(#pane)" stroke="#d4fff8" stroke-opacity="0.2" stroke-width="4"/>
+  <path d="M190 294h644" stroke="#84f7ee" stroke-opacity="0.22" stroke-width="5"/>
+  <circle cx="254" cy="244" r="18" fill="#ff7969"/>
+  <circle cx="314" cy="244" r="18" fill="#ffc867"/>
+  <circle cx="374" cy="244" r="18" fill="#66eacb"/>
+
+  <rect x="252" y="346" width="112" height="96" rx="22" fill="#b8fff8" opacity="0.12"/>
+  <rect x="252" y="482" width="150" height="18" rx="9" fill="#d8fff7" opacity="0.14"/>
+  <rect x="252" y="518" width="122" height="18" rx="9" fill="#d8fff7" opacity="0.14"/>
+  <rect x="724" y="635" width="66" height="18" rx="9" fill="#d8fff7" opacity="0.14"/>
+  <rect x="706" y="672" width="94" height="18" rx="9" fill="#d8fff7" opacity="0.14"/>
+
+  <ellipse cx="512" cy="518" rx="260" ry="206" fill="none" stroke="url(#orbit)" stroke-width="11" opacity="0.82" transform="rotate(-34 512 518)"/>
+  <circle cx="379" cy="428" r="27" fill="#77fff1" filter="url(#innerGlow)"/>
+  <circle cx="678" cy="690" r="28" fill="#ff8f67" filter="url(#innerGlow)"/>
+
+  <circle cx="512" cy="536" r="156" fill="url(#glow)"/>
+  <path
+    d="M512 444c18 58 38 78 96 96-58 18-78 38-96 96-18-58-38-78-96-96 58-18 78-38 96-96z"
+    fill="#fff3be"
+  />
+  <path
+    d="M512 478c12 38 26 52 64 64-38 12-52 26-64 64-12-38-26-52-64-64 38-12 52-26 64-64z"
+    fill="#ffffff"
+    opacity="0.72"
+  />
+
+  <path
+    d="M318 604c-72 0-130 54-130 121 0 38 18 71 48 94l-18 68 80-42c7 1 13 1 20 1 72 0 130-54 130-121s-58-121-130-121z"
+    fill="url(#cyanPersona)"
+    filter="url(#softShadow)"
+  />
+  <circle cx="318" cy="574" r="70" fill="#7bfff2" filter="url(#softShadow)"/>
+
+  <path
+    d="M707 342c74 0 134 56 134 125 0 39-19 74-50 97l19 72-83-44c-7 1-13 1-20 1-74 0-134-56-134-126 0-69 60-125 134-125z"
+    fill="url(#coralPersona)"
+    filter="url(#softShadow)"
+  />
+  <circle cx="707" cy="311" r="74" fill="#ffb176" filter="url(#softShadow)"/>
+
+  <circle cx="450" cy="482" r="5" fill="#7dfff1"/>
+  <circle cx="568" cy="650" r="6" fill="#85fff3"/>
+  <circle cx="426" cy="598" r="5" fill="#ffc76f"/>
+  <circle cx="617" cy="608" r="5" fill="#ffb86b"/>
+  <circle cx="596" cy="485" r="4" fill="#d8fff7"/>
+</svg>

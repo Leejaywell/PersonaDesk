@@ -54,6 +54,7 @@ pub fn window_plan() -> Vec<DesktopWindowPlan> {
 mod tests {
     use super::*;
     use serde_json::Value;
+    use std::path::Path;
 
     #[test]
     fn exposes_main_and_companion_window_plan() {
@@ -76,8 +77,11 @@ mod tests {
 
     #[test]
     fn companion_window_plan_matches_tauri_config() {
-        let config: Value = serde_json::from_str(include_str!("../tauri.conf.json")).expect("valid tauri config");
-        let windows = config["app"]["windows"].as_array().expect("window config array");
+        let config: Value =
+            serde_json::from_str(include_str!("../tauri.conf.json")).expect("valid tauri config");
+        let windows = config["app"]["windows"]
+            .as_array()
+            .expect("window config array");
         let companion = windows
             .iter()
             .find(|window| window["label"] == "companion")
@@ -89,14 +93,64 @@ mod tests {
 
         assert_eq!(companion["url"], "index.html?surface=companion");
         assert_eq!(companion["title"].as_str(), Some(companion_plan.title));
-        assert_eq!(companion["width"].as_u64(), Some(u64::from(companion_plan.width)));
-        assert_eq!(companion["height"].as_u64(), Some(u64::from(companion_plan.height)));
-        assert_eq!(companion["alwaysOnTop"].as_bool(), Some(companion_plan.always_on_top));
-        assert_eq!(companion["decorations"].as_bool(), Some(companion_plan.decorations));
-        assert_eq!(companion["transparent"].as_bool(), Some(companion_plan.transparent));
+        assert_eq!(
+            companion["width"].as_u64(),
+            Some(u64::from(companion_plan.width))
+        );
+        assert_eq!(
+            companion["height"].as_u64(),
+            Some(u64::from(companion_plan.height))
+        );
+        assert_eq!(
+            companion["alwaysOnTop"].as_bool(),
+            Some(companion_plan.always_on_top)
+        );
+        assert_eq!(
+            companion["decorations"].as_bool(),
+            Some(companion_plan.decorations)
+        );
+        assert_eq!(
+            companion["transparent"].as_bool(),
+            Some(companion_plan.transparent)
+        );
         assert_eq!(companion["shadow"].as_bool(), Some(companion_plan.shadow));
-        assert_eq!(companion["skipTaskbar"].as_bool(), Some(companion_plan.skip_taskbar));
+        assert_eq!(
+            companion["skipTaskbar"].as_bool(),
+            Some(companion_plan.skip_taskbar)
+        );
         assert_eq!(companion["focus"].as_bool(), Some(companion_plan.focus));
         assert!(companion_plan.drag_region);
+    }
+
+    #[test]
+    fn bundle_icon_config_points_to_generated_icons() {
+        let config: Value =
+            serde_json::from_str(include_str!("../tauri.conf.json")).expect("valid tauri config");
+        let icons = config["bundle"]["icon"]
+            .as_array()
+            .expect("bundle icon config array");
+        let icon_paths: Vec<&str> = icons.iter().filter_map(Value::as_str).collect();
+        let required = [
+            "icons/32x32.png",
+            "icons/128x128.png",
+            "icons/128x128@2x.png",
+            "icons/icon.icns",
+            "icons/icon.ico",
+        ];
+
+        for path in required {
+            assert!(icon_paths.contains(&path), "missing bundle icon {path}");
+            assert!(
+                Path::new(env!("CARGO_MANIFEST_DIR")).join(path).exists(),
+                "bundle icon file does not exist: {path}"
+            );
+        }
+
+        assert!(
+            Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("icons/personadesk-icon.svg")
+                .exists(),
+            "editable source icon should be checked in"
+        );
     }
 }

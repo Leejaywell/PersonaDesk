@@ -90,7 +90,7 @@ pub fn presence_plan() -> DesktopPresencePlan {
         ],
         disclosures: vec![
             "Tray actions are wired to local Tauri window and app events.",
-            "Notification previews use a local runtime notification API when permission already exists.",
+            "Notification previews use the native Tauri notification plugin in desktop builds and a Web Notification fallback in browser previews.",
             "No notification preview uploads task text, observation summaries, or companion chat.",
         ],
     }
@@ -110,7 +110,11 @@ pub fn install_desktop_presence_tray<R: Runtime>(app: &App<R>) -> tauri::Result<
     let mut menu = MenuBuilder::new(handle);
 
     for item in &plan.tray_menu_items {
-        menu = menu.item(&MenuItemBuilder::with_id(item.id, item.label).enabled(item.enabled).build(handle)?);
+        menu = menu.item(
+            &MenuItemBuilder::with_id(item.id, item.label)
+                .enabled(item.enabled)
+                .build(handle)?,
+        );
     }
 
     let menu = menu.build()?;
@@ -176,12 +180,19 @@ mod tests {
         assert!(plan
             .disclosures
             .iter()
+            .any(|disclosure| disclosure.contains("native Tauri notification plugin")));
+        assert!(plan
+            .disclosures
+            .iter()
             .any(|disclosure| disclosure.contains("No notification preview uploads")));
     }
 
     #[test]
     fn maps_menu_ids_to_tray_actions() {
-        assert_eq!(tray_action_for_menu_id(TRAY_SHOW_CONSOLE_ID), Some("focus-main-window"));
+        assert_eq!(
+            tray_action_for_menu_id(TRAY_SHOW_CONSOLE_ID),
+            Some("focus-main-window")
+        );
         assert_eq!(
             tray_action_for_menu_id(TRAY_TOGGLE_COMPANION_ID),
             Some("toggle-companion-window")

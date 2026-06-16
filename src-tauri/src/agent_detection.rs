@@ -117,7 +117,8 @@ mod tests {
 
     #[test]
     fn finds_executable_in_path_value() {
-        let temp_dir = env::temp_dir().join(format!("personadesk-agent-test-{}", std::process::id()));
+        let temp_dir =
+            env::temp_dir().join(format!("personadesk-agent-test-{}", std::process::id()));
         fs::create_dir_all(&temp_dir).expect("create temp dir");
         let executable = temp_dir.join("codex");
         fs::write(&executable, "#!/bin/sh\n").expect("write executable");

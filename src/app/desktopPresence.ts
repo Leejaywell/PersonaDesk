@@ -1,3 +1,4 @@
+import { isPermissionGranted, sendNotification } from "@tauri-apps/plugin-notification";
 import { invoke } from "@tauri-apps/api/core";
 import type { DesktopPresenceAuditStatus } from "../domain/types";
 import { isTauriRuntime } from "./desktopWindows";
@@ -84,7 +85,7 @@ export function fallbackDesktopPresencePlan(): DesktopPresencePlan {
     ],
     disclosures: [
       "Tray actions are wired to local Tauri window and app events.",
-      "Notification previews use a local runtime notification API when permission already exists.",
+      "Notification previews use the native Tauri notification plugin in desktop builds and a Web Notification fallback in browser previews.",
       "No notification preview uploads task text, observation summaries, or companion chat."
     ]
   };
@@ -116,6 +117,35 @@ export async function previewLocalDesktopNotification(
       status: "failed",
       disclosure: "Notification preview requires a title and body."
     };
+  }
+
+  if (isTauriRuntime()) {
+    try {
+      const permissionGranted = await isPermissionGranted();
+
+      if (!permissionGranted) {
+        return {
+          status: "permission-required",
+          disclosure:
+            "Native notification permission has not been granted. Phase 1 records the preview without opening a permission prompt."
+        };
+      }
+
+      sendNotification({ title, body });
+
+      return {
+        status: "sent",
+        disclosure: "Native Tauri notification plugin displayed the preview. No cloud notification provider was called."
+      };
+    } catch (error) {
+      return {
+        status: "failed",
+        disclosure:
+          error instanceof Error
+            ? `Native notification plugin failed locally: ${error.message}`
+            : "Native notification plugin failed locally."
+      };
+    }
   }
 
   if (typeof window === "undefined" || typeof window.Notification === "undefined") {
