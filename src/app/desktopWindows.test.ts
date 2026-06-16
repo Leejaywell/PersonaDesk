@@ -11,8 +11,11 @@ describe("desktop window plan", () => {
       title: "PersonaDesk Companion",
       alwaysOnTop: true,
       decorations: false,
+      transparent: true,
+      shadow: false,
       skipTaskbar: true,
-      focus: false
+      focus: false,
+      dragRegion: true
     });
   });
 });

@@ -150,8 +150,11 @@ export function DesktopStagePage({
               </div>
               <div className="task-meta-row">
                 <span className="meta-chip">Decorations: {windowPlan.decorations ? "on" : "off"}</span>
+                <span className="meta-chip">Transparent: {windowPlan.transparent ? "yes" : "no"}</span>
+                <span className="meta-chip">Shadow: {windowPlan.shadow ? "on" : "off"}</span>
                 <span className="meta-chip">Taskbar: {windowPlan.skipTaskbar ? "hidden" : "shown"}</span>
                 <span className="meta-chip">Initial focus: {windowPlan.focus ? "yes" : "no"}</span>
+                <span className="meta-chip">Drag region: {windowPlan.dragRegion ? "ready" : "none"}</span>
               </div>
             </article>
           ))}

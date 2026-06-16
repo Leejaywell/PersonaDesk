@@ -64,7 +64,10 @@ describe("PersonaDesk app", () => {
     expect(screen.getByText(/companion \/ floating-companion \/ 280x360/)).toBeInTheDocument();
     expect(screen.getByText("Always on top")).toBeInTheDocument();
     expect(screen.getByText("Decorations: off")).toBeInTheDocument();
+    expect(screen.getByText("Transparent: yes")).toBeInTheDocument();
+    expect(screen.getByText("Shadow: off")).toBeInTheDocument();
     expect(screen.getByText("Taskbar: hidden")).toBeInTheDocument();
+    expect(screen.getByText("Drag region: ready")).toBeInTheDocument();
   });
 
   it("shows native presence contracts and records local notification preview audits", async () => {
@@ -91,6 +94,9 @@ describe("PersonaDesk app", () => {
     render(<App />);
 
     expect(screen.getByRole("main", { name: "PersonaDesk companion window" })).toBeInTheDocument();
+    expect(screen.getByRole("main", { name: "PersonaDesk companion window" })).toHaveAttribute(
+      "data-tauri-drag-region"
+    );
     expect(screen.getByText("Mira")).toBeInTheDocument();
     expect(screen.queryByRole("navigation", { name: "Product sections" })).not.toBeInTheDocument();
     expect(screen.queryByText("Executor Registry")).not.toBeInTheDocument();

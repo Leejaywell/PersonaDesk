@@ -31,7 +31,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
 - Native desktop surfaces:
   - the Tauri desktop runtime declares a main control console window and a separate compact companion window,
   - the companion surface is loaded from `index.html?surface=companion`,
-  - the companion window is configured as always-on-top, undecorated, and hidden from the taskbar,
+  - the companion window is configured as transparent, always-on-top, undecorated, hidden from the taskbar, and backed by a drag-region surface,
   - the web fallback still shows the native surface plan without pretending browser tabs are real desktop windows,
   - tray/menu actions and notification triggers are exposed as a Tauri native presence contract,
   - the Tauri tray menu is wired to show the console, toggle the companion window, emit a stop-observation event, and quit the app,
@@ -122,7 +122,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
 - Screen observation stores local summaries only. User-triggered runtime screen capture may request the OS/browser display picker, then immediately stops the stream and discards raw frames. It does not store or upload raw frames.
 - Cloud vision approvals are recorded as audit entries only until a real vision provider and upload path are configured.
 - Optional sync is represented by local settings, a local preview, and local sync package export/import with accepted-item apply. A cloud sync backend and automatic conflict merge are not implemented yet.
-- Transparent companion windows, startup behavior, and native notification plugin integration are not implemented yet.
+- Startup behavior and native notification plugin integration are not implemented yet.
 
 ## Privacy Defaults
 

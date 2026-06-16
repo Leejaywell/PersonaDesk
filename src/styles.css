@@ -18,6 +18,10 @@ body {
   margin: 0;
 }
 
+.companion-window-document {
+  background: transparent;
+}
+
 button,
 input,
 textarea,
@@ -96,7 +100,12 @@ label {
   min-height: 100vh;
   gap: 12px;
   padding: 18px;
-  background: #f8fafc;
+  background: transparent;
+  user-select: none;
+}
+
+.companion-window-shell [data-tauri-drag-region] {
+  app-region: drag;
 }
 
 .companion-window-avatar {

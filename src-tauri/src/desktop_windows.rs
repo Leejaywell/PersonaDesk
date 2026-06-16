@@ -10,8 +10,11 @@ pub struct DesktopWindowPlan {
     pub height: u32,
     pub always_on_top: bool,
     pub decorations: bool,
+    pub transparent: bool,
+    pub shadow: bool,
     pub skip_taskbar: bool,
     pub focus: bool,
+    pub drag_region: bool,
 }
 
 pub fn window_plan() -> Vec<DesktopWindowPlan> {
@@ -24,8 +27,11 @@ pub fn window_plan() -> Vec<DesktopWindowPlan> {
             height: 820,
             always_on_top: false,
             decorations: true,
+            transparent: false,
+            shadow: true,
             skip_taskbar: false,
             focus: true,
+            drag_region: false,
         },
         DesktopWindowPlan {
             label: "companion",
@@ -35,8 +41,11 @@ pub fn window_plan() -> Vec<DesktopWindowPlan> {
             height: 360,
             always_on_top: true,
             decorations: false,
+            transparent: true,
+            shadow: false,
             skip_taskbar: true,
             focus: false,
+            drag_region: true,
         },
     ]
 }
@@ -57,8 +66,11 @@ mod tests {
                 && window.surface == "floating-companion"
                 && window.always_on_top
                 && !window.decorations
+                && window.transparent
+                && !window.shadow
                 && window.skip_taskbar
                 && !window.focus
+                && window.drag_region
         }));
     }
 
@@ -81,7 +93,10 @@ mod tests {
         assert_eq!(companion["height"].as_u64(), Some(u64::from(companion_plan.height)));
         assert_eq!(companion["alwaysOnTop"].as_bool(), Some(companion_plan.always_on_top));
         assert_eq!(companion["decorations"].as_bool(), Some(companion_plan.decorations));
+        assert_eq!(companion["transparent"].as_bool(), Some(companion_plan.transparent));
+        assert_eq!(companion["shadow"].as_bool(), Some(companion_plan.shadow));
         assert_eq!(companion["skipTaskbar"].as_bool(), Some(companion_plan.skip_taskbar));
         assert_eq!(companion["focus"].as_bool(), Some(companion_plan.focus));
+        assert!(companion_plan.drag_region);
     }
 }

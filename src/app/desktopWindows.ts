@@ -8,8 +8,11 @@ export interface DesktopWindowPlan {
   height: number;
   alwaysOnTop: boolean;
   decorations: boolean;
+  transparent: boolean;
+  shadow: boolean;
   skipTaskbar: boolean;
   focus: boolean;
+  dragRegion: boolean;
 }
 
 export interface DesktopWindowPlanResult {
@@ -33,8 +36,11 @@ export function fallbackDesktopWindowPlan(): DesktopWindowPlanResult {
         height: 820,
         alwaysOnTop: false,
         decorations: true,
+        transparent: false,
+        shadow: true,
         skipTaskbar: false,
-        focus: true
+        focus: true,
+        dragRegion: false
       },
       {
         label: "companion",
@@ -44,8 +50,11 @@ export function fallbackDesktopWindowPlan(): DesktopWindowPlanResult {
         height: 360,
         alwaysOnTop: true,
         decorations: false,
+        transparent: true,
+        shadow: false,
         skipTaskbar: true,
-        focus: false
+        focus: false,
+        dragRegion: true
       }
     ]
   };
