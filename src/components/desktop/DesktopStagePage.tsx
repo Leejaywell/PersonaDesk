@@ -1,6 +1,7 @@
 import { Sparkles } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import type { AppActions } from "../../app/actions";
+import type { CompanionWindowControlState } from "../../app/companionWindowControl";
 import type { DesktopPresencePlan } from "../../app/desktopPresence";
 import type { DesktopWindowPlanResult } from "../../app/desktopWindows";
 import type { StartupBehaviorState } from "../../app/startupBehavior";
@@ -13,6 +14,7 @@ export function DesktopStagePage({
   emotionalCharacters,
   roleBoundaries,
   latestRun,
+  companionWindowControl,
   conversationMessages,
   desktopPresenceAudits,
   desktopPresencePlan,
@@ -23,6 +25,7 @@ export function DesktopStagePage({
   emotionalCharacters: Character[];
   roleBoundaries: Record<string, RoleBoundary>;
   latestRun: TaskRun | undefined;
+  companionWindowControl: CompanionWindowControlState;
   conversationMessages: ConversationMessage[];
   desktopPresenceAudits: DesktopPresenceAudit[];
   desktopPresencePlan: DesktopPresencePlan;
@@ -162,6 +165,29 @@ export function DesktopStagePage({
               </div>
             </article>
           ))}
+          <article className="summary-card">
+            <div className="task-card-header">
+              <div>
+                <strong>Companion Window Control</strong>
+                <p>{companionWindowControl.disclosure}</p>
+              </div>
+              <button
+                disabled={!companionWindowControl.available || companionWindowControl.status === "updating"}
+                onClick={actions.toggleCompanionWindow}
+                type="button"
+              >
+                {companionWindowControl.visible ? "Hide companion window" : "Show companion window"}
+              </button>
+            </div>
+            <div className="task-meta-row">
+              <StatusPill status={companionWindowControl.visible ? "active" : "inactive"}>
+                {companionWindowControl.status}
+              </StatusPill>
+              <span className="meta-chip">
+                Runtime: {companionWindowControl.available ? "desktop" : "browser preview"}
+              </span>
+            </div>
+          </article>
         </div>
       </Panel>
 

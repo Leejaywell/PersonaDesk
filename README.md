@@ -33,6 +33,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
   - the Tauri desktop runtime declares a main control console window and a separate compact companion window,
   - the companion surface is loaded from `index.html?surface=companion`,
   - the companion window is configured as transparent, always-on-top, undecorated, hidden from the taskbar, backed by a drag-region surface, and initially hidden so it does not cover the management console,
+  - the management console and tray menu can show or hide the companion window in desktop builds, while browser previews disclose that no native companion window exists,
   - the web fallback still shows the native surface plan without pretending browser tabs are real desktop windows,
   - tray/menu actions and notification triggers are exposed as a Tauri native presence contract,
   - the Tauri tray menu is wired to show the console, toggle the companion window, emit a stop-observation event, and quit the app,

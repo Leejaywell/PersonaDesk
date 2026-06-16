@@ -69,6 +69,9 @@ describe("PersonaDesk app", () => {
     expect(screen.getByText("Taskbar: hidden")).toBeInTheDocument();
     expect(screen.getByText("Initial visibility: hidden")).toBeInTheDocument();
     expect(screen.getByText("Drag region: ready")).toBeInTheDocument();
+    expect(screen.getByText("Companion Window Control")).toBeInTheDocument();
+    expect(screen.getByText(/Companion window controls are available only in the Tauri desktop runtime/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Show companion window" })).toBeDisabled();
   });
 
   it("shows native presence contracts and records local notification preview audits", async () => {

@@ -3,6 +3,12 @@ import { listen } from "@tauri-apps/api/event";
 import type { SectionId } from "./app/navigation";
 import type { DraftFormState, ObservationFormState, TaskFormState } from "./app/actions";
 import {
+  fallbackCompanionWindowControlState,
+  loadCompanionWindowControlState,
+  setCompanionWindowControlVisible,
+  type CompanionWindowControlState
+} from "./app/companionWindowControl";
+import {
   fallbackDesktopPresencePlan,
   loadDesktopPresencePlan,
   previewLocalDesktopNotification,
@@ -105,6 +111,9 @@ export default function App() {
   const [syncImportResult, setSyncImportResult] = useState<SyncPackageImportApplyResult | null>(null);
   const [desktopWindowPlan, setDesktopWindowPlan] = useState<DesktopWindowPlanResult>(() => fallbackDesktopWindowPlan());
   const [desktopPresencePlan, setDesktopPresencePlan] = useState<DesktopPresencePlan>(() => fallbackDesktopPresencePlan());
+  const [companionWindowControl, setCompanionWindowControl] = useState<CompanionWindowControlState>(() =>
+    fallbackCompanionWindowControlState()
+  );
   const [startupBehavior, setStartupBehavior] = useState<StartupBehaviorState>(() => fallbackStartupBehaviorState());
 
   useEffect(() => {
@@ -118,6 +127,7 @@ export default function App() {
 
     void loadDesktopWindowPlan().then(setDesktopWindowPlan);
     void loadDesktopPresencePlan().then(setDesktopPresencePlan);
+    void loadCompanionWindowControlState().then(setCompanionWindowControl);
     void loadStartupBehaviorState().then(setStartupBehavior);
   }, []);
 
@@ -316,6 +326,17 @@ export default function App() {
     setStartupBehavior(next);
   }
 
+  async function toggleCompanionWindow() {
+    setCompanionWindowControl((current) => ({
+      ...current,
+      status: "updating",
+      disclosure: current.visible ? "Hiding companion window..." : "Showing companion window..."
+    }));
+    const next = await setCompanionWindowControlVisible(!companionWindowControl.visible);
+
+    setCompanionWindowControl(next);
+  }
+
   const actions = {
     runTask,
     grantTaskApproval: (taskId: string, runId: string) =>
@@ -390,6 +411,7 @@ export default function App() {
       const result = await playLocalSpeechPreview(request.text);
       setState((current) => recordVoicePlaybackResult(current, requestId, result));
     },
+    toggleCompanionWindow,
     previewDesktopNotification,
     toggleStartupBehavior,
     recordTaskAcceptance: (
@@ -488,6 +510,7 @@ export default function App() {
         return (
           <DesktopStagePage
             actions={actions}
+            companionWindowControl={companionWindowControl}
             conversationMessages={state.conversationMessages}
             desktopPresenceAudits={state.desktopPresenceAudits}
             desktopPresencePlan={desktopPresencePlan}

@@ -1,4 +1,5 @@
 use serde::Serialize;
+use tauri::{AppHandle, Manager, Runtime};
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -16,6 +17,15 @@ pub struct DesktopWindowPlan {
     pub focus: bool,
     pub visible: bool,
     pub drag_region: bool,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CompanionWindowState {
+    pub available: bool,
+    pub visible: bool,
+    pub status: &'static str,
+    pub disclosure: String,
 }
 
 pub fn window_plan() -> Vec<DesktopWindowPlan> {
@@ -51,6 +61,66 @@ pub fn window_plan() -> Vec<DesktopWindowPlan> {
             drag_region: true,
         },
     ]
+}
+
+pub fn companion_window_state_from_visibility(visible: bool) -> CompanionWindowState {
+    CompanionWindowState {
+        available: true,
+        visible,
+        status: if visible { "visible" } else { "hidden" },
+        disclosure: if visible {
+            "Companion window is visible as a separate always-on-top desktop surface.".to_string()
+        } else {
+            "Companion window is hidden so it does not cover the management console.".to_string()
+        },
+    }
+}
+
+pub fn unavailable_companion_window_state() -> CompanionWindowState {
+    CompanionWindowState {
+        available: false,
+        visible: false,
+        status: "unavailable",
+        disclosure: "Companion window controls are available only in the Tauri desktop runtime."
+            .to_string(),
+    }
+}
+
+pub fn companion_window_state<R: Runtime>(app: &AppHandle<R>) -> CompanionWindowState {
+    let Some(window) = app.get_webview_window("companion") else {
+        return unavailable_companion_window_state();
+    };
+
+    match window.is_visible() {
+        Ok(visible) => companion_window_state_from_visibility(visible),
+        Err(error) => CompanionWindowState {
+            available: true,
+            visible: false,
+            status: "failed",
+            disclosure: format!("Companion window visibility could not be read locally: {error}"),
+        },
+    }
+}
+
+pub fn set_companion_window_visibility<R: Runtime>(
+    app: &AppHandle<R>,
+    visible: bool,
+) -> CompanionWindowState {
+    let Some(window) = app.get_webview_window("companion") else {
+        return unavailable_companion_window_state();
+    };
+
+    let result = if visible { window.show() } else { window.hide() };
+
+    match result {
+        Ok(()) => companion_window_state_from_visibility(visible),
+        Err(error) => CompanionWindowState {
+            available: true,
+            visible: !visible,
+            status: "failed",
+            disclosure: format!("Companion window visibility could not be changed locally: {error}"),
+        },
+    }
 }
 
 #[cfg(test)]
@@ -157,5 +227,21 @@ mod tests {
                 .exists(),
             "editable source icon should be checked in"
         );
+    }
+
+    #[test]
+    fn companion_window_state_discloses_visibility() {
+        let hidden = companion_window_state_from_visibility(false);
+        let visible = companion_window_state_from_visibility(true);
+        let unavailable = unavailable_companion_window_state();
+
+        assert_eq!(hidden.status, "hidden");
+        assert!(!hidden.visible);
+        assert!(hidden.disclosure.contains("does not cover"));
+        assert_eq!(visible.status, "visible");
+        assert!(visible.visible);
+        assert!(visible.disclosure.contains("always-on-top"));
+        assert_eq!(unavailable.status, "unavailable");
+        assert!(!unavailable.available);
     }
 }
