@@ -1,4 +1,15 @@
-import type { Character, Executor, MemoryItem, PersonaDeskState } from "./types";
+import type {
+  AppearanceProfile,
+  Character,
+  CharacterKind,
+  Executor,
+  MemoryItem,
+  MemoryLayer,
+  PersonaDeskState,
+  ProactiveBehaviorProfile,
+  Sensitivity,
+  VoiceProfile
+} from "./types";
 
 export interface SyncPreviewItem {
   id: string;
@@ -49,6 +60,15 @@ export interface SyncPackageImportPreview {
   generatedAt: string;
   status: "ready" | "invalid";
   accepted: SyncPackageImportIssue[];
+  conflicts: SyncPackageImportIssue[];
+  rejected: SyncPackageImportIssue[];
+  disclosure: string;
+}
+
+export interface SyncPackageImportApplyResult {
+  appliedAt: string;
+  status: "applied" | "blocked" | "invalid";
+  imported: SyncPackageImportIssue[];
   conflicts: SyncPackageImportIssue[];
   rejected: SyncPackageImportIssue[];
   disclosure: string;
@@ -326,6 +346,24 @@ function isLocalSyncPackage(value: unknown): value is LocalSyncPackage {
   );
 }
 
+function parseLocalSyncPackage(packageText: string):
+  | { ok: true; syncPackage: LocalSyncPackage }
+  | { ok: false; reason: "parse-error" | "unsupported" } {
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(packageText);
+  } catch {
+    return { ok: false, reason: "parse-error" };
+  }
+
+  if (!isLocalSyncPackage(parsed)) {
+    return { ok: false, reason: "unsupported" };
+  }
+
+  return { ok: true, syncPackage: parsed };
+}
+
 function importIssue(item: LocalSyncPackageItem, reason: string): SyncPackageImportIssue {
   return {
     id: item.id,
@@ -335,12 +373,8 @@ function importIssue(item: LocalSyncPackageItem, reason: string): SyncPackageImp
   };
 }
 
-export function previewLocalSyncPackageImport(state: PersonaDeskState, packageText: string): SyncPackageImportPreview {
-  let parsed: unknown;
-
-  try {
-    parsed = JSON.parse(packageText);
-  } catch {
+function invalidImportPreview(reason: "parse-error" | "unsupported"): SyncPackageImportPreview {
+  if (reason === "parse-error") {
     return {
       generatedAt: nowIso(),
       status: "invalid",
@@ -354,26 +388,32 @@ export function previewLocalSyncPackageImport(state: PersonaDeskState, packageTe
           reason: "Package text is not valid JSON."
         }
       ],
-      disclosure: "No import was applied. PersonaDesk only previews local sync packages in Phase 1."
+      disclosure: "No import was applied. Package text must pass preflight before accepted items can be imported."
     };
   }
 
-  if (!isLocalSyncPackage(parsed)) {
-    return {
-      generatedAt: nowIso(),
-      status: "invalid",
-      accepted: [],
-      conflicts: [],
-      rejected: [
-        {
-          id: "package:unsupported",
-          dataClass: "sync-package",
-          label: "Local sync package",
-          reason: "Package schema or origin is not recognized."
-        }
-      ],
-      disclosure: "No import was applied. PersonaDesk only previews local sync packages in Phase 1."
-    };
+  return {
+    generatedAt: nowIso(),
+    status: "invalid",
+    accepted: [],
+    conflicts: [],
+    rejected: [
+      {
+        id: "package:unsupported",
+        dataClass: "sync-package",
+        label: "Local sync package",
+        reason: "Package schema or origin is not recognized."
+      }
+    ],
+    disclosure: "No import was applied. Package text must pass preflight before accepted items can be imported."
+  };
+}
+
+export function previewLocalSyncPackageImport(state: PersonaDeskState, packageText: string): SyncPackageImportPreview {
+  const parsed = parseLocalSyncPackage(packageText);
+
+  if (!parsed.ok) {
+    return invalidImportPreview(parsed.reason);
   }
 
   const accepted: SyncPackageImportIssue[] = [];
@@ -384,7 +424,7 @@ export function previewLocalSyncPackageImport(state: PersonaDeskState, packageTe
   const existingMemoryIds = new Set(state.memories.map((memory) => `memory:${memory.id}`));
   const existingSettingsIds = new Set(["settings:sync-profile", ...state.executors.map((executor) => `executor-config:${executor.id}`)]);
 
-  for (const item of parsed.included) {
+  for (const item of parsed.syncPackage.included) {
     if (!allowedClasses.has(item.dataClass)) {
       rejected.push(importIssue(item, `Data class ${item.dataClass} is not enabled in this profile.`));
       continue;
@@ -405,6 +445,13 @@ export function previewLocalSyncPackageImport(state: PersonaDeskState, packageTe
       continue;
     }
 
+    if (item.dataClass === "non-sensitive-settings") {
+      rejected.push(
+        importIssue(item, "Applying new non-sensitive settings from sync packages is not supported in Phase 1.")
+      );
+      continue;
+    }
+
     accepted.push(importIssue(item, "Package item is recognized and can be reviewed for import."));
   }
 
@@ -415,6 +462,291 @@ export function previewLocalSyncPackageImport(state: PersonaDeskState, packageTe
     conflicts,
     rejected,
     disclosure:
-      "Import preflight only validates package contents. PersonaDesk does not merge imported data automatically in Phase 1."
+      "Import preflight validates package contents. PersonaDesk only imports accepted items after the user chooses Apply accepted imports; conflicts stay local-first for review."
+  };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function stringArray(value: unknown): string[] | null {
+  return Array.isArray(value) && value.every((item) => typeof item === "string") ? value : null;
+}
+
+function nullableString(value: unknown): string | null | undefined {
+  return typeof value === "string" || value === null ? value : undefined;
+}
+
+function isAppearanceProfile(value: unknown): value is AppearanceProfile {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return (
+    (value.backend === "static" ||
+      value.backend === "state-pack" ||
+      value.backend === "live2d-reserved" ||
+      value.backend === "spine-reserved") &&
+    typeof value.avatarLabel === "string" &&
+    typeof value.accent === "string" &&
+    Boolean(stringArray(value.supportedStates))
+  );
+}
+
+function isVoiceProfile(value: unknown): value is VoiceProfile {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return (
+    nullableString(value.providerId) !== undefined &&
+    typeof value.voiceName === "string" &&
+    typeof value.speed === "number" &&
+    typeof value.emotionalIntensity === "number" &&
+    (value.status === "available" ||
+      value.status === "configured" ||
+      value.status === "unconfigured" ||
+      value.status === "missing" ||
+      value.status === "disabled")
+  );
+}
+
+function isProactiveBehaviorProfile(value: unknown): value is ProactiveBehaviorProfile {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return (
+    (value.frequency === "quiet" || value.frequency === "balanced" || value.frequency === "expressive") &&
+    Boolean(stringArray(value.triggers)) &&
+    typeof value.doNotDisturb === "boolean"
+  );
+}
+
+const characterKinds: CharacterKind[] = ["emotional", "task"];
+const memoryLayers: MemoryLayer[] = [
+  "user-profile",
+  "shared-world",
+  "character-private",
+  "task",
+  "short-term",
+  "import-summary"
+];
+const sensitivities: Sensitivity[] = ["low", "medium", "high"];
+
+function characterFromImportPayload(
+  state: PersonaDeskState,
+  item: LocalSyncPackageItem
+): Character | SyncPackageImportIssue {
+  const payload = item.payload;
+
+  if (!isRecord(payload)) {
+    return importIssue(item, "Character payload is not an object.");
+  }
+
+  const memoryPermissionProfile = stringArray(payload.memoryPermissionProfile);
+  const capabilityProfile = stringArray(payload.capabilityProfile);
+  const defaultExecutorId = nullableString(payload.defaultExecutorId);
+
+  if (
+    typeof payload.id !== "string" ||
+    typeof payload.name !== "string" ||
+    !characterKinds.includes(payload.kind as CharacterKind) ||
+    typeof payload.relationshipTemplate !== "string" ||
+    typeof payload.customRelationship !== "string" ||
+    typeof payload.personaSummary !== "string" ||
+    typeof payload.speakingStyle !== "string" ||
+    !capabilityProfile ||
+    !isAppearanceProfile(payload.appearance) ||
+    !isVoiceProfile(payload.voice) ||
+    !isProactiveBehaviorProfile(payload.proactiveBehavior) ||
+    !memoryPermissionProfile ||
+    typeof payload.roleBoundaryId !== "string" ||
+    defaultExecutorId === undefined
+  ) {
+    return importIssue(item, "Character payload is incomplete or uses unsupported fields.");
+  }
+
+  if (!state.roleBoundaries[payload.roleBoundaryId]) {
+    return importIssue(item, "Character role boundary is not available on this device.");
+  }
+
+  return {
+    id: payload.id,
+    name: payload.name,
+    kind: payload.kind as CharacterKind,
+    relationshipTemplate: payload.relationshipTemplate,
+    customRelationship: payload.customRelationship,
+    personaSummary: payload.personaSummary,
+    speakingStyle: payload.speakingStyle,
+    capabilityProfile,
+    appearance: payload.appearance,
+    voice: payload.voice,
+    proactiveBehavior: payload.proactiveBehavior,
+    memoryPermissionProfile,
+    roleBoundaryId: payload.roleBoundaryId,
+    defaultExecutorId
+  };
+}
+
+function memoryFromImportPayload(item: LocalSyncPackageItem): MemoryItem | SyncPackageImportIssue {
+  const payload = item.payload;
+
+  if (!isRecord(payload)) {
+    return importIssue(item, "Memory payload is not an object.");
+  }
+
+  const ownerCharacterId = nullableString(payload.ownerCharacterId);
+
+  if (
+    typeof payload.id !== "string" ||
+    !memoryLayers.includes(payload.layer as MemoryLayer) ||
+    ownerCharacterId === undefined ||
+    typeof payload.text !== "string" ||
+    typeof payload.source !== "string" ||
+    !sensitivities.includes(payload.sensitivity as Sensitivity) ||
+    typeof payload.createdAt !== "string" ||
+    typeof payload.updatedAt !== "string" ||
+    (payload.syncPolicy !== "local-only" && payload.syncPolicy !== "sync-allowed")
+  ) {
+    return importIssue(item, "Memory payload is incomplete or uses unsupported fields.");
+  }
+
+  if (payload.sensitivity === "high" || payload.syncPolicy !== "sync-allowed") {
+    return importIssue(item, "Only sync-allowed non-high-sensitivity memory summaries can be imported.");
+  }
+
+  return {
+    id: payload.id,
+    layer: payload.layer as MemoryLayer,
+    ownerCharacterId,
+    text: payload.text,
+    source: payload.source,
+    sensitivity: payload.sensitivity as Sensitivity,
+    createdAt: payload.createdAt,
+    updatedAt: payload.updatedAt,
+    syncPolicy: payload.syncPolicy
+  };
+}
+
+export function applyLocalSyncPackageImport(
+  state: PersonaDeskState,
+  packageText: string
+): { state: PersonaDeskState; result: SyncPackageImportApplyResult } {
+  const preview = previewLocalSyncPackageImport(state, packageText);
+
+  if (!state.syncProfile.enabled) {
+    return {
+      state,
+      result: {
+        appliedAt: nowIso(),
+        status: "blocked",
+        imported: [],
+        conflicts: preview.conflicts,
+        rejected: [
+          ...preview.rejected,
+          {
+            id: "sync:disabled",
+            dataClass: "sync-disabled",
+            label: "Optional sync",
+            reason: "Enable optional sync before applying accepted import items."
+          }
+        ],
+        disclosure: "No import was applied because optional sync is disabled."
+      }
+    };
+  }
+
+  if (preview.status === "invalid") {
+    return {
+      state,
+      result: {
+        appliedAt: nowIso(),
+        status: "invalid",
+        imported: [],
+        conflicts: preview.conflicts,
+        rejected: preview.rejected,
+        disclosure: "No import was applied because package preflight failed."
+      }
+    };
+  }
+
+  const parsed = parseLocalSyncPackage(packageText);
+
+  if (!parsed.ok) {
+    return {
+      state,
+      result: {
+        appliedAt: nowIso(),
+        status: "invalid",
+        imported: [],
+        conflicts: preview.conflicts,
+        rejected: preview.rejected,
+        disclosure: "No import was applied because package preflight failed."
+      }
+    };
+  }
+
+  const acceptedIds = new Set(preview.accepted.map((item) => item.id));
+  const importedCharacters: Character[] = [];
+  const importedMemories: MemoryItem[] = [];
+  const imported: SyncPackageImportIssue[] = [];
+  const rejected: SyncPackageImportIssue[] = [...preview.rejected];
+
+  for (const item of parsed.syncPackage.included.filter((packageItem) => acceptedIds.has(packageItem.id))) {
+    if (item.dataClass === "confirmed-character-definitions") {
+      const character = characterFromImportPayload(state, item);
+
+      if ("reason" in character) {
+        rejected.push(character);
+      } else {
+        importedCharacters.push(character);
+        imported.push(importIssue(item, "Imported confirmed character definition."));
+      }
+      continue;
+    }
+
+    if (item.dataClass === "confirmed-memory-summaries") {
+      const memory = memoryFromImportPayload(item);
+
+      if ("reason" in memory) {
+        rejected.push(memory);
+      } else {
+        importedMemories.push(memory);
+        imported.push(importIssue(item, "Imported confirmed memory summary."));
+      }
+      continue;
+    }
+
+    rejected.push(importIssue(item, "Applying this non-sensitive settings item is not supported yet."));
+  }
+
+  const nextState: PersonaDeskState =
+    imported.length > 0
+      ? {
+          ...state,
+          characters: [...state.characters, ...importedCharacters],
+          memories: [...state.memories, ...importedMemories],
+          syncProfile: {
+            ...state.syncProfile,
+            lastSyncStatus: preview.conflicts.length > 0 || rejected.length > 0 ? "conflict" : "synced"
+          }
+        }
+      : state;
+
+  return {
+    state: nextState,
+    result: {
+      appliedAt: nowIso(),
+      status: imported.length > 0 ? "applied" : "blocked",
+      imported,
+      conflicts: preview.conflicts,
+      rejected,
+      disclosure:
+        imported.length > 0
+          ? `Imported ${imported.length} accepted item${imported.length === 1 ? "" : "s"}. Conflicts and rejected items were not merged.`
+          : "No accepted import items could be applied. Conflicts and rejected items remain unchanged."
+    }
   };
 }

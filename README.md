@@ -86,6 +86,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
   - lists excluded local-only data such as raw observation streams and detailed task logs,
   - exports a local sync package that omits raw data, endpoints, and secret references,
   - previews imported sync packages for accepted items, conflicts, and rejected data before any merge,
+  - applies accepted local sync package items while leaving conflicts and rejected items untouched for review,
   - does not upload data in Phase 1.
 - Product navigation for Phase 1 areas:
   - Desktop: emotional presence, companion chat, and an expandable/collapsible task stage for the latest run.
@@ -120,7 +121,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
 - ASR and TTS are exposed as provider slots, local request audit records, manual transcript routing, runtime speech-recognition capture when the browser/WebView supports it, and local browser speech playback for TTS previews. External/cloud transcription adapters and external/cloud audio generation are not implemented yet.
 - Screen observation stores local summaries only. User-triggered runtime screen capture may request the OS/browser display picker, then immediately stops the stream and discards raw frames. It does not store or upload raw frames.
 - Cloud vision approvals are recorded as audit entries only until a real vision provider and upload path are configured.
-- Optional sync is represented by local settings, a local preview, and local sync package export/import preflight. A cloud sync backend and automatic import merge are not implemented yet.
+- Optional sync is represented by local settings, a local preview, and local sync package export/import with accepted-item apply. A cloud sync backend and automatic conflict merge are not implemented yet.
 - Transparent companion windows, startup behavior, and native notification plugin integration are not implemented yet.
 
 ## Privacy Defaults

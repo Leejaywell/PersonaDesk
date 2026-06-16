@@ -46,6 +46,7 @@ export interface AppActions {
   prepareSyncPreview: () => void;
   exportLocalSyncPackage: () => void;
   previewSyncPackageImport: () => void;
+  applySyncPackageImport: () => void;
   scanLocalAgents: () => Promise<void>;
   configureExecutor: (executorId: string, configuration: ExecutorConfigurationInput) => void;
   recordExecutorHealthCheck: (executorId: string) => void;

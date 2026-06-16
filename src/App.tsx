@@ -48,10 +48,12 @@ import {
 } from "./domain/observation";
 import { loadState, saveState } from "./domain/storage";
 import {
+  applyLocalSyncPackageImport,
   buildLocalSyncPackage,
   buildSyncPreview,
   previewLocalSyncPackageImport,
   serializeLocalSyncPackage,
+  type SyncPackageImportApplyResult,
   type SyncPackageImportPreview,
   type SyncPreview
 } from "./domain/sync";
@@ -94,6 +96,7 @@ export default function App() {
   const [syncPreview, setSyncPreview] = useState<SyncPreview | null>(null);
   const [syncPackageText, setSyncPackageText] = useState("");
   const [syncImportPreview, setSyncImportPreview] = useState<SyncPackageImportPreview | null>(null);
+  const [syncImportResult, setSyncImportResult] = useState<SyncPackageImportApplyResult | null>(null);
   const [desktopWindowPlan, setDesktopWindowPlan] = useState<DesktopWindowPlanResult>(() => fallbackDesktopWindowPlan());
   const [desktopPresencePlan, setDesktopPresencePlan] = useState<DesktopPresencePlan>(() => fallbackDesktopPresencePlan());
 
@@ -320,6 +323,7 @@ export default function App() {
     exportLocalSyncPackage: () => {
       setSyncPackageText(serializeLocalSyncPackage(buildLocalSyncPackage(state)));
       setSyncImportPreview(null);
+      setSyncImportResult(null);
     },
     previewSyncPackageImport: () => {
       if (!syncPackageText.trim()) {
@@ -327,6 +331,18 @@ export default function App() {
       }
 
       setSyncImportPreview(previewLocalSyncPackageImport(state, syncPackageText));
+      setSyncImportResult(null);
+    },
+    applySyncPackageImport: () => {
+      if (!syncPackageText.trim()) {
+        return;
+      }
+
+      const applied = applyLocalSyncPackageImport(state, syncPackageText);
+
+      updateState(applied.state);
+      setSyncImportResult(applied.result);
+      setSyncImportPreview(previewLocalSyncPackageImport(applied.state, syncPackageText));
     },
     scanLocalAgents,
     configureExecutor: (executorId: string, configuration: Parameters<typeof configureExecutor>[2]) =>
@@ -439,6 +455,7 @@ export default function App() {
             setObservationForm={setObservationForm}
             setSyncPackageText={setSyncPackageText}
             syncImportPreview={syncImportPreview}
+            syncImportResult={syncImportResult}
             syncPackageText={syncPackageText}
             syncPreview={syncPreview}
             syncProfile={state.syncProfile}

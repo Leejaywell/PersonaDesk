@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -642,6 +642,62 @@ describe("PersonaDesk app", () => {
     expect(within(preflight).getByText("Import preflight ready")).toBeInTheDocument();
     expect(within(preflight).getByText("Conflicts")).toBeInTheDocument();
     expect(within(preflight).getAllByText(/would require user review/i).length).toBeGreaterThan(0);
-    expect(within(preflight).getByText(/does not merge imported data automatically/i)).toBeInTheDocument();
+    expect(within(preflight).getByText(/Apply accepted imports/i)).toBeInTheDocument();
+  });
+
+  it("applies accepted local sync package imports after preflight", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    const packageText = JSON.stringify(
+      {
+        schemaVersion: 1,
+        origin: "personadesk-local-sync-package",
+        generatedAt: "2026-06-16T00:00:00.000Z",
+        included: [
+          {
+            id: "memory:remote-ui-memory",
+            dataClass: "confirmed-memory-summaries",
+            label: "shared-world",
+            detail: "Remote sync memory from another device.",
+            payload: {
+              id: "remote-ui-memory",
+              layer: "shared-world",
+              ownerCharacterId: null,
+              text: "Remote sync memory from another device.",
+              source: "remote-package",
+              sensitivity: "low",
+              createdAt: "2026-06-16T00:00:00.000Z",
+              updatedAt: "2026-06-16T00:00:00.000Z",
+              syncPolicy: "sync-allowed"
+            }
+          }
+        ],
+        excluded: [],
+        disclosure: "Test package."
+      },
+      null,
+      2
+    );
+
+    await user.click(screen.getByRole("button", { name: /Privacy/i }));
+    await user.click(screen.getByLabelText("Enable optional sync for confirmed summaries"));
+    fireEvent.change(screen.getByLabelText("Local sync package JSON"), {
+      target: { value: packageText }
+    });
+    await user.click(screen.getByRole("button", { name: "Preview sync package import" }));
+
+    const preflight = screen.getByLabelText("Sync package import preflight");
+    expect(within(preflight).getByText("Accepted")).toBeInTheDocument();
+    expect(within(preflight).getByText("shared-world")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Apply accepted imports" }));
+
+    const result = screen.getByLabelText("Sync package import result");
+    expect(within(result).getByText("Import result applied")).toBeInTheDocument();
+    expect(within(result).getByText(/Imported 1 accepted item/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Memory/i }));
+    const confirmedMemoryPanel = screen.getByRole("region", { name: "Confirmed Memory" });
+    expect(within(confirmedMemoryPanel).getByText("Remote sync memory from another device.")).toBeInTheDocument();
   });
 });

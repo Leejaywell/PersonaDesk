@@ -4,7 +4,14 @@ import { createInitialState } from "./defaultState";
 import { recordDesktopNotificationAudit } from "./desktopPresence";
 import { configureExecutor, recordExecutorHealthCheck } from "./executors";
 import { confirmMemoryCandidate, proposeMemoryCandidate } from "./memory";
-import { buildLocalSyncPackage, buildSyncPreview, previewLocalSyncPackageImport, serializeLocalSyncPackage } from "./sync";
+import {
+  applyLocalSyncPackageImport,
+  buildLocalSyncPackage,
+  buildSyncPreview,
+  previewLocalSyncPackageImport,
+  serializeLocalSyncPackage,
+  type LocalSyncPackage
+} from "./sync";
 import { createVoiceRequest } from "./voice";
 
 describe("sync preview", () => {
@@ -230,7 +237,7 @@ describe("sync preview", () => {
     expect(syncPackage.disclosure).toContain("Local sync packages include confirmed role settings");
   });
 
-  it("previews local sync package imports without merging data automatically", () => {
+  it("preflights local sync package imports without merging until the user applies accepted items", () => {
     let state = createInitialState();
     state = {
       ...state,
@@ -258,7 +265,149 @@ describe("sync preview", () => {
     expect(preview.conflicts.some((item) => item.reason.includes("would require user review"))).toBe(true);
     expect(preview.rejected).toHaveLength(0);
     expect(state.memories).toHaveLength(1);
-    expect(preview.disclosure).toContain("does not merge imported data automatically");
+    expect(preview.disclosure).toContain("Apply accepted imports");
+  });
+
+  it("applies accepted imported character and memory items while leaving conflicts untouched", () => {
+    let state = createInitialState();
+    state = {
+      ...state,
+      syncProfile: {
+        ...state.syncProfile,
+        enabled: true
+      }
+    };
+    const remoteCharacter = {
+      ...state.characters[0],
+      id: "remote-companion",
+      name: "Remote Companion"
+    };
+    const syncPackage: LocalSyncPackage = {
+      schemaVersion: 1,
+      origin: "personadesk-local-sync-package",
+      generatedAt: "2026-06-16T00:00:00.000Z",
+      included: [
+        {
+          id: "character:remote-companion",
+          dataClass: "confirmed-character-definitions",
+          label: "Remote Companion",
+          detail: "emotional character using partner relationship template.",
+          payload: remoteCharacter
+        },
+        {
+          id: "memory:remote-memory",
+          dataClass: "confirmed-memory-summaries",
+          label: "shared-world",
+          detail: "Remote memory summary",
+          payload: {
+            id: "remote-memory",
+            layer: "shared-world",
+            ownerCharacterId: null,
+            text: "Remote memory summary",
+            source: "remote-package",
+            sensitivity: "low",
+            createdAt: "2026-06-16T00:00:00.000Z",
+            updatedAt: "2026-06-16T00:00:00.000Z",
+            syncPolicy: "sync-allowed"
+          }
+        },
+        {
+          id: "character:mira",
+          dataClass: "confirmed-character-definitions",
+          label: "Mira",
+          detail: "Existing character conflict.",
+          payload: state.characters[0]
+        }
+      ],
+      excluded: [],
+      disclosure: "Test package."
+    };
+
+    const applied = applyLocalSyncPackageImport(state, serializeLocalSyncPackage(syncPackage));
+
+    expect(applied.result.status).toBe("applied");
+    expect(applied.result.imported.map((item) => item.id)).toEqual([
+      "character:remote-companion",
+      "memory:remote-memory"
+    ]);
+    expect(applied.result.conflicts.map((item) => item.id)).toEqual(["character:mira"]);
+    expect(applied.state.characters.some((character) => character.id === "remote-companion")).toBe(true);
+    expect(applied.state.memories.some((memory) => memory.id === "remote-memory")).toBe(true);
+    expect(applied.state.characters.filter((character) => character.id === "mira")).toHaveLength(1);
+    expect(applied.state.syncProfile.lastSyncStatus).toBe("conflict");
+  });
+
+  it("rejects new non-sensitive settings items because Phase 1 does not apply settings imports", () => {
+    let state = createInitialState();
+    state = {
+      ...state,
+      syncProfile: {
+        ...state.syncProfile,
+        enabled: true
+      }
+    };
+    const syncPackage: LocalSyncPackage = {
+      schemaVersion: 1,
+      origin: "personadesk-local-sync-package",
+      generatedAt: "2026-06-16T00:00:00.000Z",
+      included: [
+        {
+          id: "executor-config:remote-provider",
+          dataClass: "non-sensitive-settings",
+          label: "Remote Provider",
+          detail: "Configured metadata from another device.",
+          payload: {
+            id: "remote-provider"
+          }
+        }
+      ],
+      excluded: [],
+      disclosure: "Test package."
+    };
+
+    const preview = previewLocalSyncPackageImport(state, serializeLocalSyncPackage(syncPackage));
+
+    expect(preview.status).toBe("invalid");
+    expect(preview.rejected[0]).toMatchObject({
+      id: "executor-config:remote-provider",
+      reason: "Applying new non-sensitive settings from sync packages is not supported in Phase 1."
+    });
+  });
+
+  it("does not apply accepted imports while optional sync is disabled", () => {
+    const state = createInitialState();
+    const syncPackage: LocalSyncPackage = {
+      schemaVersion: 1,
+      origin: "personadesk-local-sync-package",
+      generatedAt: "2026-06-16T00:00:00.000Z",
+      included: [
+        {
+          id: "memory:remote-memory",
+          dataClass: "confirmed-memory-summaries",
+          label: "shared-world",
+          detail: "Remote memory summary",
+          payload: {
+            id: "remote-memory",
+            layer: "shared-world",
+            ownerCharacterId: null,
+            text: "Remote memory summary",
+            source: "remote-package",
+            sensitivity: "low",
+            createdAt: "2026-06-16T00:00:00.000Z",
+            updatedAt: "2026-06-16T00:00:00.000Z",
+            syncPolicy: "sync-allowed"
+          }
+        }
+      ],
+      excluded: [],
+      disclosure: "Test package."
+    };
+
+    const applied = applyLocalSyncPackageImport(state, serializeLocalSyncPackage(syncPackage));
+
+    expect(applied.result.status).toBe("blocked");
+    expect(applied.result.rejected[0].id).toBe("sync:disabled");
+    expect(applied.state.memories).toHaveLength(0);
   });
 
   it("rejects invalid local sync package text during import preflight", () => {

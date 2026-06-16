@@ -1,6 +1,6 @@
 import { AlertTriangle, Check, Eye, MonitorUp, Shield, X } from "lucide-react";
 import type { AppActions, ObservationFormState } from "../../app/actions";
-import type { SyncPackageImportPreview, SyncPreview } from "../../domain/sync";
+import type { SyncPackageImportApplyResult, SyncPackageImportPreview, SyncPreview } from "../../domain/sync";
 import type { ObservationSession, SyncProfile } from "../../domain/types";
 import { Panel } from "../ui/Panel";
 import { StatusPill } from "../ui/StatusPill";
@@ -12,6 +12,7 @@ export function PrivacySyncPage({
   syncPreview,
   syncPackageText,
   syncImportPreview,
+  syncImportResult,
   screenObservationStatus,
   observationForm,
   setObservationForm,
@@ -24,6 +25,7 @@ export function PrivacySyncPage({
   syncPreview: SyncPreview | null;
   syncPackageText: string;
   syncImportPreview: SyncPackageImportPreview | null;
+  syncImportResult: SyncPackageImportApplyResult | null;
   screenObservationStatus: string;
   observationForm: ObservationFormState;
   setObservationForm: (next: ObservationFormState) => void;
@@ -184,6 +186,17 @@ export function PrivacySyncPage({
           <button disabled={!syncPackageText.trim()} onClick={actions.previewSyncPackageImport} type="button">
             Preview sync package import
           </button>
+          <button
+            disabled={
+              !syncProfile.enabled ||
+              syncImportPreview?.status !== "ready" ||
+              syncImportPreview.accepted.length === 0
+            }
+            onClick={actions.applySyncPackageImport}
+            type="button"
+          >
+            Apply accepted imports
+          </button>
         </div>
         <label>
           Local sync package JSON
@@ -238,6 +251,45 @@ export function PrivacySyncPage({
                   <p className="empty-state">No rejected package items.</p>
                 ) : (
                   syncImportPreview.rejected.map((item) => (
+                    <article className="review-card" key={item.id}>
+                      <strong>{item.label}</strong>
+                      <p>{item.dataClass}</p>
+                      <p>{item.reason}</p>
+                    </article>
+                  ))
+                )}
+              </section>
+            </div>
+          </div>
+        )}
+        {syncImportResult && (
+          <div className="sync-import-preview" aria-label="Sync package import result">
+            <div className="task-card-header">
+              <strong>Import result {syncImportResult.status}</strong>
+              <StatusPill status={syncImportResult.status === "applied" ? "ready" : "blocked"} />
+            </div>
+            <p>{syncImportResult.disclosure}</p>
+            <div className="settings-grid">
+              <section className="sync-preview-list" aria-label="Sync import applied">
+                <h3>Imported</h3>
+                {syncImportResult.imported.length === 0 ? (
+                  <p className="empty-state">No package items were imported.</p>
+                ) : (
+                  syncImportResult.imported.map((item) => (
+                    <article className="review-card" key={item.id}>
+                      <strong>{item.label}</strong>
+                      <p>{item.dataClass}</p>
+                      <p>{item.reason}</p>
+                    </article>
+                  ))
+                )}
+              </section>
+              <section className="sync-preview-list" aria-label="Sync import held for review">
+                <h3>Held</h3>
+                {[...syncImportResult.conflicts, ...syncImportResult.rejected].length === 0 ? (
+                  <p className="empty-state">No conflicts or rejected package items.</p>
+                ) : (
+                  [...syncImportResult.conflicts, ...syncImportResult.rejected].map((item) => (
                     <article className="review-card" key={item.id}>
                       <strong>{item.label}</strong>
                       <p>{item.dataClass}</p>
