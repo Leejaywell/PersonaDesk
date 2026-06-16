@@ -15,6 +15,7 @@ import type {
   MemoryItem,
   ObservationBoundaryViolation,
   ObservationSession,
+  ObservationSummary,
   PersonaDeskState,
   RoleBoundary,
   SyncProfile,
@@ -103,9 +104,27 @@ function normalizeObservationBoundaryViolation(value: ObservationBoundaryViolati
   };
 }
 
+function normalizeObservationSummary(value: ObservationSummary): ObservationSummary {
+  return {
+    id: value.id,
+    appName: value.appName,
+    source: value.source === "runtime-screen-capture" ? "runtime-screen-capture" : "manual-summary",
+    summary: value.summary,
+    captureDisclosure:
+      value.captureDisclosure ??
+      "Observation summary was restored from an older local state. PersonaDesk stored text only and captured no raw screen frames.",
+    frameWidth: typeof value.frameWidth === "number" ? value.frameWidth : null,
+    frameHeight: typeof value.frameHeight === "number" ? value.frameHeight : null,
+    createdAt: value.createdAt
+  };
+}
+
 function normalizeObservationSession(session: ObservationSession): ObservationSession {
   return {
     ...session,
+    localSummaryStream: Array.isArray(session.localSummaryStream)
+      ? session.localSummaryStream.map(normalizeObservationSummary)
+      : [],
     boundaryViolations: Array.isArray(session.boundaryViolations)
       ? session.boundaryViolations.filter(isObservationBoundaryViolation).map(normalizeObservationBoundaryViolation)
       : [],

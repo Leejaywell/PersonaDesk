@@ -10,7 +10,14 @@ import type {
 export interface ObservationEventInput {
   appName: string;
   summary: string;
+  source?: ObservationSummary["source"];
+  captureDisclosure?: string;
+  frameWidth?: number | null;
+  frameHeight?: number | null;
 }
+
+const MANUAL_SUMMARY_DISCLOSURE =
+  "Observation summary was entered manually. PersonaDesk stored text only and captured no raw screen frames.";
 
 function createId(prefix: string): string {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -57,7 +64,11 @@ export function summarizeObservationEvent(
       const summary: ObservationSummary = {
         id: createId("observation-summary"),
         appName: input.appName.trim(),
+        source: input.source ?? "manual-summary",
         summary: input.summary.trim(),
+        captureDisclosure: input.captureDisclosure?.trim() || MANUAL_SUMMARY_DISCLOSURE,
+        frameWidth: input.frameWidth ?? null,
+        frameHeight: input.frameHeight ?? null,
         createdAt: nowIso()
       };
 

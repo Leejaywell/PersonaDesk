@@ -72,6 +72,45 @@ describe("state storage", () => {
     expect(restored.observationSessions[0].boundaryViolations).toEqual([]);
   });
 
+  it("defaults older observation summaries to manual text-only capture metadata", () => {
+    const state = createInitialState();
+    const legacyState = {
+      ...state,
+      observationSessions: [
+        {
+          id: "observation-legacy",
+          allowedApps: ["Safari"],
+          active: false,
+          localSummaryStream: [
+            {
+              id: "observation-summary-legacy",
+              appName: "Safari",
+              summary: "Legacy local summary",
+              createdAt: "2026-06-15T00:00:00.000Z"
+            }
+          ],
+          boundaryViolations: [],
+          cloudUploadApprovals: [],
+          retentionPolicy: "summaries-only",
+          startedAt: "2026-06-15T00:00:00.000Z",
+          endedAt: "2026-06-15T00:01:00.000Z"
+        }
+      ]
+    };
+
+    const restored = deserializeState(JSON.stringify({ version: 2, state: legacyState }));
+
+    expect(restored.observationSessions[0].localSummaryStream[0]).toMatchObject({
+      id: "observation-summary-legacy",
+      appName: "Safari",
+      source: "manual-summary",
+      summary: "Legacy local summary",
+      frameWidth: null,
+      frameHeight: null
+    });
+    expect(restored.observationSessions[0].localSummaryStream[0].captureDisclosure).toContain("older local state");
+  });
+
   it("drops legacy forbidden observation preview text during migration", () => {
     const state = createInitialState();
     const legacyState = {

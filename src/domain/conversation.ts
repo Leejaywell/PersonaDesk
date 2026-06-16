@@ -172,7 +172,7 @@ export function addTaskRunCompanionReactions(state: PersonaDeskState, runId: str
 }
 
 function observationReactionText(characterName: string, appName: string, summary: string): string {
-  return `${characterName}: I noticed ${appName} locally: "${summary}". I can stay with this observation inside your allowlist; no raw screen frames were captured or uploaded.`;
+  return `${characterName}: I noticed ${appName} locally: "${summary}". I can stay with this observation inside your allowlist; no raw screen frames were stored or uploaded.`;
 }
 
 export function addObservationSummaryCompanionReactions(state: PersonaDeskState, sessionId: string): PersonaDeskState {

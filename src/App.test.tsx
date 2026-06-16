@@ -4,9 +4,14 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const scanLocalAgentsMock = vi.hoisted(() => vi.fn());
+const captureRuntimeScreenObservationMock = vi.hoisted(() => vi.fn());
 
 vi.mock("./app/localAgents", () => ({
   scanLocalAgents: scanLocalAgentsMock
+}));
+
+vi.mock("./app/screenObservation", () => ({
+  captureRuntimeScreenObservation: captureRuntimeScreenObservationMock
 }));
 
 import App from "./App";
@@ -23,6 +28,15 @@ describe("PersonaDesk app", () => {
     scanLocalAgentsMock.mockResolvedValue({
       agents: [],
       message: "Local agent scan is available in the Tauri desktop runtime."
+    });
+    captureRuntimeScreenObservationMock.mockReset();
+    captureRuntimeScreenObservationMock.mockResolvedValue({
+      status: "unavailable",
+      appName: "Screen Capture",
+      summary: "",
+      disclosure: "Runtime screen capture is not available in this browser or WebView. No screen capture was attempted.",
+      frameWidth: null,
+      frameHeight: null
     });
   });
 
@@ -516,7 +530,31 @@ describe("PersonaDesk app", () => {
     await user.click(screen.getByRole("button", { name: /Desktop/i }));
 
     expect(screen.getByText(/I noticed Safari locally/i)).toBeInTheDocument();
-    expect(screen.getByText(/no raw screen frames were captured or uploaded/i)).toBeInTheDocument();
+    expect(screen.getByText(/no raw screen frames were stored or uploaded/i)).toBeInTheDocument();
+  });
+
+  it("captures runtime screen metadata into the local observation stream", async () => {
+    const user = userEvent.setup();
+    captureRuntimeScreenObservationMock.mockResolvedValue({
+      status: "captured",
+      appName: "Screen Capture",
+      summary:
+        "Runtime screen capture observed a display surface (1280x720) locally. PersonaDesk stopped the media stream immediately and discarded raw frames before storage.",
+      disclosure:
+        "User-initiated runtime screen capture completed locally. PersonaDesk stored only a text summary with capture metadata and discarded raw frames.",
+      frameWidth: 1280,
+      frameHeight: 720
+    });
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /Privacy/i }));
+    await user.click(screen.getByRole("button", { name: "Start observation" }));
+    await user.click(screen.getByRole("button", { name: "Capture runtime screen summary" }));
+
+    expect(captureRuntimeScreenObservationMock).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText(/Runtime screen capture observed a display surface/)).toBeInTheDocument();
+    expect(screen.getByText(/runtime-screen-capture.*1280x720/)).toBeInTheDocument();
+    expect(screen.getAllByText(/stored only a text summary with capture metadata/i).length).toBeGreaterThan(0);
   });
 
   it("records observation boundary violations for non-allowlisted apps", async () => {

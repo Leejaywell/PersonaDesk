@@ -768,6 +768,11 @@ label {
   background: transparent;
 }
 
+.summary-card .summary-meta {
+  color: #5f6f86;
+  font-size: 0.78rem;
+}
+
 .approval-list {
   display: grid;
   gap: 10px;

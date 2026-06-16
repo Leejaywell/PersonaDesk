@@ -275,7 +275,11 @@ export interface MemoryCandidate {
 export interface ObservationSummary {
   id: string;
   appName: string;
+  source: "manual-summary" | "runtime-screen-capture";
   summary: string;
+  captureDisclosure: string;
+  frameWidth: number | null;
+  frameHeight: number | null;
   createdAt: string;
 }
 

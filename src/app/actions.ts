@@ -40,6 +40,7 @@ export interface AppActions {
   startObservation: () => void;
   stopObservation: () => void;
   addObservationSummary: () => void;
+  captureScreenObservation: () => Promise<void>;
   approveCloudVisionUpload: (sessionId: string, summaryId: string) => void;
   setSyncEnabled: (enabled: boolean) => void;
   prepareSyncPreview: () => void;

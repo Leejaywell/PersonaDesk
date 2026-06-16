@@ -69,6 +69,8 @@ This repository currently implements the Phase 1 thin slice from the design spec
   - app allowlists are enforced,
   - non-allowlisted observation events are ignored and recorded in a boundary audit,
   - only local text summaries are stored,
+  - user-triggered runtime screen capture can add a local metadata summary when the browser/WebView supports display capture,
+  - runtime screen capture stops the media stream immediately and stores no raw pixels or screenshots,
   - allowlisted local summaries can trigger local companion feedback for permitted emotional characters,
   - memory-shaped local summaries can propose memory candidates without writing long-term memory automatically,
   - task characters can use local observation summaries only when a task explicitly authorizes observation-summary access,
@@ -114,7 +116,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
 - Tasks only run through executors allowed for that task; unavailable or not-yet-adapted allowed executors create a visible blocked run.
 - Detected local agents are not launched by the task loop yet; the task card records that no local agent process was started.
 - ASR and TTS are exposed as provider slots, local request audit records, manual transcript routing, runtime speech-recognition capture when the browser/WebView supports it, and local browser speech playback for TTS previews. External/cloud transcription adapters and external/cloud audio generation are not implemented yet.
-- Screen observation stores local summaries only. It does not capture or upload raw frames.
+- Screen observation stores local summaries only. User-triggered runtime screen capture may request the OS/browser display picker, then immediately stops the stream and discards raw frames. It does not store or upload raw frames.
 - Cloud vision approvals are recorded as audit entries only until a real vision provider and upload path are configured.
 - Optional sync is represented by local settings, a local preview, and local sync package export/import preflight. A cloud sync backend and automatic import merge are not implemented yet.
 - Transparent companion windows, startup behavior, and native notification plugin integration are not implemented yet.

@@ -15,6 +15,7 @@ import {
   type DesktopWindowPlanResult
 } from "./app/desktopWindows";
 import { scanLocalAgents as scanKnownLocalAgents } from "./app/localAgents";
+import { captureRuntimeScreenObservation } from "./app/screenObservation";
 import { playLocalSpeechPreview } from "./app/voicePlayback";
 import { captureRuntimeSpeechTranscript } from "./app/voiceRecognition";
 import { AppShell } from "./components/layout/AppShell";
@@ -77,7 +78,7 @@ export default function App() {
     allowedExecutorIds: ["local-planner"]
   });
   const [observationForm, setObservationForm] = useState<ObservationFormState>({
-    allowedApps: "Safari, Notes",
+    allowedApps: "Safari, Notes, Screen Capture",
     sourceApp: "Safari",
     summary: "",
     cloudVisionReason: "User requested additional visual interpretation for this local summary."
@@ -87,6 +88,9 @@ export default function App() {
     image: null
   });
   const [localAgentScanStatus, setLocalAgentScanStatus] = useState("Not scanned in this session.");
+  const [screenObservationStatus, setScreenObservationStatus] = useState(
+    "Runtime screen capture has not been requested."
+  );
   const [syncPreview, setSyncPreview] = useState<SyncPreview | null>(null);
   const [syncPackageText, setSyncPackageText] = useState("");
   const [syncImportPreview, setSyncImportPreview] = useState<SyncPackageImportPreview | null>(null);
@@ -216,6 +220,43 @@ export default function App() {
     setObservationForm({ ...observationForm, summary: "" });
   }
 
+  async function captureScreenObservation() {
+    if (!activeObservation) {
+      setScreenObservationStatus("Start an observation session before requesting runtime screen capture.");
+      return;
+    }
+
+    setScreenObservationStatus("Requesting runtime screen capture...");
+    const result = await captureRuntimeScreenObservation();
+    setScreenObservationStatus(result.disclosure);
+
+    if (result.status !== "captured" || !result.summary.trim()) {
+      return;
+    }
+
+    setState((current) => {
+      const currentActiveObservation = current.observationSessions.find((session) => session.active);
+
+      if (!currentActiveObservation) {
+        return current;
+      }
+
+      const summarized = summarizeObservationEvent(current, currentActiveObservation.id, {
+        appName: result.appName,
+        summary: result.summary,
+        source: "runtime-screen-capture",
+        captureDisclosure: result.disclosure,
+        frameWidth: result.frameWidth,
+        frameHeight: result.frameHeight
+      });
+      const nextSession = summarized.observationSessions.find((session) => session.id === currentActiveObservation.id);
+
+      return nextSession && nextSession.localSummaryStream.length > currentActiveObservation.localSummaryStream.length
+        ? addObservationSummaryCompanionReactions(summarized, currentActiveObservation.id)
+        : summarized;
+    });
+  }
+
   function approveCloudVision(sessionId: string, summaryId: string) {
     updateState(approveCloudVisionUpload(state, sessionId, summaryId, observationForm.cloudVisionReason));
   }
@@ -273,6 +314,7 @@ export default function App() {
     startObservation,
     stopObservation,
     addObservationSummary,
+    captureScreenObservation,
     approveCloudVisionUpload: approveCloudVision,
     prepareSyncPreview: () => setSyncPreview(buildSyncPreview(state)),
     exportLocalSyncPackage: () => {
@@ -393,6 +435,7 @@ export default function App() {
             activeObservation={activeObservation}
             observationForm={observationForm}
             observationSessions={state.observationSessions}
+            screenObservationStatus={screenObservationStatus}
             setObservationForm={setObservationForm}
             setSyncPackageText={setSyncPackageText}
             syncImportPreview={syncImportPreview}

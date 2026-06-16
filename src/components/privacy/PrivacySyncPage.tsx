@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, Eye, Shield, X } from "lucide-react";
+import { AlertTriangle, Check, Eye, MonitorUp, Shield, X } from "lucide-react";
 import type { AppActions, ObservationFormState } from "../../app/actions";
 import type { SyncPackageImportPreview, SyncPreview } from "../../domain/sync";
 import type { ObservationSession, SyncProfile } from "../../domain/types";
@@ -12,6 +12,7 @@ export function PrivacySyncPage({
   syncPreview,
   syncPackageText,
   syncImportPreview,
+  screenObservationStatus,
   observationForm,
   setObservationForm,
   setSyncPackageText,
@@ -23,6 +24,7 @@ export function PrivacySyncPage({
   syncPreview: SyncPreview | null;
   syncPackageText: string;
   syncImportPreview: SyncPackageImportPreview | null;
+  screenObservationStatus: string;
   observationForm: ObservationFormState;
   setObservationForm: (next: ObservationFormState) => void;
   setSyncPackageText: (next: string) => void;
@@ -74,6 +76,11 @@ export function PrivacySyncPage({
           <Check aria-hidden="true" size={15} />
           Add local summary
         </button>
+        <button disabled={!activeObservation} onClick={() => void actions.captureScreenObservation()} type="button">
+          <MonitorUp aria-hidden="true" size={15} />
+          Capture runtime screen summary
+        </button>
+        <p className="local-only">{screenObservationStatus}</p>
         <label>
           Cloud vision approval reason
           <input
@@ -93,6 +100,13 @@ export function PrivacySyncPage({
                   <p>
                     <strong>{summary.appName}</strong>: {summary.summary}
                   </p>
+                  <p className="summary-meta">
+                    {summary.source}
+                    {summary.frameWidth && summary.frameHeight
+                      ? ` · ${summary.frameWidth}x${summary.frameHeight}`
+                      : ""}
+                  </p>
+                  <p className="local-only">{summary.captureDisclosure}</p>
                   <button
                     disabled={approved}
                     onClick={() => actions.approveCloudVisionUpload(session.id, summary.id)}
