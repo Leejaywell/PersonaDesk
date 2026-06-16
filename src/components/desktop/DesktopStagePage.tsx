@@ -3,6 +3,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import type { AppActions } from "../../app/actions";
 import type { DesktopPresencePlan } from "../../app/desktopPresence";
 import type { DesktopWindowPlanResult } from "../../app/desktopWindows";
+import type { StartupBehaviorState } from "../../app/startupBehavior";
 import type { Character, ConversationMessage, DesktopPresenceAudit, RoleBoundary, TaskRun } from "../../domain/types";
 import { CharacterCard } from "../characters/CharacterCard";
 import { Panel } from "../ui/Panel";
@@ -16,6 +17,7 @@ export function DesktopStagePage({
   desktopPresenceAudits,
   desktopPresencePlan,
   desktopWindowPlan,
+  startupBehavior,
   actions
 }: {
   emotionalCharacters: Character[];
@@ -25,6 +27,7 @@ export function DesktopStagePage({
   desktopPresenceAudits: DesktopPresenceAudit[];
   desktopPresencePlan: DesktopPresencePlan;
   desktopWindowPlan: DesktopWindowPlanResult;
+  startupBehavior: StartupBehaviorState;
   actions: AppActions;
 }) {
   const [selectedCharacterId, setSelectedCharacterId] = useState(emotionalCharacters[0]?.id ?? "");
@@ -154,6 +157,7 @@ export function DesktopStagePage({
                 <span className="meta-chip">Shadow: {windowPlan.shadow ? "on" : "off"}</span>
                 <span className="meta-chip">Taskbar: {windowPlan.skipTaskbar ? "hidden" : "shown"}</span>
                 <span className="meta-chip">Initial focus: {windowPlan.focus ? "yes" : "no"}</span>
+                <span className="meta-chip">Initial visibility: {windowPlan.visible ? "shown" : "hidden"}</span>
                 <span className="meta-chip">Drag region: {windowPlan.dragRegion ? "ready" : "none"}</span>
               </div>
             </article>
@@ -162,7 +166,7 @@ export function DesktopStagePage({
       </Panel>
 
       <Panel
-        description="Tray and notification contracts stay local-first while native event wiring is added incrementally."
+        description="Tray, startup, and notification contracts stay local-first while native event wiring is added incrementally."
         title="Native Presence"
       >
         <p className="local-only">{desktopPresencePlan.message}</p>
@@ -199,6 +203,27 @@ export function DesktopStagePage({
                   {trigger.label}
                 </span>
               ))}
+            </div>
+          </article>
+          <article className="summary-card">
+            <div className="task-card-header">
+              <div>
+                <strong>Startup</strong>
+                <p>{startupBehavior.disclosure}</p>
+              </div>
+              <button
+                disabled={!startupBehavior.available || startupBehavior.status === "updating"}
+                onClick={actions.toggleStartupBehavior}
+                type="button"
+              >
+                {startupBehavior.enabled ? "Disable startup" : "Enable startup"}
+              </button>
+            </div>
+            <div className="task-meta-row">
+              <StatusPill status={startupBehavior.status === "enabled" ? "active" : "inactive"}>
+                {startupBehavior.status}
+              </StatusPill>
+              <span className="meta-chip">Runtime: {startupBehavior.available ? "desktop" : "browser preview"}</span>
             </div>
           </article>
         </div>

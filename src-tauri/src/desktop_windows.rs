@@ -14,6 +14,7 @@ pub struct DesktopWindowPlan {
     pub shadow: bool,
     pub skip_taskbar: bool,
     pub focus: bool,
+    pub visible: bool,
     pub drag_region: bool,
 }
 
@@ -31,6 +32,7 @@ pub fn window_plan() -> Vec<DesktopWindowPlan> {
             shadow: true,
             skip_taskbar: false,
             focus: true,
+            visible: true,
             drag_region: false,
         },
         DesktopWindowPlan {
@@ -45,6 +47,7 @@ pub fn window_plan() -> Vec<DesktopWindowPlan> {
             shadow: false,
             skip_taskbar: true,
             focus: false,
+            visible: false,
             drag_region: true,
         },
     ]
@@ -71,6 +74,7 @@ mod tests {
                 && !window.shadow
                 && window.skip_taskbar
                 && !window.focus
+                && !window.visible
                 && window.drag_region
         }));
     }
@@ -119,6 +123,7 @@ mod tests {
             Some(companion_plan.skip_taskbar)
         );
         assert_eq!(companion["focus"].as_bool(), Some(companion_plan.focus));
+        assert_eq!(companion["visible"].as_bool(), Some(companion_plan.visible));
         assert!(companion_plan.drag_region);
     }
 

@@ -12,6 +12,7 @@ export interface DesktopWindowPlan {
   shadow: boolean;
   skipTaskbar: boolean;
   focus: boolean;
+  visible: boolean;
   dragRegion: boolean;
 }
 
@@ -40,6 +41,7 @@ export function fallbackDesktopWindowPlan(): DesktopWindowPlanResult {
         shadow: true,
         skipTaskbar: false,
         focus: true,
+        visible: true,
         dragRegion: false
       },
       {
@@ -54,6 +56,7 @@ export function fallbackDesktopWindowPlan(): DesktopWindowPlanResult {
         shadow: false,
         skipTaskbar: true,
         focus: false,
+        visible: false,
         dragRegion: true
       }
     ]

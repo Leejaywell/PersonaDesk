@@ -15,6 +15,7 @@ describe("desktop window plan", () => {
       shadow: false,
       skipTaskbar: true,
       focus: false,
+      visible: false,
       dragRegion: true
     });
   });

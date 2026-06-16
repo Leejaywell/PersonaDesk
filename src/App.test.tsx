@@ -67,6 +67,7 @@ describe("PersonaDesk app", () => {
     expect(screen.getByText("Transparent: yes")).toBeInTheDocument();
     expect(screen.getByText("Shadow: off")).toBeInTheDocument();
     expect(screen.getByText("Taskbar: hidden")).toBeInTheDocument();
+    expect(screen.getByText("Initial visibility: hidden")).toBeInTheDocument();
     expect(screen.getByText("Drag region: ready")).toBeInTheDocument();
   });
 
@@ -79,6 +80,9 @@ describe("PersonaDesk app", () => {
     expect(screen.getByText("Tray Menu")).toBeInTheDocument();
     expect(screen.getByText("Show or hide companion")).toBeInTheDocument();
     expect(screen.getByText("Task delivered")).toBeInTheDocument();
+    expect(screen.getByText("Startup")).toBeInTheDocument();
+    expect(screen.getByText(/Browser previews do not register OS login items/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Enable startup" })).toBeDisabled();
 
     await user.click(screen.getByRole("button", { name: "Preview local desktop notification" }));
 

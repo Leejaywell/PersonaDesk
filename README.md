@@ -32,10 +32,11 @@ This repository currently implements the Phase 1 thin slice from the design spec
   - generated PersonaDesk app icons are checked in for desktop bundles, with the editable source at `src-tauri/icons/personadesk-icon.svg`,
   - the Tauri desktop runtime declares a main control console window and a separate compact companion window,
   - the companion surface is loaded from `index.html?surface=companion`,
-  - the companion window is configured as transparent, always-on-top, undecorated, hidden from the taskbar, and backed by a drag-region surface,
+  - the companion window is configured as transparent, always-on-top, undecorated, hidden from the taskbar, backed by a drag-region surface, and initially hidden so it does not cover the management console,
   - the web fallback still shows the native surface plan without pretending browser tabs are real desktop windows,
   - tray/menu actions and notification triggers are exposed as a Tauri native presence contract,
   - the Tauri tray menu is wired to show the console, toggle the companion window, emit a stop-observation event, and quit the app,
+  - startup behavior can be checked, enabled, and disabled through the native Tauri autostart plugin in desktop builds, while browser previews disclose that no OS login item is registered,
   - local desktop notification previews use the native Tauri notification plugin in desktop builds or the Web Notification fallback in browser previews, only when permission already exists, and always record a local audit.
 - A real deterministic local planner executor for text planning and validation.
 - Autonomous task loop:
@@ -123,7 +124,6 @@ This repository currently implements the Phase 1 thin slice from the design spec
 - Screen observation stores local summaries only. User-triggered runtime screen capture may request the OS/browser display picker, then immediately stops the stream and discards raw frames. It does not store or upload raw frames.
 - Cloud vision approvals are recorded as audit entries only until a real vision provider and upload path are configured.
 - Optional sync is represented by local settings, a local preview, and local sync package export/import with accepted-item apply. A cloud sync backend and automatic conflict merge are not implemented yet.
-- Startup behavior is not implemented yet.
 
 ## Privacy Defaults
 

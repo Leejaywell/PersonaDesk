@@ -54,6 +54,7 @@ export interface AppActions {
   captureSpeechTranscript: () => Promise<RuntimeSpeechRecognitionResult>;
   playVoicePreview: (requestId: string) => Promise<void>;
   previewDesktopNotification: () => Promise<void>;
+  toggleStartupBehavior: () => Promise<void>;
   recordTaskAcceptance: (
     taskId: string,
     runId: string,

@@ -16,6 +16,12 @@ import {
 } from "./app/desktopWindows";
 import { scanLocalAgents as scanKnownLocalAgents } from "./app/localAgents";
 import { captureRuntimeScreenObservation } from "./app/screenObservation";
+import {
+  fallbackStartupBehaviorState,
+  loadStartupBehaviorState,
+  setStartupBehaviorEnabled,
+  type StartupBehaviorState
+} from "./app/startupBehavior";
 import { playLocalSpeechPreview } from "./app/voicePlayback";
 import { captureRuntimeSpeechTranscript } from "./app/voiceRecognition";
 import { AppShell } from "./components/layout/AppShell";
@@ -99,6 +105,7 @@ export default function App() {
   const [syncImportResult, setSyncImportResult] = useState<SyncPackageImportApplyResult | null>(null);
   const [desktopWindowPlan, setDesktopWindowPlan] = useState<DesktopWindowPlanResult>(() => fallbackDesktopWindowPlan());
   const [desktopPresencePlan, setDesktopPresencePlan] = useState<DesktopPresencePlan>(() => fallbackDesktopPresencePlan());
+  const [startupBehavior, setStartupBehavior] = useState<StartupBehaviorState>(() => fallbackStartupBehaviorState());
 
   useEffect(() => {
     saveState(state);
@@ -111,6 +118,7 @@ export default function App() {
 
     void loadDesktopWindowPlan().then(setDesktopWindowPlan);
     void loadDesktopPresencePlan().then(setDesktopPresencePlan);
+    void loadStartupBehaviorState().then(setStartupBehavior);
   }, []);
 
   const emotionalCharacters = useMemo(
@@ -295,6 +303,19 @@ export default function App() {
     );
   }
 
+  async function toggleStartupBehavior() {
+    setStartupBehavior((current) => ({
+      ...current,
+      status: "updating",
+      disclosure: current.enabled
+        ? "Disabling PersonaDesk startup registration..."
+        : "Enabling PersonaDesk startup registration..."
+    }));
+    const next = await setStartupBehaviorEnabled(!startupBehavior.enabled);
+
+    setStartupBehavior(next);
+  }
+
   const actions = {
     runTask,
     grantTaskApproval: (taskId: string, runId: string) =>
@@ -370,6 +391,7 @@ export default function App() {
       setState((current) => recordVoicePlaybackResult(current, requestId, result));
     },
     previewDesktopNotification,
+    toggleStartupBehavior,
     recordTaskAcceptance: (
       taskId: string,
       runId: string,
@@ -473,6 +495,7 @@ export default function App() {
             emotionalCharacters={emotionalCharacters}
             latestRun={latestRun}
             roleBoundaries={state.roleBoundaries}
+            startupBehavior={startupBehavior}
           />
         );
     }

@@ -28,6 +28,7 @@ fn desktop_presence_plan() -> DesktopPresencePlan {
 
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_autostart::Builder::new().build())
         .plugin(tauri_plugin_notification::init())
         .setup(|app| {
             install_desktop_presence_tray(app)?;
