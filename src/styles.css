@@ -732,6 +732,11 @@ label {
   background: #fff5f5;
 }
 
+.notice.success {
+  border: 1px solid #9ae6b4;
+  background: #f0fff4;
+}
+
 .artifact {
   overflow-x: auto;
   border: 1px solid #d9e2ec;

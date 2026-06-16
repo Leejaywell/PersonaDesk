@@ -81,6 +81,23 @@ export function TaskCard({
           ))}
         </div>
       )}
+      <section className={`notice ${run.openIssues.length > 0 ? "danger" : "success"}`} aria-label="Open issues">
+        <div className="task-card-header">
+          <strong>Open Issues</strong>
+          <StatusPill status={run.openIssues.length > 0 ? "blocked" : "delivered"}>
+            {run.openIssues.length > 0 ? `${run.openIssues.length} open` : "None"}
+          </StatusPill>
+        </div>
+        {run.openIssues.length > 0 ? (
+          <ul>
+            {run.openIssues.map((issue, index) => (
+              <li key={`${index}-${issue}`}>{issue}</li>
+            ))}
+          </ul>
+        ) : (
+          <p>No open issues after local validation.</p>
+        )}
+      </section>
       {(run.decisions.length > 0 || run.logs.length > 0) && (
         <div className="task-run-audit" aria-label="Task run decisions and logs">
           {run.decisions.length > 0 && (

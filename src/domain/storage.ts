@@ -275,6 +275,7 @@ function normalizeTaskRuns(persisted: unknown): TaskRun[] {
   return arrayOrEmpty<TaskRun>(persisted).map((run) => ({
     ...run,
     revisionOfRunId: typeof run.revisionOfRunId === "string" ? run.revisionOfRunId : null,
+    openIssues: normalizeRunOpenIssues(run),
     executorCalls: arrayOrEmpty(run.executorCalls)
       .map(normalizeExecutorCall)
       .filter((call): call is ExecutorCall => Boolean(call)),
@@ -296,6 +297,22 @@ function normalizeTaskRuns(persisted: unknown): TaskRun[] {
             }
           : null
   }));
+}
+
+function normalizeRunOpenIssues(run: TaskRun): string[] {
+  if (Array.isArray(run.openIssues)) {
+    return run.openIssues.filter((issue): issue is string => typeof issue === "string" && issue.trim().length > 0);
+  }
+
+  if (run.status === "blocked" && Array.isArray(run.approvalRequests) && run.approvalRequests.length > 0) {
+    return run.approvalRequests.map((request) => `${request.reason} Requested scope: ${request.requestedScope}.`);
+  }
+
+  if (run.status === "blocked" && typeof run.finalSummary === "string" && run.finalSummary.trim()) {
+    return [run.finalSummary];
+  }
+
+  return [];
 }
 
 function mergeRoleBoundaries(persisted: unknown, defaults: Record<string, RoleBoundary>): Record<string, RoleBoundary> {

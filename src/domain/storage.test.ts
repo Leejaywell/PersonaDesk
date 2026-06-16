@@ -214,6 +214,29 @@ describe("state storage", () => {
     expect(restored.tasks[0].deadline).toBeNull();
   });
 
+  it("adds open issue records to older blocked task runs", () => {
+    let state = createInitialState();
+    state = createTask(state, {
+      goal: "Delete old files",
+      constraints: "Needs filesystem",
+      desiredOutput: "Checklist",
+      supervisionMode: "unsupervised",
+      authorizationScope: "text-planning-only",
+      allowedExecutorIds: ["local-planner"]
+    });
+    state = runAutonomyCycle(state, state.tasks[0].id);
+    const legacyState = {
+      ...state,
+      taskRuns: state.taskRuns.map(({ openIssues, ...run }) => run)
+    };
+
+    const restored = deserializeState(JSON.stringify({ version: 2, state: legacyState }));
+
+    expect(restored.taskRuns[0].openIssues).toContain(
+      "The task appears to require destructive file operations. Requested scope: destructive-filesystem."
+    );
+  });
+
   it("defaults older voice request audits to audit-only routing", () => {
     const state = createInitialState();
     const legacyState = {

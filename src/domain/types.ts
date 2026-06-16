@@ -247,6 +247,7 @@ export interface TaskRun {
   logs: string[];
   validationResults: ValidationResult[];
   artifacts: Artifact[];
+  openIssues: string[];
   approvalRequests: ApprovalRequest[];
   acceptance: TaskAcceptance | null;
   finalSummary: string;

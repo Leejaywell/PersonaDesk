@@ -60,7 +60,7 @@ This repository currently implements the Phase 1 thin slice from the design spec
   - blocks when the allowed executor list has no available executor instead of silently falling back,
   - blocks detected local agents and configured provider slots that do not yet have a Phase 1 task execution adapter instead of pretending they ran,
   - lets the user grant requested scopes and resume the same blocked task while preserving the blocked run as history.
-  - shows task run decisions, execution logs, fallback choices, and executor-call disclosures on task cards.
+  - shows task run decisions, execution logs, open issues, fallback choices, and executor-call disclosures on task cards.
 - Memory candidate workflow:
   - candidates are proposed from task outcomes, memory-shaped companion messages, and allowlisted observation summaries,
   - users can edit memory text, layer, owner, sensitivity, and sync policy before confirmation,

@@ -319,6 +319,9 @@ describe("PersonaDesk app", () => {
     expect(screen.getByText(/Scheduled task as Priority high; target deadline 2026-07-01/i)).toBeInTheDocument();
     expect(screen.getByText("Dispatch: local-deterministic")).toBeInTheDocument();
     expect(screen.getByText(/Produced one local deterministic planning artifact/i)).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Open issues" })).toHaveTextContent(
+      "No open issues after local validation."
+    );
 
     await user.click(screen.getByRole("button", { name: /Desktop/i }));
     expect(screen.getByText(/land as delivered/)).toBeInTheDocument();
@@ -419,6 +422,7 @@ describe("PersonaDesk app", () => {
     expect(screen.getByText("Allowed executors: openai-compatible")).toBeInTheDocument();
     expect(screen.getByText("Dispatch: model-api")).toBeInTheDocument();
     expect(screen.getAllByText(/No executor dispatch was sent/i).length).toBeGreaterThan(0);
+    expect(screen.getByRole("region", { name: "Open issues" })).toHaveTextContent("No executor dispatch was sent");
     expect(screen.getByText(/OpenAI-compatible chat API is unconfigured/)).toBeInTheDocument();
   });
 
@@ -498,7 +502,7 @@ describe("PersonaDesk app", () => {
     await user.click(screen.getByRole("button", { name: "Run autonomous task" }));
 
     expect(await screen.findByText("Blocked")).toBeInTheDocument();
-    expect(screen.getByText(/The task appears to require destructive file operations/)).toBeInTheDocument();
+    expect(screen.getAllByText(/The task appears to require destructive file operations/).length).toBeGreaterThan(1);
     await user.click(screen.getByRole("button", { name: "Grant requested scopes and continue" }));
 
     expect(screen.getAllByText("Delivered").length).toBeGreaterThan(0);

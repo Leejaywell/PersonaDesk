@@ -44,6 +44,7 @@ describe("task autonomy", () => {
       note: "Awaiting final user acceptance.",
       decidedAt: null
     });
+    expect(run.openIssues).toEqual([]);
   });
 
   it("records priority and deadline in scheduling decisions and local artifacts", () => {
@@ -302,6 +303,9 @@ describe("task autonomy", () => {
 
     expect(state.taskRuns[0].status).toBe("blocked");
     expect(state.taskRuns[0].approvalRequests.length).toBeGreaterThan(0);
+    expect(state.taskRuns[0].openIssues).toContain(
+      "The task appears to require destructive file operations. Requested scope: destructive-filesystem."
+    );
   });
 
   it("continues when risky operations are explicitly inside authorization scope", () => {

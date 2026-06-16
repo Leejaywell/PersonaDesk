@@ -61,6 +61,16 @@ function taskScheduleSummary(task: Task): string {
     : `Priority ${task.priority}; no deadline set.`;
 }
 
+function approvalOpenIssues(approvals: ApprovalRequest[]): string[] {
+  return approvals.map((approval) => `${approval.reason} Requested scope: ${approval.requestedScope}.`);
+}
+
+function validationOpenIssues(validationResults: ValidationResult[]): string[] {
+  return validationResults
+    .filter((result) => !result.passed)
+    .map((result) => `${result.label}: ${result.detail}`);
+}
+
 function authorizedObservationSummaries(state: PersonaDeskState, task: Task): ObservationSummary[] {
   if (!canUseObservationSummaries(task)) {
     return [];
@@ -312,6 +322,7 @@ export function runAutonomyCycle(state: PersonaDeskState, taskId: string): Perso
       logs: [taskScheduleSummary(task), "PersonaDesk did not run tools or publish/delete anything."],
       validationResults: [],
       artifacts: [],
+      openIssues: approvalOpenIssues(approvals),
       approvalRequests: approvals,
       acceptance: null,
       finalSummary: "Task is blocked until the user grants additional permission."
@@ -347,6 +358,7 @@ export function runAutonomyCycle(state: PersonaDeskState, taskId: string): Perso
       logs: [executorCall.outputSummary],
       validationResults: [],
       artifacts: [],
+      openIssues: [executorCall.outputSummary],
       approvalRequests: [],
       acceptance: null,
       finalSummary: blockedExecutorFinalSummary(executor)
@@ -391,6 +403,7 @@ export function runAutonomyCycle(state: PersonaDeskState, taskId: string): Perso
     ],
     validationResults,
     artifacts: [artifact],
+    openIssues: validationOpenIssues(validationResults),
     approvalRequests: [],
     acceptance: passed
       ? {
@@ -570,6 +583,7 @@ export function runTaskRevision(state: PersonaDeskState, taskId: string, previou
       logs: ["PersonaDesk did not revise, publish, or delete anything."],
       validationResults: [],
       artifacts: [],
+      openIssues: approvalOpenIssues(approvals),
       approvalRequests: approvals,
       acceptance: null,
       finalSummary: "Task revision is blocked until the user grants additional permission."
@@ -606,6 +620,7 @@ export function runTaskRevision(state: PersonaDeskState, taskId: string, previou
       logs: [executorCall.outputSummary],
       validationResults: [],
       artifacts: [],
+      openIssues: [executorCall.outputSummary],
       approvalRequests: [],
       acceptance: null,
       finalSummary: blockedExecutorFinalSummary(executor)
@@ -651,6 +666,7 @@ export function runTaskRevision(state: PersonaDeskState, taskId: string, previou
     ],
     validationResults,
     artifacts: [artifact],
+    openIssues: validationOpenIssues(validationResults),
     approvalRequests: [],
     acceptance: passed
       ? {
