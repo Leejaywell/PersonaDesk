@@ -3,7 +3,9 @@ import { createInitialState } from "./defaultState";
 import {
   addObservationSummaryCompanionReactions,
   addTaskRunCompanionReactions,
-  sendCompanionMessage
+  sendCompanionMessage,
+  appendConversationMessage,
+  updateConversationMessageText
 } from "./conversation";
 import { startObservationSession, summarizeObservationEvent } from "./observation";
 import { createTask, runAutonomyCycle } from "./tasks";
@@ -148,4 +150,23 @@ describe("companion conversation", () => {
     expect(state.observationSessions[0].localSummaryStream).toHaveLength(0);
     expect(state.conversationMessages).toHaveLength(0);
   });
+
+  it("appends and updates conversation messages correctly", () => {
+    let state = createInitialState();
+    const result = appendConversationMessage(state, {
+      characterId: "mira",
+      speaker: "user",
+      text: "Draft message",
+      source: "desktop-companion",
+      sourceEventId: null
+    });
+
+    state = result.state;
+    expect(state.conversationMessages).toHaveLength(1);
+    expect(state.conversationMessages[0].text).toBe("Draft message");
+
+    state = updateConversationMessageText(state, result.message.id, "Updated message");
+    expect(state.conversationMessages[0].text).toBe("Updated message");
+  });
 });
+

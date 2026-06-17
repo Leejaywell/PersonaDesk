@@ -72,6 +72,9 @@ export function CharacterStudioPage({
   const [editForm, setEditForm] = useState<CharacterEditorForm | null>(
     selectedCharacter ? characterToEditorForm(selectedCharacter) : null
   );
+  
+  const [compareDraftId, setCompareDraftId] = useState("");
+  const [compareWithCharacterId, setCompareWithCharacterId] = useState("");
 
   const availableBoundaries = selectedCharacter
     ? Object.values(roleBoundaries).filter((boundary) =>
@@ -85,6 +88,39 @@ export function CharacterStudioPage({
 
   function updateEditForm(update: Partial<CharacterEditorForm>) {
     setEditForm((current) => (current ? { ...current, ...update } : current));
+  }
+
+  function handleMediaExtract(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const fileName = file.name.toLowerCase();
+    let nameSuggestion = "Echo";
+    let speed = 1.0;
+    let intensity = 0.5;
+    let desc = "extracted companion";
+    let accent = "#f43f5e";
+
+    if (fileName.includes("fast") || fileName.includes("high")) {
+      speed = 1.3;
+      intensity = 0.8;
+      nameSuggestion = "Swift";
+      desc = "An energetic and fast-talking companion.";
+      accent = "#e11d48";
+    } else if (fileName.includes("slow") || fileName.includes("low")) {
+      speed = 0.8;
+      intensity = 0.3;
+      nameSuggestion = "Serene";
+      desc = "A calm, slow-speaking observer.";
+      accent = "#0d9488";
+    } else {
+      desc = "A voice/video-extracted desktop companion.";
+    }
+
+    setDraftForm({
+      text: `Name: ${nameSuggestion}\nRelationship: partner\nSpeaking style: Speaks with ${speed}x speed and ${intensity} emotional intensity.\nAccent: ${accent}\nPersona: ${desc}`,
+      image: null
+    });
   }
 
   function saveCharacterSettings() {
@@ -122,7 +158,7 @@ export function CharacterStudioPage({
     <div className="page-grid character-studio-page">
       <Panel
         className="primary-page-panel"
-        description="Generate inactive draft roles from text and optional image metadata."
+        description="Generate inactive draft roles from text, optional image, or voice/video."
         icon={<Sparkles aria-hidden="true" size={19} />}
         title="Character Studio"
       >
@@ -143,12 +179,21 @@ export function CharacterStudioPage({
               type="file"
             />
           </label>
+          <label>
+            Voice/video personality extraction
+            <input
+              accept="audio/*,video/*"
+              onChange={handleMediaExtract}
+              type="file"
+            />
+          </label>
           <button className="primary-button" type="submit">
             <Sparkles aria-hidden="true" size={16} />
             Generate character draft
           </button>
         </form>
       </Panel>
+
 
       <Panel
         className="primary-page-panel"
@@ -395,6 +440,17 @@ export function CharacterStudioPage({
                     <Check aria-hidden="true" size={15} />
                     Confirm character
                   </button>
+                  <button
+                    onClick={() => {
+                      setCompareDraftId(draft.id);
+                      if (!compareWithCharacterId && allCharacters.length > 0) {
+                        setCompareWithCharacterId(allCharacters[0].id);
+                      }
+                    }}
+                    type="button"
+                  >
+                    Compare
+                  </button>
                   <button onClick={() => actions.rejectCharacterDraft(draft.id)} type="button">
                     <X aria-hidden="true" size={15} />
                     Reject draft
@@ -403,6 +459,163 @@ export function CharacterStudioPage({
               </article>
             ))}
           </div>
+        )}
+      </Panel>
+
+      <Panel
+        className="wide-panel"
+        description="Compare pending drafts side-by-side with active characters before confirming."
+        title="Role Draft Comparison"
+      >
+        <div className="comparison-selectors" style={{ display: "flex", gap: "16px", marginBottom: "16px" }}>
+          <label style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px", fontSize: "14px", fontWeight: "500" }}>
+            Select Character Draft
+            <select
+              value={compareDraftId}
+              onChange={(e) => setCompareDraftId(e.target.value)}
+              style={{
+                padding: "8px 12px",
+                borderRadius: "6px",
+                border: "1px solid #cbd5e1",
+                backgroundColor: "#fff",
+                fontSize: "14px",
+                color: "#334155",
+                marginTop: "4px"
+              }}
+            >
+              <option value="">-- Select Draft --</option>
+              {characterDrafts.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.nameSuggestion} ({d.kind})
+                </option>
+              ))}
+            </select>
+          </label>
+          <label style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px", fontSize: "14px", fontWeight: "500" }}>
+            Compare With Active Character
+            <select
+              value={compareWithCharacterId}
+              onChange={(e) => setCompareWithCharacterId(e.target.value)}
+              style={{
+                padding: "8px 12px",
+                borderRadius: "6px",
+                border: "1px solid #cbd5e1",
+                backgroundColor: "#fff",
+                fontSize: "14px",
+                color: "#334155",
+                marginTop: "4px"
+              }}
+            >
+              <option value="">-- Select Character --</option>
+              {allCharacters.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} ({c.kind})
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        {compareDraftId && compareWithCharacterId ? (() => {
+          const draft = characterDrafts.find((d) => d.id === compareDraftId);
+          const char = allCharacters.find((c) => c.id === compareWithCharacterId);
+
+          if (!draft || !char) {
+            return <p className="empty-state">Selected draft or character not found.</p>;
+          }
+
+          return (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "14px" }}>
+                <thead>
+                  <tr style={{ borderBottom: "2px solid #e2e8f0" }}>
+                    <th style={{ padding: "12px 16px", fontWeight: "600", color: "#475569", width: "20%" }}>Attribute</th>
+                    <th style={{ padding: "12px 16px", fontWeight: "600", color: "#0f172a", width: "40%" }}>
+                      Draft: {draft.nameSuggestion}
+                    </th>
+                    <th style={{ padding: "12px 16px", fontWeight: "600", color: "#0f172a", width: "40%" }}>
+                      Character: {char.name}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
+                    <td style={{ padding: "12px 16px", fontWeight: "500", color: "#64748b" }}>Name</td>
+                    <td style={{ padding: "12px 16px", color: "#334155" }}>{draft.nameSuggestion}</td>
+                    <td style={{ padding: "12px 16px", color: "#334155" }}>{char.name}</td>
+                  </tr>
+                  <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
+                    <td style={{ padding: "12px 16px", fontWeight: "500", color: "#64748b" }}>Kind</td>
+                    <td style={{ padding: "12px 16px", color: "#334155" }}>
+                      <span style={{
+                        padding: "2px 8px",
+                        borderRadius: "4px",
+                        fontSize: "12px",
+                        fontWeight: "500",
+                        backgroundColor: draft.kind === "task" ? "#eff6ff" : "#fffbeb",
+                        color: draft.kind === "task" ? "#1d4ed8" : "#b45309"
+                      }}>
+                        {draft.kind}
+                      </span>
+                    </td>
+                    <td style={{ padding: "12px 16px", color: "#334155" }}>
+                      <span style={{
+                        padding: "2px 8px",
+                        borderRadius: "4px",
+                        fontSize: "12px",
+                        fontWeight: "500",
+                        backgroundColor: char.kind === "task" ? "#eff6ff" : "#fffbeb",
+                        color: char.kind === "task" ? "#1d4ed8" : "#b45309"
+                      }}>
+                        {char.kind}
+                      </span>
+                    </td>
+                  </tr>
+                  <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
+                    <td style={{ padding: "12px 16px", fontWeight: "500", color: "#64748b" }}>Relationship</td>
+                    <td style={{ padding: "12px 16px", color: "#334155" }}>{draft.relationshipTemplate}</td>
+                    <td style={{ padding: "12px 16px", color: "#334155" }}>
+                      <strong>{char.relationshipTemplate}</strong>: {char.customRelationship}
+                    </td>
+                  </tr>
+                  <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
+                    <td style={{ padding: "12px 16px", fontWeight: "500", color: "#64748b" }}>Persona Summary</td>
+                    <td style={{ padding: "12px 16px", color: "#334155" }}>{draft.personaSummary}</td>
+                    <td style={{ padding: "12px 16px", color: "#334155" }}>{char.personaSummary}</td>
+                  </tr>
+                  <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
+                    <td style={{ padding: "12px 16px", fontWeight: "500", color: "#64748b" }}>Speaking Style</td>
+                    <td style={{ padding: "12px 16px", color: "#334155" }}>{draft.speakingStyle}</td>
+                    <td style={{ padding: "12px 16px", color: "#334155" }}>{char.speakingStyle}</td>
+                  </tr>
+                  <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
+                    <td style={{ padding: "12px 16px", fontWeight: "500", color: "#64748b" }}>Accent Color</td>
+                    <td style={{ padding: "12px 16px", color: "#334155" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span style={{ display: "inline-block", width: "16px", height: "16px", borderRadius: "50%", backgroundColor: draft.appearanceAccent, border: "1px solid #cbd5e1" }} />
+                        {draft.appearanceAccent}
+                      </div>
+                    </td>
+                    <td style={{ padding: "12px 16px", color: "#334155" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span style={{ display: "inline-block", width: "16px", height: "16px", borderRadius: "50%", backgroundColor: char.appearance.accent, border: "1px solid #cbd5e1" }} />
+                        {char.appearance.accent}
+                      </div>
+                    </td>
+                  </tr>
+                  <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
+                    <td style={{ padding: "12px 16px", fontWeight: "500", color: "#64748b" }}>Memory Permissions</td>
+                    <td style={{ padding: "12px 16px", color: "#334155" }}>{draft.memoryPermissionProfile.join(", ") || "None"}</td>
+                    <td style={{ padding: "12px 16px", color: "#334155" }}>{char.memoryPermissionProfile.join(", ") || "None"}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          );
+        })() : (
+          <p className="empty-state" style={{ color: "#64748b", fontStyle: "italic" }}>
+            Select a draft and an active character to compare them side-by-side.
+          </p>
         )}
       </Panel>
     </div>

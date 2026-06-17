@@ -7,7 +7,9 @@ import {
   grantApprovalScopesAndResumeTask,
   recordTaskAcceptance,
   runAutonomyCycle,
-  runTaskRevision
+  runTaskRevision,
+  deliverTaskRun,
+  failTaskRun
 } from "./tasks";
 
 describe("task autonomy", () => {
@@ -396,4 +398,54 @@ describe("task autonomy", () => {
     expect(state.taskRuns[1].status).toBe("delivered");
     expect(state.taskRuns[1].approvalRequests).toEqual([]);
   });
+
+  it("handles deliverTaskRun and failTaskRun properly", () => {
+    let state = createInitialState();
+    state = createTask(state, {
+      goal: "Generate UI layout",
+      constraints: "Keep it clean",
+      desiredOutput: "Checklist",
+      supervisionMode: "unsupervised",
+      authorizationScope: "text-planning-only",
+      allowedExecutorIds: ["openai-compatible"]
+    });
+
+    // Run the cycle, which should return running since openai-compatible is a model-api
+    // Let's first make openai-compatible status "available" (configured)
+    state.executors = state.executors.map((e) =>
+      e.id === "openai-compatible" ? { ...e, status: "available" } : e
+    );
+
+    state = runAutonomyCycle(state, state.tasks[0].id);
+    expect(state.taskRuns[0].status).toBe("running");
+
+    const runId = state.taskRuns[0].id;
+
+    // Deliver it
+    state = deliverTaskRun(state, state.tasks[0].id, runId, "openai-compatible", "- Goal: Generate UI layout\n- Desired output: Checklist\n- Keep raw screen frames approval boundary", "Success");
+    expect(state.taskRuns[0].status).toBe("delivered");
+    expect(state.tasks[0].status).toBe("delivered");
+    expect(state.memoryCandidates).toHaveLength(1);
+
+    // Fail case
+    let state2 = createInitialState();
+    state2.executors = state2.executors.map((e) =>
+      e.id === "openai-compatible" ? { ...e, status: "available" } : e
+    );
+    state2 = createTask(state2, {
+      goal: "Generate UI layout",
+      constraints: "Keep it clean",
+      desiredOutput: "Checklist",
+      supervisionMode: "unsupervised",
+      authorizationScope: "text-planning-only",
+      allowedExecutorIds: ["openai-compatible"]
+    });
+    state2 = runAutonomyCycle(state2, state2.tasks[0].id);
+    const runId2 = state2.taskRuns[0].id;
+
+    state2 = failTaskRun(state2, state2.tasks[0].id, runId2, "openai-compatible", "API quota exceeded");
+    expect(state2.taskRuns[0].status).toBe("failed");
+    expect(state2.tasks[0].status).toBe("failed");
+  });
 });
+

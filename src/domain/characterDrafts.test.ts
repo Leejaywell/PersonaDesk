@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createInitialState } from "./defaultState";
-import { confirmCharacterDraft, createCharacterDraft, rejectCharacterDraft } from "./characterDrafts";
+import { confirmCharacterDraft, createCharacterDraft, rejectCharacterDraft, createCustomCharacterDraft } from "./characterDrafts";
 
 describe("character draft generation", () => {
   it("creates a draft from text and image metadata without activating it", () => {
@@ -43,5 +43,27 @@ describe("character draft generation", () => {
     state = rejectCharacterDraft(state, state.characterDrafts[0].id);
 
     expect(state.characterDrafts).toHaveLength(0);
+  });
+
+  it("creates a custom draft from AI vision result", () => {
+    let state = createInitialState();
+    state = createCustomCharacterDraft(state, {
+      nameSuggestion: "Aero",
+      kind: "task",
+      relationshipTemplate: "reviewer",
+      personaSummary: "An AI vision analyzed reviewer",
+      speakingStyle: "Direct",
+      memoryPermissionProfile: ["task"],
+      appearanceAccent: "#2563eb",
+      sourceText: "AI generated draft from image analysis",
+      imageFileName: "aero.png",
+      imageMimeType: "image/png",
+      imageSizeBytes: 4096,
+      disclosures: ["Processed with vision provider"]
+    });
+
+    expect(state.characterDrafts).toHaveLength(1);
+    expect(state.characterDrafts[0].nameSuggestion).toBe("Aero");
+    expect(state.characterDrafts[0].disclosures).toContain("Processed with vision provider");
   });
 });

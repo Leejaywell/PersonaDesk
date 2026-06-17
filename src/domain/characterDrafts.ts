@@ -173,3 +173,21 @@ export function rejectCharacterDraft(state: PersonaDeskState, draftId: string): 
     characterDrafts: state.characterDrafts.filter((item) => item.id !== draftId)
   };
 }
+
+export function createCustomCharacterDraft(
+  state: PersonaDeskState,
+  draft: Omit<CharacterDraft, "id" | "createdAt">
+): PersonaDeskState {
+  return {
+    ...state,
+    characterDrafts: [
+      ...state.characterDrafts,
+      {
+        ...draft,
+        id: createId("character-draft"),
+        createdAt: nowIso()
+      }
+    ]
+  };
+}
+

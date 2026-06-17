@@ -238,3 +238,45 @@ export function addObservationSummaryCompanionReactions(state: PersonaDeskState,
     );
   }, nextState);
 }
+
+export function proposeCompanionMemory(
+  state: PersonaDeskState,
+  characterId: string,
+  sourceEventId: string,
+  text: string,
+  reason: string
+): PersonaDeskState {
+  return proposeCompanionMemoryIfUseful(state, characterId, sourceEventId, text, reason);
+}
+
+export function appendConversationMessage(
+  state: PersonaDeskState,
+  message: Omit<ConversationMessage, "id" | "createdAt">
+): { state: PersonaDeskState; message: ConversationMessage } {
+  const fullMessage: ConversationMessage = {
+    ...message,
+    id: createId(message.speaker === "user" ? "conversation-user" : "conversation-character"),
+    createdAt: nowIso()
+  };
+  return {
+    state: {
+      ...state,
+      conversationMessages: [...state.conversationMessages, fullMessage]
+    },
+    message: fullMessage
+  };
+}
+
+export function updateConversationMessageText(
+  state: PersonaDeskState,
+  messageId: string,
+  newText: string
+): PersonaDeskState {
+  return {
+    ...state,
+    conversationMessages: state.conversationMessages.map((msg) =>
+      msg.id === messageId ? { ...msg, text: newText } : msg
+    )
+  };
+}
+

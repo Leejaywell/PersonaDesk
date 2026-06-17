@@ -41,16 +41,20 @@ import { TaskRoomPage } from "./components/tasks/TaskRoomPage";
 import {
   confirmCharacterDraft as confirmDraft,
   createCharacterDraft,
+  createCustomCharacterDraft,
   rejectCharacterDraft as rejectDraft
 } from "./domain/characterDrafts";
 import { updateCharacterSettings } from "./domain/characters";
 import {
   addObservationSummaryCompanionReactions,
   addTaskRunCompanionReactions,
-  sendCompanionMessage
+  sendCompanionMessage,
+  appendConversationMessage,
+  updateConversationMessageText,
+  proposeCompanionMemory
 } from "./domain/conversation";
 import { recordDesktopNotificationAudit } from "./domain/desktopPresence";
-import { configureExecutor, mergeDetectedLocalAgents, recordExecutorHealthCheck } from "./domain/executors";
+import { configureExecutor, mergeDetectedLocalAgents, recordExecutorHealthCheck, routeExecutorForTask } from "./domain/executors";
 import { confirmMemoryCandidate as confirmMemory, rejectMemoryCandidate as rejectMemory } from "./domain/memory";
 import {
   approveCloudVisionUpload,
@@ -71,13 +75,18 @@ import {
 } from "./domain/sync";
 import {
   createTask,
+  deliverTaskRun,
+  failTaskRun,
   grantApprovalScopesAndResumeTask,
   recordTaskAcceptance,
   runAutonomyCycle,
   runTaskRevision
 } from "./domain/tasks";
-import type { PersonaDeskState } from "./domain/types";
+import type { Executor, PersonaDeskState, CharacterDraft } from "./domain/types";
 import { createVoiceRequest, recordVoicePlaybackResult } from "./domain/voice";
+import { buildChatMessages, buildTaskPrompt } from "./domain/promptBuilder";
+import { callLLMProvider, analyzeImageWithVision } from "./app/aiProvider";
+
 
 export default function App() {
   const [state, setState] = useState<PersonaDeskState>(() => loadState());
@@ -169,6 +178,135 @@ export default function App() {
     setState(next);
   }
 
+  async function triggerTaskLLM(currentState: PersonaDeskState, taskId: string, runId: string, isRevision: boolean) {
+    const task = currentState.tasks.find((t) => t.id === taskId);
+    if (!task) return;
+
+    const allowedIds = new Set(task.allowedExecutorIds?.filter(Boolean) ?? []);
+    const allowedExecutors = allowedIds.size > 0 
+      ? currentState.executors.filter((executor) => allowedIds.has(executor.id)) 
+      : currentState.executors;
+
+    const canProduce = (executor: Executor) => {
+      return (
+        (executor.type === "deterministic" && executor.status === "available") ||
+        ((executor.type === "model-api" || executor.type === "local-model") &&
+          (executor.status === "available" || executor.status === "configured"))
+      );
+    };
+
+    const routed = routeExecutorForTask(currentState, {
+      taskCharacterId: "orion",
+      taskKind: isRevision ? "revision" : "planning",
+      requiresLocalAgent: false,
+      allowedExecutorIds: task.allowedExecutorIds
+    });
+
+    const fallback = allowedExecutors.find(canProduce);
+    const executor = fallback && !canProduce(routed) ? fallback : routed;
+
+    if (executor.type === "model-api" || executor.type === "local-model") {
+      try {
+        const taskPrompt = buildTaskPrompt(task, currentState.memories);
+        const endpoint = executor.configuration.endpoint;
+        const model = executor.configuration.model || "gpt-4o";
+        const apiKey = executor.configuration.secretRef;
+
+        const response = await callLLMProvider({
+          endpoint,
+          model,
+          apiKey,
+          messages: taskPrompt
+        });
+
+        setState((current) => deliverTaskRun(current, taskId, runId, executor.id, response, response));
+      } catch (err: any) {
+        console.error("AI task execution failed:", err);
+        const errorMessage = err?.message || String(err);
+        setState((current) => failTaskRun(current, taskId, runId, executor.id, errorMessage));
+      }
+    }
+  }
+
+  async function handleSendCompanionMessage(characterId: string, text: string) {
+    const character = state.characters.find((c) => c.id === characterId);
+    if (!character) return;
+
+    const executor = state.executors.find(
+      (e) =>
+        (e.id === "openai-compatible" || e.id === "local-model-server") &&
+        (e.status === "available" || e.status === "configured") &&
+        e.configuration.endpoint
+    );
+
+    if (executor) {
+      const userMsg = {
+        characterId,
+        speaker: "user" as const,
+        text,
+        source: "desktop-companion" as const,
+        sourceEventId: null
+      };
+      const appendedUser = appendConversationMessage(state, userMsg);
+      let nextState = appendedUser.state;
+      const userMessageId = appendedUser.message.id;
+
+      const thinkingMsg = {
+        characterId,
+        speaker: "character" as const,
+        text: "...",
+        source: "desktop-companion" as const,
+        sourceEventId: userMessageId
+      };
+      const appendedThinking = appendConversationMessage(nextState, thinkingMsg);
+      nextState = appendedThinking.state;
+      const assistantMessageId = appendedThinking.message.id;
+
+      updateState(nextState);
+
+      try {
+        const history = nextState.conversationMessages
+          .filter((m) => m.characterId === characterId && m.id !== assistantMessageId)
+          .map((m) => ({
+            speaker: m.speaker,
+            text: m.text
+          }));
+
+        const chatMessages = buildChatMessages(character, nextState.memories, history);
+
+        const responseText = await callLLMProvider({
+          endpoint: executor.configuration.endpoint,
+          model: executor.configuration.model || "gpt-4o",
+          apiKey: executor.configuration.secretRef,
+          messages: chatMessages
+        });
+
+        setState((current) => {
+          let updated = updateConversationMessageText(current, assistantMessageId, responseText);
+          updated = proposeCompanionMemory(
+            updated,
+            characterId,
+            userMessageId,
+            text,
+            "Extracted user preference or character memory candidate from desktop conversation."
+          );
+          return updated;
+        });
+      } catch (err) {
+        console.error("AI companion message failed:", err);
+        setState((current) =>
+          updateConversationMessageText(
+            current,
+            assistantMessageId,
+            `Error calling ${executor.displayName}.`
+          )
+        );
+      }
+    } else {
+      setState((current) => sendCompanionMessage(current, { characterId, text }));
+    }
+  }
+
   function runTask(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -188,27 +326,100 @@ export default function App() {
     });
     const taskId = next.tasks[next.tasks.length - 1].id;
     next = runAutonomyCycle(next, taskId);
-    const runId = next.taskRuns[next.taskRuns.length - 1]?.id;
+    const run = next.taskRuns[next.taskRuns.length - 1];
 
-    updateState(runId ? addTaskRunCompanionReactions(next, runId) : next);
+    const finalNext = run?.id ? addTaskRunCompanionReactions(next, run.id) : next;
+    updateState(finalNext);
     setTaskForm({ ...taskForm, goal: "" });
+
+    if (run && run.status === "running") {
+      triggerTaskLLM(finalNext, taskId, run.id, false);
+    }
   }
 
-  function generateDraft(event: FormEvent<HTMLFormElement>) {
+  async function generateDraft(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!draftForm.text.trim() && !draftForm.image) {
       return;
     }
 
-    updateState(
-      createCharacterDraft(state, {
+    const visionExecutor = state.executors.find((e) => e.id === "vision-provider");
+    const isVisionAvailable =
+      visionExecutor &&
+      (visionExecutor.status === "available" || visionExecutor.status === "configured") &&
+      visionExecutor.configuration.endpoint;
+
+    if (isVisionAvailable && draftForm.image) {
+      try {
+        const file = draftForm.image;
+        const base64Data = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+
+        const prompt = `Please analyze the provided image (and the accompanying text description: "${draftForm.text.trim()}") to design a desktop companion character. Return a JSON object with the following fields:
+{
+  "nameSuggestion": "suggested name",
+  "kind": "emotional" or "task",
+  "relationshipTemplate": "partner", "reviewer", "observer", or "custom",
+  "personaSummary": "concise description of the character's personality and characteristics",
+  "speakingStyle": "speaking style description",
+  "memoryPermissionProfile": ["relationship", "preferences", "shared-world"] or ["task"],
+  "appearanceAccent": "hex color code representing their accent color",
+  "disclosures": ["Vision-based draft generated from uploaded image"]
+}
+Return ONLY the raw JSON object, without markdown formatting or code blocks.`;
+
+        const responseText = await analyzeImageWithVision(
+          visionExecutor.configuration.endpoint,
+          visionExecutor.configuration.model || "gpt-4o",
+          visionExecutor.configuration.secretRef,
+          base64Data,
+          prompt
+        );
+
+        const cleanText = responseText.replace(/^```json\s*/i, "").replace(/```$/, "").trim();
+        const parsed = JSON.parse(cleanText);
+
+        const draft: Omit<CharacterDraft, "id" | "createdAt"> = {
+          nameSuggestion: parsed.nameSuggestion || "Ari",
+          kind: parsed.kind === "task" ? "task" : "emotional",
+          relationshipTemplate: parsed.relationshipTemplate || "custom",
+          personaSummary: parsed.personaSummary || "A vision-generated companion draft.",
+          speakingStyle: parsed.speakingStyle || "Natural and direct.",
+          memoryPermissionProfile: Array.isArray(parsed.memoryPermissionProfile)
+            ? parsed.memoryPermissionProfile
+            : parsed.kind === "task" ? ["task"] : ["relationship", "preferences", "shared-world"],
+          appearanceAccent: parsed.appearanceAccent || (parsed.kind === "task" ? "#2563eb" : "#b45309"),
+          sourceText: draftForm.text || `Vision draft: ${file.name}`,
+          imageFileName: file.name,
+          imageMimeType: file.type || null,
+          imageSizeBytes: file.size || null,
+          disclosures: Array.isArray(parsed.disclosures)
+            ? parsed.disclosures
+            : ["Vision-based draft generated from uploaded image."]
+        };
+
+        setState((current) => createCustomCharacterDraft(current, draft));
+        setDraftForm({ text: "", image: null });
+        return;
+      } catch (err) {
+        console.error("Vision draft generation failed, falling back to deterministic generation:", err);
+      }
+    }
+
+    setState((current) =>
+      createCharacterDraft(current, {
         textImport: draftForm.text,
         imageFileName: draftForm.image?.name ?? null,
         imageMimeType: draftForm.image?.type || null,
         imageSizeBytes: draftForm.image?.size ?? null
       })
     );
+    setDraftForm({ text: "", image: null });
   }
 
   function startObservation() {
@@ -350,16 +561,15 @@ export default function App() {
 
         return latestRunId ? addTaskRunCompanionReactions(next, latestRunId) : next;
       }),
-    sendCompanionMessage: (characterId: string, text: string) =>
-      setState((current) => sendCompanionMessage(current, { characterId, text })),
+    sendCompanionMessage: handleSendCompanionMessage,
     generateCharacterDraft: generateDraft,
-    confirmCharacterDraft: (draftId: string) => updateState(confirmDraft(state, draftId)),
-    rejectCharacterDraft: (draftId: string) => updateState(rejectDraft(state, draftId)),
+    confirmCharacterDraft: (draftId: string) => setState((current) => confirmDraft(current, draftId)),
+    rejectCharacterDraft: (draftId: string) => setState((current) => rejectDraft(current, draftId)),
     updateCharacterSettings: (characterId: string, update: Parameters<typeof updateCharacterSettings>[2]) =>
       setState((current) => updateCharacterSettings(current, characterId, update)),
     confirmMemoryCandidate: (candidateId: string, review?: Parameters<typeof confirmMemory>[2]) =>
-      updateState(confirmMemory(state, candidateId, review)),
-    rejectMemoryCandidate: (candidateId: string) => updateState(rejectMemory(state, candidateId)),
+      setState((current) => confirmMemory(current, candidateId, review)),
+    rejectMemoryCandidate: (candidateId: string) => setState((current) => rejectMemory(current, candidateId)),
     startObservation,
     stopObservation,
     addObservationSummary,
@@ -424,13 +634,23 @@ export default function App() {
       decision: Parameters<typeof recordTaskAcceptance>[3],
       note?: string
     ) => setState((current) => recordTaskAcceptance(current, taskId, runId, decision, note)),
-    runTaskRevision: (taskId: string, runId: string) =>
+    runTaskRevision: (taskId: string, runId: string) => {
+      let finalNext: PersonaDeskState | null = null;
+      let runIdToTrigger: string | null = null;
       setState((current) => {
         const next = runTaskRevision(current, taskId, runId);
-        const latestRunId = next.taskRuns[next.taskRuns.length - 1]?.id;
+        const latestRun = next.taskRuns[next.taskRuns.length - 1];
+        if (latestRun && latestRun.status === "running") {
+          runIdToTrigger = latestRun.id;
+        }
+        finalNext = latestRun?.id && next !== current ? addTaskRunCompanionReactions(next, latestRun.id) : next;
+        return finalNext;
+      });
 
-        return latestRunId && next !== current ? addTaskRunCompanionReactions(next, latestRunId) : next;
-      }),
+      if (runIdToTrigger && finalNext) {
+        triggerTaskLLM(finalNext, taskId, runIdToTrigger, true);
+      }
+    },
     setSyncEnabled: (enabled: boolean) =>
       updateState({
         ...state,
