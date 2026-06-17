@@ -524,6 +524,12 @@ export function CharacterStudioPage({
             return <p className="empty-state">Selected draft or character not found.</p>;
           }
 
+          const speedMatch = draft.speakingStyle.match(/([\d.]+)x\s+speed/i) || draft.sourceText.match(/([\d.]+)x\s+speed/i);
+          const intensityMatch = draft.speakingStyle.match(/([\d.]+)\s+emotional\s+intensity/i) || draft.sourceText.match(/([\d.]+)\s+emotional\s+intensity/i);
+          const draftSpeed = speedMatch ? `${speedMatch[1]}x` : "1.0x (Default)";
+          const draftIntensity = intensityMatch ? `${intensityMatch[1]}` : (draft.kind === "task" ? "0.2" : "0.6 (Default)");
+          const draftTriggers = draft.kind === "task" ? "task-created" : "manual-mention, observation-note";
+
           return (
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "14px" }}>
@@ -607,6 +613,20 @@ export function CharacterStudioPage({
                     <td style={{ padding: "12px 16px", fontWeight: "500", color: "#64748b" }}>Memory Permissions</td>
                     <td style={{ padding: "12px 16px", color: "#334155" }}>{draft.memoryPermissionProfile.join(", ") || "None"}</td>
                     <td style={{ padding: "12px 16px", color: "#334155" }}>{char.memoryPermissionProfile.join(", ") || "None"}</td>
+                  </tr>
+                  <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
+                    <td style={{ padding: "12px 16px", fontWeight: "500", color: "#64748b" }}>Voice Profile</td>
+                    <td style={{ padding: "12px 16px", color: "#334155" }}>
+                      Speed: {draftSpeed}, Intensity: {draftIntensity}
+                    </td>
+                    <td style={{ padding: "12px 16px", color: "#334155" }}>
+                      Speed: {char.voice.speed}x, Intensity: {char.voice.emotionalIntensity}
+                    </td>
+                  </tr>
+                  <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
+                    <td style={{ padding: "12px 16px", fontWeight: "500", color: "#64748b" }}>Proactive Triggers</td>
+                    <td style={{ padding: "12px 16px", color: "#334155" }}>{draftTriggers}</td>
+                    <td style={{ padding: "12px 16px", color: "#334155" }}>{char.proactiveBehavior.triggers.join(", ") || "None"}</td>
                   </tr>
                 </tbody>
               </table>

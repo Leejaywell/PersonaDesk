@@ -16,10 +16,10 @@ function nowIso(): string {
 }
 
 function inferName(text: string): string {
-  const explicit = text.match(/\b(?:name|called|named)\s+([A-Z][a-zA-Z]{2,20})/);
+  const explicit = text.match(/\bname\s*:\s*([A-Za-z0-9 _-]{2,20})/i) || text.match(/\b(?:name|called|named)\s+([A-Z][a-zA-Z]{2,20})/i);
 
   if (explicit?.[1]) {
-    return explicit[1];
+    return explicit[1].trim();
   }
 
   if (text.toLowerCase().includes("review")) {
@@ -34,13 +34,21 @@ function inferName(text: string): string {
 }
 
 function inferRelationship(text: string): string {
+  const explicit = text.match(/\brelationship\s*:\s*([A-Za-z0-9 _-]{2,20})/i);
+  if (explicit?.[1]) {
+    const val = explicit[1].trim().toLowerCase();
+    if (["reviewer", "partner", "observer", "custom"].includes(val)) {
+      return val;
+    }
+  }
+
   const lower = text.toLowerCase();
 
   if (lower.includes("reviewer") || lower.includes("checks")) {
     return "reviewer";
   }
 
-  if (lower.includes("companion") || lower.includes("gentle")) {
+  if (lower.includes("companion") || lower.includes("gentle") || lower.includes("partner")) {
     return "partner";
   }
 
@@ -56,6 +64,11 @@ function inferKind(relationshipTemplate: string): "emotional" | "task" {
 }
 
 function summarizePersona(text: string): string {
+  const explicit = text.match(/\b(?:persona|summary)\s*:\s*(.+)/i);
+  if (explicit?.[1]) {
+    return explicit[1].trim();
+  }
+
   const trimmed = text.trim();
 
   if (!trimmed) {
@@ -66,6 +79,11 @@ function summarizePersona(text: string): string {
 }
 
 function inferSpeakingStyle(text: string): string {
+  const explicit = text.match(/\b(?:speaking style|style)\s*:\s*(.+)/i);
+  if (explicit?.[1]) {
+    return explicit[1].trim();
+  }
+
   const lower = text.toLowerCase();
 
   if (lower.includes("soft") || lower.includes("gentle")) {
@@ -97,6 +115,9 @@ export function createCharacterDraft(
     disclosures.push("Image handling used file metadata only; no vision model is configured.");
   }
 
+  const accentMatch = sourceText.match(/\b(?:accent|color)\s*:\s*(#[0-9a-fA-F]{6})/i);
+  const appearanceAccent = accentMatch ? accentMatch[1] : (kind === "task" ? "#2563eb" : "#b45309");
+
   const draft: CharacterDraft = {
     id: createId("character-draft"),
     nameSuggestion: inferName(sourceText),
@@ -105,7 +126,7 @@ export function createCharacterDraft(
     personaSummary: summarizePersona(sourceText),
     speakingStyle: inferSpeakingStyle(sourceText),
     memoryPermissionProfile: kind === "task" ? ["task"] : ["relationship", "preferences", "shared-world"],
-    appearanceAccent: kind === "task" ? "#2563eb" : "#b45309",
+    appearanceAccent,
     sourceText,
     imageFileName: input.imageFileName,
     imageMimeType: input.imageMimeType,
@@ -127,6 +148,12 @@ export function confirmCharacterDraft(state: PersonaDeskState, draftId: string):
     return state;
   }
 
+  const speedMatch = draft.speakingStyle.match(/([\d.]+)x\s+speed/i) || draft.sourceText.match(/([\d.]+)x\s+speed/i);
+  const intensityMatch = draft.speakingStyle.match(/([\d.]+)\s+emotional\s+intensity/i) || draft.sourceText.match(/([\d.]+)\s+emotional\s+intensity/i);
+  
+  const voiceSpeed = speedMatch ? parseFloat(speedMatch[1]) : 1;
+  const voiceIntensity = intensityMatch ? parseFloat(intensityMatch[1]) : (draft.kind === "task" ? 0.2 : 0.6);
+
   const boundary = draft.kind === "task" ? "boundary-task-agent" : "boundary-emotional-companion";
   const character: Character = {
     id: draft.id,
@@ -146,8 +173,8 @@ export function confirmCharacterDraft(state: PersonaDeskState, draftId: string):
     voice: {
       providerId: null,
       voiceName: "Unconfigured voice",
-      speed: 1,
-      emotionalIntensity: draft.kind === "task" ? 0.2 : 0.6,
+      speed: voiceSpeed,
+      emotionalIntensity: voiceIntensity,
       status: "unconfigured"
     },
     proactiveBehavior: {
