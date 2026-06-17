@@ -66,17 +66,58 @@ export function DesktopStagePage({
         icon={<Sparkles aria-hidden="true" size={19} />}
         title="Desktop Stage"
       >
-        <div className="stage-surface">
+        <div className="stage-surface" style={{ display: "flex", gap: "24px", justifyContent: "center", padding: "16px 0" }}>
           {emotionalCharacters.map((character, index) => (
             <div
-              className={`avatar-card ${index % 2 === 0 ? "warm" : "cool"}`}
               key={character.id}
-              style={{ backgroundColor: character.appearance.accent }}
+              style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}
             >
-              {character.appearance.avatarLabel}
+              <div
+                className={`avatar-card ${index % 2 === 0 ? "warm" : "cool"}`}
+                style={{
+                  backgroundColor: character.appearance.accent,
+                  position: "relative",
+                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1)",
+                  border: "2px solid rgba(255, 255, 255, 0.2)",
+                  display: "grid",
+                  placeItems: "center",
+                  width: "64px",
+                  height: "64px",
+                  borderRadius: "50%",
+                  fontSize: "24px",
+                  fontWeight: "bold",
+                  color: "#ffffff"
+                }}
+              >
+                {character.appearance.avatarLabel}
+                {character.appearance.backend !== "static" && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      bottom: "-4px",
+                      right: "-4px",
+                      fontSize: "9px",
+                      padding: "2px 6px",
+                      borderRadius: "10px",
+                      backgroundColor: "#1f2937",
+                      color: "#ffffff",
+                      border: "1px solid #4b5563",
+                      fontWeight: "bold",
+                      whiteSpace: "nowrap"
+                    }}
+                  >
+                    {character.appearance.backend === "state-pack" ? "StatePack" : character.appearance.backend.replace("-reserved", "").toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <span style={{ fontSize: "12px", fontWeight: "600", color: "#334155" }}>
+                {character.name}
+              </span>
             </div>
           ))}
-          <div className="stage-caption">
+        </div>
+        <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+          <div className="stage-caption" style={{ textAlign: "center", maxWidth: "600px", color: "#64748b", fontSize: "13px", marginTop: "8px" }}>
             Emotional characters can accompany the user, watch approved observation sessions, and comment within
             configured boundaries.
           </div>
